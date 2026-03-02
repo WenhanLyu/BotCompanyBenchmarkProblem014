@@ -1,0 +1,23 @@
+# Build artifacts
+*.o
+*.a
+code
+CMakeCache.txt
+cmake_install.cmake
+
+# Build directories
+CMakeFiles/
+Makefile
+
+# Generated build artifacts
+generated/CMakeFiles/
+generated/Makefile
+generated/cmake_install.cmake
+generated/libPyAntlr.a
+generated/*.o
+
+# Temporary files
+.tbc_pdb_meta
+
+# Other
+submit_acmoj/

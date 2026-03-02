@@ -83,7 +83,16 @@ run_test() {
     fi
     
     # Run the interpreter
-    if ! timeout 5 ./code < "$test_input" > "$actual_output" 2>&1; then
+    # Use timeout if available (Linux), gtimeout on macOS (if installed), otherwise run without timeout
+    if command -v timeout > /dev/null 2>&1; then
+        TIMEOUT_CMD="timeout 5"
+    elif command -v gtimeout > /dev/null 2>&1; then
+        TIMEOUT_CMD="gtimeout 5"
+    else
+        TIMEOUT_CMD=""
+    fi
+    
+    if ! $TIMEOUT_CMD ./code < "$test_input" > "$actual_output" 2>&1; then
         echo -e "${RED}FAIL (runtime error or timeout)${NC}"
         TESTS_FAILED=$((TESTS_FAILED + 1))
         return 1
@@ -121,7 +130,16 @@ if command -v valgrind > /dev/null 2>&1; then
     echo "  Running valgrind on test1..."
     VALGRIND_OUTPUT="/tmp/valgrind_test1.log"
     
-    if timeout 30 valgrind --leak-check=full --error-exitcode=1 \
+    # Determine timeout command
+    if command -v timeout > /dev/null 2>&1; then
+        VALGRIND_TIMEOUT="timeout 30"
+    elif command -v gtimeout > /dev/null 2>&1; then
+        VALGRIND_TIMEOUT="gtimeout 30"
+    else
+        VALGRIND_TIMEOUT=""
+    fi
+    
+    if $VALGRIND_TIMEOUT valgrind --leak-check=full --error-exitcode=1 \
         ./code < testcases/basic-testcases/test1.in > /dev/null 2> "$VALGRIND_OUTPUT"; then
         echo -e "${GREEN}✓ No memory leaks detected${NC}"
     else
