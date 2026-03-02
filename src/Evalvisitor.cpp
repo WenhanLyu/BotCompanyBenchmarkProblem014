@@ -317,9 +317,22 @@ std::any EvalVisitor::visitAtom(Python3Parser::AtomContext *ctx) {
             double numValue = std::stod(numStr);
             return Value(numValue);
         } else {
-            // Parse as integer
-            int numValue = std::stoi(numStr);
-            return Value(numValue);
+            // Parse as integer - check if it fits in int
+            // int can hold roughly -2B to +2B, which is 10 digits for positive
+            // If the number is too large, use BigInteger
+            bool negative = !numStr.empty() && numStr[0] == '-';
+            std::string absNumStr = negative ? numStr.substr(1) : numStr;
+            
+            // Check if number is too large for int (more than 10 digits, or exactly 10 and >= 2147483648)
+            if (absNumStr.length() > 10 || 
+                (absNumStr.length() == 10 && absNumStr > "2147483647")) {
+                // Use BigInteger for large integers
+                return Value(BigInteger(numStr));
+            } else {
+                // Use regular int
+                int numValue = std::stoi(numStr);
+                return Value(numValue);
+            }
         }
     }
     
