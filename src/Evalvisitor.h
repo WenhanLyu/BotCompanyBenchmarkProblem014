@@ -3,6 +3,7 @@
 #define PYTHON_INTERPRETER_EVALVISITOR_H
 
 #include "Python3ParserBaseVisitor.h"
+#include "BigInteger.h"
 #include <variant>
 #include <string>
 #include <iostream>
@@ -11,10 +12,11 @@
 #include <map>
 #include <cmath>
 #include <sstream>
+#include <climits>
 
 // Value class using std::variant to represent Python values
 // std::monostate represents None in Python
-using Value = std::variant<std::monostate, int, bool, std::string, double>;
+using Value = std::variant<std::monostate, int, bool, std::string, double, BigInteger>;
 
 class EvalVisitor : public Python3ParserBaseVisitor {
 public:
@@ -72,6 +74,19 @@ private:
     
     // Helper to convert Value to bool for condition evaluation
     bool valueToBool(const Value& val);
+    
+    // Python-style floor division for integers (floors toward -∞)
+    int pythonFloorDiv(int a, int b);
+    
+    // Python-style modulo for integers (result has same sign as divisor)
+    int pythonModulo(int a, int b);
+    
+    // Overflow detection helpers - check BEFORE operation
+    bool willOverflowAdd(int a, int b);
+    bool willOverflowSubtract(int a, int b);
+    bool willOverflowMultiply(int a, int b);
+    bool willOverflowFloorDiv(int a, int b);
+    bool willOverflowModulo(int a, int b);
 };
 
 #endif//PYTHON_INTERPRETER_EVALVISITOR_H
