@@ -415,7 +415,21 @@ std::any EvalVisitor::visitArith_expr(Python3Parser::Arith_exprContext *ctx) {
         std::string op = ops[i]->getText();
         
         // Type coercion and operation
-        if (std::holds_alternative<int>(result) && std::holds_alternative<int>(term)) {
+        // BigInteger has highest priority, then double, then int
+        if (std::holds_alternative<BigInteger>(result) || std::holds_alternative<BigInteger>(term)) {
+            // Promote to BigInteger if needed
+            BigInteger left = std::holds_alternative<BigInteger>(result) ? 
+                std::get<BigInteger>(result) : 
+                (std::holds_alternative<int>(result) ? BigInteger(std::get<int>(result)) : BigInteger(0));
+            BigInteger right = std::holds_alternative<BigInteger>(term) ? 
+                std::get<BigInteger>(term) : 
+                (std::holds_alternative<int>(term) ? BigInteger(std::get<int>(term)) : BigInteger(0));
+            if (op == "+") {
+                result = left + right;
+            } else if (op == "-") {
+                result = left - right;
+            }
+        } else if (std::holds_alternative<int>(result) && std::holds_alternative<int>(term)) {
             // int op int -> int
             int left = std::get<int>(result);
             int right = std::get<int>(term);
@@ -483,7 +497,29 @@ std::any EvalVisitor::visitTerm(Python3Parser::TermContext *ctx) {
         std::string op = ops[i]->getText();
         
         // Type coercion and operation
-        if (op == "/") {
+        // Handle BigInteger operations
+        if (std::holds_alternative<BigInteger>(result) || std::holds_alternative<BigInteger>(factor)) {
+            // Promote to BigInteger if needed
+            BigInteger left = std::holds_alternative<BigInteger>(result) ? 
+                std::get<BigInteger>(result) : 
+                (std::holds_alternative<int>(result) ? BigInteger(std::get<int>(result)) : BigInteger(0));
+            BigInteger right = std::holds_alternative<BigInteger>(factor) ? 
+                std::get<BigInteger>(factor) : 
+                (std::holds_alternative<int>(factor) ? BigInteger(std::get<int>(factor)) : BigInteger(0));
+            if (op == "*") {
+                result = left * right;
+            } else if (op == "//") {
+                result = left.floorDiv(right);
+            } else if (op == "%") {
+                result = left % right;
+            } else if (op == "/") {
+                // BigInteger division returns double
+                // Convert to string and then to double for precision
+                double leftD = std::stod(left.toString());
+                double rightD = std::stod(right.toString());
+                result = leftD / rightD;
+            }
+        } else if (op == "/") {
             // Division always returns double
             double left = std::holds_alternative<double>(result) ? std::get<double>(result) : static_cast<double>(std::get<int>(result));
             double right = std::holds_alternative<double>(factor) ? std::get<double>(factor) : static_cast<double>(std::get<int>(factor));
@@ -543,6 +579,8 @@ std::any EvalVisitor::visitFactor(Python3Parser::FactorContext *ctx) {
                     return Value(-std::get<int>(factorVal));
                 } else if (std::holds_alternative<double>(factorVal)) {
                     return Value(-std::get<double>(factorVal));
+                } else if (std::holds_alternative<BigInteger>(factorVal)) {
+                    return Value(-std::get<BigInteger>(factorVal));
                 }
             } else {
                 // Unary plus (no-op)
