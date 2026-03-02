@@ -7,9 +7,11 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include <map>
 
 // Value class using std::variant to represent Python values
-using Value = std::variant<std::monostate, std::string>;
+// std::monostate represents None in Python
+using Value = std::variant<std::monostate, int, bool, std::string>;
 
 class EvalVisitor : public Python3ParserBaseVisitor {
 public:
@@ -27,6 +29,9 @@ public:
     std::any visitTrailer(Python3Parser::TrailerContext *ctx) override;
 
 private:
+    // Variable storage: maps variable names to their values
+    std::map<std::string, Value> variables;
+    
     // Helper to remove quotes from string literals
     std::string unquoteString(const std::string& str);
 };
