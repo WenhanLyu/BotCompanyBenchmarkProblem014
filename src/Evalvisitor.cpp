@@ -644,7 +644,22 @@ std::any EvalVisitor::visitComparison(Python3Parser::ComparisonContext *ctx) {
         bool compResult = false;
         
         // Perform comparison based on types
-        if (std::holds_alternative<int>(left) && std::holds_alternative<int>(right)) {
+        // Handle BigInteger comparisons
+        if (std::holds_alternative<BigInteger>(left) || std::holds_alternative<BigInteger>(right)) {
+            // Promote to BigInteger if needed
+            BigInteger l = std::holds_alternative<BigInteger>(left) ? 
+                std::get<BigInteger>(left) : 
+                (std::holds_alternative<int>(left) ? BigInteger(std::get<int>(left)) : BigInteger(0));
+            BigInteger r = std::holds_alternative<BigInteger>(right) ? 
+                std::get<BigInteger>(right) : 
+                (std::holds_alternative<int>(right) ? BigInteger(std::get<int>(right)) : BigInteger(0));
+            if (op == "<") compResult = l < r;
+            else if (op == ">") compResult = l > r;
+            else if (op == "<=") compResult = l <= r;
+            else if (op == ">=") compResult = l >= r;
+            else if (op == "==") compResult = l == r;
+            else if (op == "!=") compResult = l != r;
+        } else if (std::holds_alternative<int>(left) && std::holds_alternative<int>(right)) {
             // int vs int
             int l = std::get<int>(left);
             int r = std::get<int>(right);
@@ -713,7 +728,7 @@ std::string EvalVisitor::unquoteString(const std::string& str) {
 
 bool EvalVisitor::valueToBool(const Value& val) {
     // Convert Python value to bool using Python's truthiness rules
-    // False values: None, False, 0, 0.0, empty string ""
+    // False values: None, False, 0, 0.0, empty string "", BigInteger(0)
     // True values: everything else
     if (std::holds_alternative<std::monostate>(val)) {
         return false; // None is falsy
@@ -725,6 +740,8 @@ bool EvalVisitor::valueToBool(const Value& val) {
         return std::get<double>(val) != 0.0;
     } else if (std::holds_alternative<std::string>(val)) {
         return !std::get<std::string>(val).empty();
+    } else if (std::holds_alternative<BigInteger>(val)) {
+        return !std::get<BigInteger>(val).isZero();
     }
     return false;
 }
