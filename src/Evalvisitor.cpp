@@ -229,6 +229,9 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                                 } else if (std::holds_alternative<std::monostate>(val)) {
                                     // Python prints None
                                     std::cout << "None" << std::endl;
+                                } else if (std::holds_alternative<BigInteger>(val)) {
+                                    // Print BigInteger
+                                    std::cout << std::get<BigInteger>(val).toString() << std::endl;
                                 }
                             } catch (...) {
                                 // Not a Value, ignore
