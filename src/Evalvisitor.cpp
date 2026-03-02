@@ -385,6 +385,108 @@ std::any EvalVisitor::visitFactor(Python3Parser::FactorContext *ctx) {
     return std::any();
 }
 
+std::any EvalVisitor::visitComparison(Python3Parser::ComparisonContext *ctx) {
+    // comparison: arith_expr (comp_op arith_expr)*
+    auto arithExprs = ctx->arith_expr();
+    if (arithExprs.empty()) {
+        return std::any();
+    }
+    
+    // If there's only one arith_expr, just return its value (no comparison)
+    if (arithExprs.size() == 1) {
+        return visit(arithExprs[0]);
+    }
+    
+    // Visit the first arith_expr
+    auto leftAny = visit(arithExprs[0]);
+    if (!leftAny.has_value()) {
+        return Value(false);
+    }
+    
+    Value left;
+    try {
+        left = std::any_cast<Value>(leftAny);
+    } catch (...) {
+        return Value(false);
+    }
+    
+    // Process all comparison operations (Python supports chaining: a < b < c)
+    auto ops = ctx->comp_op();
+    bool finalResult = true;
+    
+    for (size_t i = 0; i < ops.size(); i++) {
+        auto rightAny = visit(arithExprs[i + 1]);
+        if (!rightAny.has_value()) {
+            return Value(false);
+        }
+        
+        Value right;
+        try {
+            right = std::any_cast<Value>(rightAny);
+        } catch (...) {
+            return Value(false);
+        }
+        
+        std::string op = ops[i]->getText();
+        bool compResult = false;
+        
+        // Perform comparison based on types
+        if (std::holds_alternative<int>(left) && std::holds_alternative<int>(right)) {
+            // int vs int
+            int l = std::get<int>(left);
+            int r = std::get<int>(right);
+            if (op == "<") compResult = l < r;
+            else if (op == ">") compResult = l > r;
+            else if (op == "<=") compResult = l <= r;
+            else if (op == ">=") compResult = l >= r;
+            else if (op == "==") compResult = l == r;
+            else if (op == "!=") compResult = l != r;
+        } else if ((std::holds_alternative<int>(left) || std::holds_alternative<double>(left)) &&
+                   (std::holds_alternative<int>(right) || std::holds_alternative<double>(right))) {
+            // int vs double OR double vs int OR double vs double
+            double l = std::holds_alternative<double>(left) ? std::get<double>(left) : static_cast<double>(std::get<int>(left));
+            double r = std::holds_alternative<double>(right) ? std::get<double>(right) : static_cast<double>(std::get<int>(right));
+            if (op == "<") compResult = l < r;
+            else if (op == ">") compResult = l > r;
+            else if (op == "<=") compResult = l <= r;
+            else if (op == ">=") compResult = l >= r;
+            else if (op == "==") compResult = l == r;
+            else if (op == "!=") compResult = l != r;
+        } else if (std::holds_alternative<std::string>(left) && std::holds_alternative<std::string>(right)) {
+            // string vs string (lexicographic comparison)
+            std::string l = std::get<std::string>(left);
+            std::string r = std::get<std::string>(right);
+            if (op == "<") compResult = l < r;
+            else if (op == ">") compResult = l > r;
+            else if (op == "<=") compResult = l <= r;
+            else if (op == ">=") compResult = l >= r;
+            else if (op == "==") compResult = l == r;
+            else if (op == "!=") compResult = l != r;
+        } else if (std::holds_alternative<bool>(left) && std::holds_alternative<bool>(right)) {
+            // bool vs bool
+            bool l = std::get<bool>(left);
+            bool r = std::get<bool>(right);
+            if (op == "<") compResult = l < r;
+            else if (op == ">") compResult = l > r;
+            else if (op == "<=") compResult = l <= r;
+            else if (op == ">=") compResult = l >= r;
+            else if (op == "==") compResult = l == r;
+            else if (op == "!=") compResult = l != r;
+        } else {
+            // Different types or None - for now, just return false
+            // In Python, different types have specific comparison rules
+            compResult = false;
+        }
+        
+        finalResult = finalResult && compResult;
+        
+        // For chained comparisons, the right becomes the new left
+        left = right;
+    }
+    
+    return Value(finalResult);
+}
+
 std::string EvalVisitor::unquoteString(const std::string& str) {
     // Remove surrounding quotes from string literals
     if (str.length() >= 2) {

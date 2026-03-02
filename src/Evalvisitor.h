@@ -35,6 +35,9 @@ public:
     std::any visitArith_expr(Python3Parser::Arith_exprContext *ctx) override;
     std::any visitTerm(Python3Parser::TermContext *ctx) override;
     std::any visitFactor(Python3Parser::FactorContext *ctx) override;
+    
+    // Comparison expression processing
+    std::any visitComparison(Python3Parser::ComparisonContext *ctx) override;
 
 private:
     // Variable storage: maps variable names to their values
