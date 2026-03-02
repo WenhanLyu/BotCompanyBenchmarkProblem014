@@ -50,10 +50,22 @@ public:
     std::any visitOr_test(Python3Parser::Or_testContext *ctx) override;
     std::any visitAnd_test(Python3Parser::And_testContext *ctx) override;
     std::any visitNot_test(Python3Parser::Not_testContext *ctx) override;
+    
+    // Function definition
+    std::any visitFuncdef(Python3Parser::FuncdefContext *ctx) override;
 
 private:
+    // Structure to store function definitions
+    struct FunctionDef {
+        std::vector<std::string> parameters;  // Parameter names
+        Python3Parser::SuiteContext* body;     // Function body (suite)
+    };
+    
     // Variable storage: maps variable names to their values
     std::map<std::string, Value> variables;
+    
+    // Function storage: maps function names to their definitions
+    std::map<std::string, FunctionDef> functions;
     
     // Helper to remove quotes from string literals
     std::string unquoteString(const std::string& str);
