@@ -73,6 +73,12 @@ private:
     
     // Helper to convert Value to bool for condition evaluation
     bool valueToBool(const Value& val);
+    
+    // Python-style floor division for integers (floors toward -∞)
+    int pythonFloorDiv(int a, int b);
+    
+    // Python-style modulo for integers (result has same sign as divisor)
+    int pythonModulo(int a, int b);
 };
 
 #endif//PYTHON_INTERPRETER_EVALVISITOR_H

@@ -101,20 +101,20 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
             } else if (op == "//=") {
                 // Floor division
                 if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
-                    result = std::get<int>(currentValue) / std::get<int>(rightValue);
+                    result = pythonFloorDiv(std::get<int>(currentValue), std::get<int>(rightValue));
                 } else {
                     double left = std::holds_alternative<double>(currentValue) ? std::get<double>(currentValue) : static_cast<double>(std::get<int>(currentValue));
                     double right = std::holds_alternative<double>(rightValue) ? std::get<double>(rightValue) : static_cast<double>(std::get<int>(rightValue));
-                    result = static_cast<int>(left) / static_cast<int>(right);
+                    result = pythonFloorDiv(static_cast<int>(left), static_cast<int>(right));
                 }
             } else if (op == "%=") {
                 // Modulo
                 if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
-                    result = std::get<int>(currentValue) % std::get<int>(rightValue);
+                    result = pythonModulo(std::get<int>(currentValue), std::get<int>(rightValue));
                 } else {
                     double left = std::holds_alternative<double>(currentValue) ? std::get<double>(currentValue) : static_cast<double>(std::get<int>(currentValue));
                     double right = std::holds_alternative<double>(rightValue) ? std::get<double>(rightValue) : static_cast<double>(std::get<int>(rightValue));
-                    result = static_cast<int>(left) % static_cast<int>(right);
+                    result = pythonModulo(static_cast<int>(left), static_cast<int>(right));
                 }
             }
             
@@ -531,9 +531,9 @@ std::any EvalVisitor::visitTerm(Python3Parser::TermContext *ctx) {
             if (op == "*") {
                 result = left * right;
             } else if (op == "//") {
-                result = left / right;
+                result = pythonFloorDiv(left, right);
             } else if (op == "%") {
-                result = left % right;
+                result = pythonModulo(left, right);
             }
         } else {
             // int op double -> double OR double op int -> double OR double op double -> double
@@ -542,9 +542,9 @@ std::any EvalVisitor::visitTerm(Python3Parser::TermContext *ctx) {
             if (op == "*") {
                 result = left * right;
             } else if (op == "//") {
-                result = static_cast<int>(left) / static_cast<int>(right);
+                result = pythonFloorDiv(static_cast<int>(left), static_cast<int>(right));
             } else if (op == "%") {
-                result = static_cast<int>(left) % static_cast<int>(right);
+                result = pythonModulo(static_cast<int>(left), static_cast<int>(right));
             }
         }
     }
@@ -1023,4 +1023,41 @@ std::any EvalVisitor::visitFuncdef(Python3Parser::FuncdefContext *ctx) {
     functions[funcName] = funcDef;
     
     return std::any();
+}
+
+// Python-style floor division: floors toward -∞
+int EvalVisitor::pythonFloorDiv(int a, int b) {
+    if (b == 0) {
+        throw std::runtime_error("Division by zero");
+    }
+    
+    // C++ division truncates toward zero
+    // Python floor division floors toward -∞
+    int q = a / b;
+    int r = a % b;
+    
+    // If signs differ and there's a remainder, adjust quotient down by 1
+    if ((a < 0) != (b < 0) && r != 0) {
+        q -= 1;
+    }
+    
+    return q;
+}
+
+// Python-style modulo: result has same sign as divisor
+int EvalVisitor::pythonModulo(int a, int b) {
+    if (b == 0) {
+        throw std::runtime_error("Modulo by zero");
+    }
+    
+    // C++ modulo has same sign as dividend
+    // Python modulo has same sign as divisor
+    int r = a % b;
+    
+    // If signs differ and remainder is non-zero, adjust
+    if ((a < 0) != (b < 0) && r != 0) {
+        r += b;
+    }
+    
+    return r;
 }
