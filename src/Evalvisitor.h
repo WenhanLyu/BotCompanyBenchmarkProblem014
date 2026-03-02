@@ -6,6 +6,7 @@
 #include <variant>
 #include <string>
 #include <iostream>
+#include <vector>
 
 // Value class using std::variant to represent Python values
 using Value = std::variant<std::monostate, std::string>;
@@ -24,6 +25,10 @@ public:
     std::any visitAtom_expr(Python3Parser::Atom_exprContext *ctx) override;
     std::any visitAtom(Python3Parser::AtomContext *ctx) override;
     std::any visitTrailer(Python3Parser::TrailerContext *ctx) override;
+
+private:
+    // Helper to remove quotes from string literals
+    std::string unquoteString(const std::string& str);
 };
 
 #endif//PYTHON_INTERPRETER_EVALVISITOR_H
