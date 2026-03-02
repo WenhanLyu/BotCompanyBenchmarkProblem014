@@ -237,7 +237,55 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                     }
                 }
             }
+            return std::any();
         }
+        
+        // Check if this is a user-defined function
+        auto funcIt = functions.find(funcName);
+        if (funcIt != functions.end()) {
+            // This is a user-defined function call
+            const FunctionDef& funcDef = funcIt->second;
+            
+            // Evaluate the arguments
+            std::vector<Value> argValues;
+            auto arglist = trailer->arglist();
+            if (arglist) {
+                auto args = arglist->argument();
+                for (auto arg : args) {
+                    auto tests = arg->test();
+                    if (!tests.empty()) {
+                        auto argValue = visit(tests[0]);
+                        if (argValue.has_value()) {
+                            try {
+                                Value val = std::any_cast<Value>(argValue);
+                                argValues.push_back(val);
+                            } catch (...) {
+                                argValues.push_back(Value(std::monostate{}));
+                            }
+                        } else {
+                            argValues.push_back(Value(std::monostate{}));
+                        }
+                    }
+                }
+            }
+            
+            // Save the current variable context (for local scope)
+            std::map<std::string, Value> savedVariables = variables;
+            
+            // Bind parameters to arguments
+            for (size_t i = 0; i < funcDef.parameters.size() && i < argValues.size(); i++) {
+                variables[funcDef.parameters[i]] = argValues[i];
+            }
+            
+            // Execute the function body
+            visit(funcDef.body);
+            
+            // Restore the variable context (local scope ends)
+            variables = savedVariables;
+            
+            return std::any();
+        }
+        
         return std::any();
     } else {
         // No trailer - this is just an atom expression, visit the atom
@@ -861,6 +909,47 @@ std::any EvalVisitor::visitNot_test(Python3Parser::Not_testContext *ctx) {
     if (comparison) {
         return visit(comparison);
     }
+    
+    return std::any();
+}
+
+std::any EvalVisitor::visitFuncdef(Python3Parser::FuncdefContext *ctx) {
+    // funcdef: 'def' NAME parameters ':' suite
+    // Get the function name
+    auto nameToken = ctx->NAME();
+    if (!nameToken) {
+        return std::any();
+    }
+    std::string funcName = nameToken->getText();
+    
+    // Get the parameters
+    auto parametersCtx = ctx->parameters();
+    std::vector<std::string> params;
+    
+    if (parametersCtx) {
+        // parameters: '(' typedargslist? ')'
+        auto typedargslist = parametersCtx->typedargslist();
+        if (typedargslist) {
+            // typedargslist: (tfpdef ('=' test)? (',' tfpdef ('=' test)?)*);
+            // tfpdef: NAME
+            auto tfpdefs = typedargslist->tfpdef();
+            for (auto tfpdef : tfpdefs) {
+                auto paramName = tfpdef->NAME();
+                if (paramName) {
+                    params.push_back(paramName->getText());
+                }
+            }
+        }
+    }
+    
+    // Get the function body (suite)
+    auto suite = ctx->suite();
+    
+    // Store the function definition
+    FunctionDef funcDef;
+    funcDef.parameters = params;
+    funcDef.body = suite;
+    functions[funcName] = funcDef;
     
     return std::any();
 }
