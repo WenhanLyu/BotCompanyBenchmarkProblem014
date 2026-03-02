@@ -32,6 +32,7 @@ public:
     std::any visitAtom_expr(Python3Parser::Atom_exprContext *ctx) override;
     std::any visitAtom(Python3Parser::AtomContext *ctx) override;
     std::any visitTrailer(Python3Parser::TrailerContext *ctx) override;
+    std::any visitFormat_string(Python3Parser::Format_stringContext *ctx) override;
     
     // Arithmetic expression processing
     std::any visitArith_expr(Python3Parser::Arith_exprContext *ctx) override;
@@ -71,6 +72,9 @@ private:
     
     // Helper to remove quotes from string literals
     std::string unquoteString(const std::string& str);
+    
+    // Helper to convert Value to string for printing and f-strings
+    std::string valueToString(const Value& val);
     
     // Helper to convert Value to bool for condition evaluation
     bool valueToBool(const Value& val);
