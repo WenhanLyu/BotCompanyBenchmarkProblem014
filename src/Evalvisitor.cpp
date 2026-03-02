@@ -101,7 +101,23 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                                 } else if (std::holds_alternative<int>(val)) {
                                     std::cout << std::get<int>(val) << std::endl;
                                 } else if (std::holds_alternative<double>(val)) {
-                                    std::cout << std::get<double>(val) << std::endl;
+                                    // Python always shows at least one decimal place for floats
+                                    double d = std::get<double>(val);
+                                    std::ostringstream oss;
+                                    oss << std::fixed << std::setprecision(6) << d;
+                                    std::string result = oss.str();
+                                    // Remove trailing zeros after decimal point
+                                    size_t dotPos = result.find('.');
+                                    if (dotPos != std::string::npos) {
+                                        size_t lastNonZero = result.find_last_not_of('0');
+                                        if (lastNonZero > dotPos) {
+                                            result = result.substr(0, lastNonZero + 1);
+                                        } else {
+                                            // Keep at least one decimal place
+                                            result = result.substr(0, dotPos + 2);
+                                        }
+                                    }
+                                    std::cout << result << std::endl;
                                 } else if (std::holds_alternative<bool>(val)) {
                                     // Python prints True/False, not 1/0
                                     std::cout << (std::get<bool>(val) ? "True" : "False") << std::endl;
@@ -140,9 +156,18 @@ std::any EvalVisitor::visitAtom(Python3Parser::AtomContext *ctx) {
     auto number = ctx->NUMBER();
     if (number) {
         std::string numStr = number->getText();
-        // For now, treat all numbers as integers
-        int numValue = std::stoi(numStr);
-        return Value(numValue);
+        // Check if it's a float (contains decimal point or scientific notation)
+        if (numStr.find('.') != std::string::npos || 
+            numStr.find('e') != std::string::npos || 
+            numStr.find('E') != std::string::npos) {
+            // Parse as float
+            double numValue = std::stod(numStr);
+            return Value(numValue);
+        } else {
+            // Parse as integer
+            int numValue = std::stoi(numStr);
+            return Value(numValue);
+        }
     }
     
     // Check if this is True

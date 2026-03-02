@@ -6,8 +6,11 @@
 #include <variant>
 #include <string>
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <map>
+#include <cmath>
+#include <sstream>
 
 // Value class using std::variant to represent Python values
 // std::monostate represents None in Python
