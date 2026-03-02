@@ -1,0 +1,22 @@
+=========================================
+M1 Acceptance Tests
+=========================================
+
+[1;33m[1/4] Building project...[0m
+[0;32m✓ Build successful[0m
+
+[1;33m[2/4] Running tests...[0m
+  Testing test0... [0;32mPASS[0m
+  Testing test1... [0;32mPASS[0m
+
+[1;33m[3/4] Checking for memory leaks...[0m
+[1;33m  valgrind not installed, skipping memory leak check[0m
+  To install: sudo apt install valgrind
+
+[1;33m[4/4] Test Summary[0m
+=========================================
+Tests passed: [0;32m2[0m
+Tests failed: [0;31m0[0m
+=========================================
+
+[0;32m✓ All M1 acceptance tests passed![0m
