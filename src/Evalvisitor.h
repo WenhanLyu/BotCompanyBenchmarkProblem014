@@ -11,7 +11,7 @@
 
 // Value class using std::variant to represent Python values
 // std::monostate represents None in Python
-using Value = std::variant<std::monostate, int, bool, std::string>;
+using Value = std::variant<std::monostate, int, bool, std::string, double>;
 
 class EvalVisitor : public Python3ParserBaseVisitor {
 public:
@@ -27,6 +27,11 @@ public:
     std::any visitAtom_expr(Python3Parser::Atom_exprContext *ctx) override;
     std::any visitAtom(Python3Parser::AtomContext *ctx) override;
     std::any visitTrailer(Python3Parser::TrailerContext *ctx) override;
+    
+    // Arithmetic expression processing
+    std::any visitArith_expr(Python3Parser::Arith_exprContext *ctx) override;
+    std::any visitTerm(Python3Parser::TermContext *ctx) override;
+    std::any visitFactor(Python3Parser::FactorContext *ctx) override;
 
 private:
     // Variable storage: maps variable names to their values
