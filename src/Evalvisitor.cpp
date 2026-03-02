@@ -20,6 +20,111 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
     // Get all testlists
     auto testlists = ctx->testlist();
     
+    // Check for augmented assignment
+    auto augassign = ctx->augassign();
+    if (augassign) {
+        // Augmented assignment: a += b, a -= b, etc.
+        // testlists[0] is the variable, testlists[1] is the value
+        if (testlists.size() >= 2) {
+            // Get the variable name
+            std::string varName = testlists[0]->getText();
+            
+            // Get the current value of the variable
+            auto it = variables.find(varName);
+            if (it == variables.end()) {
+                // Variable doesn't exist, initialize to appropriate default
+                variables[varName] = Value(0);
+            }
+            Value currentValue = variables[varName];
+            
+            // Evaluate the right-hand side
+            auto rightAny = visit(testlists[1]);
+            Value rightValue;
+            if (rightAny.has_value()) {
+                try {
+                    rightValue = std::any_cast<Value>(rightAny);
+                } catch (...) {
+                    rightValue = Value(0);
+                }
+            } else {
+                rightValue = Value(0);
+            }
+            
+            // Get the operator
+            std::string op = augassign->getText();
+            
+            // Apply the operation
+            Value result;
+            
+            if (op == "+=") {
+                // Addition for numbers, concatenation for strings
+                if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
+                    result = std::get<int>(currentValue) + std::get<int>(rightValue);
+                } else if (std::holds_alternative<double>(currentValue) || std::holds_alternative<double>(rightValue)) {
+                    double left = std::holds_alternative<double>(currentValue) ? std::get<double>(currentValue) : static_cast<double>(std::get<int>(currentValue));
+                    double right = std::holds_alternative<double>(rightValue) ? std::get<double>(rightValue) : static_cast<double>(std::get<int>(rightValue));
+                    result = left + right;
+                } else if (std::holds_alternative<std::string>(currentValue) && std::holds_alternative<std::string>(rightValue)) {
+                    result = std::get<std::string>(currentValue) + std::get<std::string>(rightValue);
+                }
+            } else if (op == "-=") {
+                if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
+                    result = std::get<int>(currentValue) - std::get<int>(rightValue);
+                } else if (std::holds_alternative<double>(currentValue) || std::holds_alternative<double>(rightValue)) {
+                    double left = std::holds_alternative<double>(currentValue) ? std::get<double>(currentValue) : static_cast<double>(std::get<int>(currentValue));
+                    double right = std::holds_alternative<double>(rightValue) ? std::get<double>(rightValue) : static_cast<double>(std::get<int>(rightValue));
+                    result = left - right;
+                }
+            } else if (op == "*=") {
+                // Multiplication for numbers, repetition for string * int
+                if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
+                    result = std::get<int>(currentValue) * std::get<int>(rightValue);
+                } else if (std::holds_alternative<double>(currentValue) || std::holds_alternative<double>(rightValue)) {
+                    double left = std::holds_alternative<double>(currentValue) ? std::get<double>(currentValue) : static_cast<double>(std::get<int>(currentValue));
+                    double right = std::holds_alternative<double>(rightValue) ? std::get<double>(rightValue) : static_cast<double>(std::get<int>(rightValue));
+                    result = left * right;
+                } else if (std::holds_alternative<std::string>(currentValue) && std::holds_alternative<int>(rightValue)) {
+                    // String repetition
+                    std::string s = std::get<std::string>(currentValue);
+                    int count = std::get<int>(rightValue);
+                    std::string repeated;
+                    for (int i = 0; i < count; i++) {
+                        repeated += s;
+                    }
+                    result = repeated;
+                }
+            } else if (op == "/=") {
+                // Division always returns double
+                double left = std::holds_alternative<double>(currentValue) ? std::get<double>(currentValue) : static_cast<double>(std::get<int>(currentValue));
+                double right = std::holds_alternative<double>(rightValue) ? std::get<double>(rightValue) : static_cast<double>(std::get<int>(rightValue));
+                result = left / right;
+            } else if (op == "//=") {
+                // Floor division
+                if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
+                    result = std::get<int>(currentValue) / std::get<int>(rightValue);
+                } else {
+                    double left = std::holds_alternative<double>(currentValue) ? std::get<double>(currentValue) : static_cast<double>(std::get<int>(currentValue));
+                    double right = std::holds_alternative<double>(rightValue) ? std::get<double>(rightValue) : static_cast<double>(std::get<int>(rightValue));
+                    result = static_cast<int>(left) / static_cast<int>(right);
+                }
+            } else if (op == "%=") {
+                // Modulo
+                if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
+                    result = std::get<int>(currentValue) % std::get<int>(rightValue);
+                } else {
+                    double left = std::holds_alternative<double>(currentValue) ? std::get<double>(currentValue) : static_cast<double>(std::get<int>(currentValue));
+                    double right = std::holds_alternative<double>(rightValue) ? std::get<double>(rightValue) : static_cast<double>(std::get<int>(rightValue));
+                    result = static_cast<int>(left) % static_cast<int>(right);
+                }
+            }
+            
+            // Store the result
+            variables[varName] = result;
+        }
+        
+        return std::any();
+    }
+    
     if (testlists.size() == 1) {
         // Just an expression, evaluate it
         return visit(testlists[0]);
