@@ -218,10 +218,10 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-### **M5: BigInteger Arithmetic**
+### **M5: BigInteger Arithmetic** ❌ FAILED (10 cycles used)
 **Goal:** Implement arbitrary precision integer arithmetic  
 **Test Target:** BigIntegerTest0-19 (all bigint tests)  
-**Estimated Cycles:** 8-12
+**Estimated Cycles:** 8-12 | **Actual:** 10 (incomplete)
 
 **Deliverables:**
 - Complete BigInteger class with +, -, *, /, //, %
@@ -236,11 +236,35 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 - BigInteger operations handle edge cases (negatives, zero, very large numbers)
 - Performance within time limits (500-16000ms per test)
 
-**Note:** Deferred to M5 (was M2) because:
-- Need solid type system first (M2)
-- Need arithmetic operators first (M3)
-- BigInteger is complex (500-800 LOC)
-- 30% of score, but better done right than rushed
+**Outcome:** INCOMPLETE - Division algorithm bug prevents all BigInteger tests from passing. Breaking into M5.1 (division fix) and M5.2 (verification).
+
+---
+
+### **M5.1: BigInteger Division Fix** (NEXT - Cycle 67)
+**Goal:** Fix division algorithm to use quotient estimation instead of repeated subtraction  
+**Test Target:** BigIntegerTest0 (basic division test)  
+**Estimated Cycles:** 5
+
+**Deliverables:**
+- Replace repeated subtraction (lines 303-306 in BigInteger.cpp) with quotient estimation
+- Implement standard long division algorithm using leading digit estimation
+- Ensure correct Python floor division semantics (floor toward -∞)
+- Ensure correct Python modulo semantics (sign matches divisor)
+- Division performance O(n²) instead of O(quotient_value)
+
+**Acceptance Criteria:**
+- BigIntegerTest0 passes completely (all 4 operations: +, -, *, /)
+- Division completes in < 1 second for test cases
+- Floor division: -7 // 2 = -4 (NOT -3)
+- Modulo: -7 % 2 = 1 (NOT -1)
+- No regression on test0-12
+- Code on leo/overflow-detection branch ready for PR
+
+**Implementation Guide:**
+See /workspace/liam/IMPLEMENTATION_GUIDE.md for exact code changes with line numbers.
+
+**Why This Matters:**
+Division blocks all 20 BigIntegerTest cases (30% of OJ score). All other BigInteger operations already work. This is the only blocker.
 
 ---
 
@@ -426,6 +450,53 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 **Key Insight:** All independent evaluations converge on the same recommendation: BigInteger now. The alternative (complete basic tests first) would leave only 5-9 cycles for BigInteger, creating rushed implementation with high regression risk. test13 cannot be completed without BigInteger (large number factorization). Better to tackle the hardest problem now with time buffer.
 
+### Cycles 50-60: M5 Implementation (Ares's team) - DEADLINE MISSED
+- ❌ **Status:** 10/10 cycles used, milestone incomplete
+- ✅ **Progress:** BigInteger infrastructure complete (466 LOC on leo/overflow-detection)
+  - Addition: ✅ Working
+  - Subtraction: ✅ Working  
+  - Multiplication: ✅ Working (after cycle 57-58 fix)
+  - Division: ❌ BROKEN (quotient estimation algorithm missing)
+  - Modulo: ❌ BROKEN (depends on division)
+  - Integer overflow detection: ✅ Working
+  - Value type integration: ✅ Complete
+- ❌ **Test Results:** 0/20 BigIntegerTest passing (all hang/fail due to division bug)
+- 🔍 **Root Cause:** Division algorithm uses repeated subtraction (lines 303-306) instead of quotient estimation
+  - Example: 1000000000 ÷ 2 requires 500 million subtractions → hangs
+  - Standard solution exists: quotient estimation from leading digits
+- 📊 **Work Breakdown:**
+  - Cycles 51-53: BigInteger class and operators implementation
+  - Cycle 54-55: Floor division/modulo Python semantics fix
+  - Cycle 56: Testing revealed multiplication bug
+  - Cycle 57-58: Multiplication carry propagation fix
+  - Cycle 59: Overflow detection implementation
+  - Cycle 60: Testing revealed division bug (root cause)
+
+**Key Insight:** M5 underestimated division complexity. 80% of BigInteger implementation works correctly. The division bug is well-understood with clear solution (quotient estimation), but ran out of cycles before fixing it. This is recoverable - break into M5.1 (division fix) and M5.2 (verification).
+
+### Cycles 61-64: M5 Analysis Phase (Athena)
+- 🔍 **Post-mortem:** M5 deadline miss analysis
+- ✅ **Research commissioned:** Zoe (division root cause), Diana (empirical testing), Elena (strategic options)
+- ✅ **Findings confirmed:** Division bug is fixable in 2-3 cycles (Liam, cycle 65)
+- ✅ **Strategic decision:** Continue with M5.1 (division fix), not pivot to f-strings
+
+**Key Insight:** Division bug is not a mystery - clear root cause, standard solution, 2-3 cycle fix. F-strings would only get 2/66 tests (~3% of score) vs BigInteger 20/66 tests (30%). Must fix division to unlock BigInteger tests.
+
+### Cycles 65-66: M5.1 Planning (Athena)
+- ✅ **Liam (division analysis):** Root cause confirmed, quotient estimation solution identified, 2-3 cycle estimate, HIGH confidence
+- ✅ **Marcus (f-string analysis):** 3-4 cycles, MEDIUM complexity, recommend AFTER M5
+- ✅ **Testing (Liam, cycle 66):** 13/16 basic tests passing on leo/overflow-detection, test14-15 fail (f-strings), test13 skipped (no expected output)
+- 🎯 **Decision:** Proceed with M5.1 (division fix) - higher impact than f-strings (30% vs 3% of OJ score)
+
+**Key Insight:** Clear path forward. Division fix is well-scoped, f-strings can wait. BigInteger is critical path to project success.
+
+### Cycle 67: M5.1 Milestone Definition (Athena)
+- 🎯 **Strategy:** Break M5 into M5.1 (division fix, 5 cycles) and M5.2 (verification, 2 cycles)
+- 📝 **Roadmap updated** with M5 failure lessons and M5.1 plan
+- ✅ **Decision rationale:** 30% of OJ score justifies continued focus on BigInteger
+
+**Key Insight:** Sunk cost is not a reason to abandon BigInteger - 80% of the work is done and working. The remaining 20% (division) has clear solution. Better to finish what we started than pivot to lower-value features.
+
 ---
 
 ## Risk Register
@@ -444,6 +515,7 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 ## Current Milestone
 
 **Completed:** M4.3 - Function Parameters ✅ (Cycles used: 2)
-**Next:** M5 - BigInteger Arithmetic (MAJOR)
+**Failed:** M5 - BigInteger Arithmetic ❌ (Cycles used: 10/10, incomplete)
+**Next:** M5.1 - BigInteger Division Fix (5 cycles budgeted)
 
-**Action:** Athena confirmed M5 strategy, ready to output milestone (Cycle 49)
+**Action:** Athena defining M5.1 milestone (Cycle 67)
