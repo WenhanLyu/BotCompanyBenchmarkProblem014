@@ -262,37 +262,30 @@ void BigInteger::divideAbs(const BigInteger& divisor, BigInteger& quotient, BigI
     
     // Long division algorithm
     for (int i = digits.size() - 1; i >= 0; i--) {
-        // Shift remainder left by BASE and add next digit
+        // Shift remainder left by BASE (multiply by BASE) and add next digit
+        // In our positional system, multiplying by BASE means shifting all digits up one position
         if (!remainder.isZero()) {
-            for (size_t j = 0; j < remainder.digits.size(); j++) {
-                remainder.digits[j] *= BASE;
-            }
-            // Handle carries
-            long long carry = 0;
-            for (size_t j = 0; j < remainder.digits.size(); j++) {
-                long long cur = remainder.digits[j] + carry;
-                remainder.digits[j] = cur % BASE;
-                carry = cur / BASE;
-            }
-            if (carry) {
-                remainder.digits.push_back(carry);
-            }
+            // Insert 0 at the beginning (least significant position) and shift all digits up
+            remainder.digits.insert(remainder.digits.begin(), 0);
         }
         
-        // Add current digit
+        // Add current digit at the least significant position
         if (remainder.isZero()) {
             remainder.digits.push_back(digits[i]);
         } else {
             remainder.digits[0] += digits[i];
-            // Handle overflow
-            long long carry = 0;
-            for (size_t j = 0; j < remainder.digits.size(); j++) {
-                long long cur = remainder.digits[j] + carry;
-                remainder.digits[j] = cur % BASE;
-                carry = cur / BASE;
-            }
-            if (carry) {
-                remainder.digits.push_back(carry);
+            // Handle overflow if the addition causes carry
+            if (remainder.digits[0] >= BASE) {
+                long long carry = remainder.digits[0] / BASE;
+                remainder.digits[0] %= BASE;
+                for (size_t j = 1; j < remainder.digits.size() && carry > 0; j++) {
+                    remainder.digits[j] += carry;
+                    carry = remainder.digits[j] / BASE;
+                    remainder.digits[j] %= BASE;
+                }
+                if (carry > 0) {
+                    remainder.digits.push_back(carry);
+                }
             }
         }
         
