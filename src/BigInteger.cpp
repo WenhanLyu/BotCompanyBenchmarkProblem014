@@ -299,10 +299,52 @@ void BigInteger::divideAbs(const BigInteger& divisor, BigInteger& quotient, BigI
         remainder.normalize();
         
         // Find how many times divisor goes into remainder
+        // Use quotient estimation instead of repeated subtraction
         int count = 0;
-        while (remainder.compareAbs(divisor) >= 0) {
-            remainder = remainder.subtractAbs(divisor);
-            count++;
+        
+        // Estimate quotient digit based on leading digits
+        if (!divisor.isZero() && !remainder.isZero()) {
+            long long estimate = 0;
+            
+            if (remainder.digits.size() == divisor.digits.size()) {
+                // Same number of digits - estimate from leading digit
+                estimate = remainder.digits.back() / divisor.digits.back();
+            } 
+            else if (remainder.digits.size() == divisor.digits.size() + 1) {
+                // Remainder is one digit longer - use two leading digits
+                long long high = remainder.digits.back();
+                long long low = (remainder.digits.size() > 1) ? 
+                                remainder.digits[remainder.digits.size() - 2] : 0;
+                long long dividend_est = high * BASE + low;
+                long long divisor_lead = divisor.digits.back();
+                estimate = dividend_est / divisor_lead;
+            }
+            else if (remainder.digits.size() > divisor.digits.size() + 1) {
+                // Remainder is much larger than divisor
+                estimate = BASE - 1;
+            }
+            // else: remainder < divisor, quotient digit is 0
+            
+            // Clamp estimate to valid digit range [0, BASE-1]
+            if (estimate >= BASE) estimate = BASE - 1;
+            if (estimate < 0) estimate = 0;
+            
+            // Verify estimate and adjust if needed
+            count = (int)estimate;
+            while (count > 0) {
+                // Calculate divisor * count
+                BigInteger product(count);
+                product = divisor * product;
+                
+                // Check if estimate is valid
+                if (remainder.compareAbs(product) >= 0) {
+                    // Good estimate - subtract and we're done
+                    remainder = remainder.subtractAbs(product);
+                    break;
+                }
+                // Estimate was too high - reduce and try again
+                count--;
+            }
         }
         
         quotient.digits.push_back(count);
