@@ -38,6 +38,18 @@ public:
     
     // Comparison expression processing
     std::any visitComparison(Python3Parser::ComparisonContext *ctx) override;
+    
+    // Control flow statements
+    std::any visitCompound_stmt(Python3Parser::Compound_stmtContext *ctx) override;
+    std::any visitWhile_stmt(Python3Parser::While_stmtContext *ctx) override;
+    std::any visitIf_stmt(Python3Parser::If_stmtContext *ctx) override;
+    std::any visitSuite(Python3Parser::SuiteContext *ctx) override;
+    
+    // Test expressions (for conditions)
+    std::any visitTest(Python3Parser::TestContext *ctx) override;
+    std::any visitOr_test(Python3Parser::Or_testContext *ctx) override;
+    std::any visitAnd_test(Python3Parser::And_testContext *ctx) override;
+    std::any visitNot_test(Python3Parser::Not_testContext *ctx) override;
 
 private:
     // Variable storage: maps variable names to their values
@@ -45,6 +57,9 @@ private:
     
     // Helper to remove quotes from string literals
     std::string unquoteString(const std::string& str);
+    
+    // Helper to convert Value to bool for condition evaluation
+    bool valueToBool(const Value& val);
 };
 
 #endif//PYTHON_INTERPRETER_EVALVISITOR_H
