@@ -602,3 +602,259 @@ std::string EvalVisitor::unquoteString(const std::string& str) {
     }
     return str;
 }
+
+bool EvalVisitor::valueToBool(const Value& val) {
+    // Convert Python value to bool using Python's truthiness rules
+    // False values: None, False, 0, 0.0, empty string ""
+    // True values: everything else
+    if (std::holds_alternative<std::monostate>(val)) {
+        return false; // None is falsy
+    } else if (std::holds_alternative<bool>(val)) {
+        return std::get<bool>(val);
+    } else if (std::holds_alternative<int>(val)) {
+        return std::get<int>(val) != 0;
+    } else if (std::holds_alternative<double>(val)) {
+        return std::get<double>(val) != 0.0;
+    } else if (std::holds_alternative<std::string>(val)) {
+        return !std::get<std::string>(val).empty();
+    }
+    return false;
+}
+
+std::any EvalVisitor::visitCompound_stmt(Python3Parser::Compound_stmtContext *ctx) {
+    // compound_stmt: if_stmt | while_stmt | funcdef
+    // Route to the appropriate handler
+    return visitChildren(ctx);
+}
+
+std::any EvalVisitor::visitWhile_stmt(Python3Parser::While_stmtContext *ctx) {
+    // while_stmt: 'while' test ':' suite
+    auto test = ctx->test();
+    auto suite = ctx->suite();
+    
+    if (!test || !suite) {
+        return std::any();
+    }
+    
+    // Loop while the test condition is true
+    while (true) {
+        // Evaluate the condition
+        auto conditionAny = visit(test);
+        if (!conditionAny.has_value()) {
+            break;
+        }
+        
+        Value conditionValue;
+        try {
+            conditionValue = std::any_cast<Value>(conditionAny);
+        } catch (...) {
+            break;
+        }
+        
+        // Check if condition is true
+        if (!valueToBool(conditionValue)) {
+            break;
+        }
+        
+        // Execute the suite (body of the while loop)
+        visit(suite);
+    }
+    
+    return std::any();
+}
+
+std::any EvalVisitor::visitIf_stmt(Python3Parser::If_stmtContext *ctx) {
+    // if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ('else' ':' suite)?
+    auto tests = ctx->test();
+    auto suites = ctx->suite();
+    
+    if (tests.empty() || suites.empty()) {
+        return std::any();
+    }
+    
+    // Evaluate the if condition
+    auto conditionAny = visit(tests[0]);
+    if (conditionAny.has_value()) {
+        Value conditionValue;
+        try {
+            conditionValue = std::any_cast<Value>(conditionAny);
+        } catch (...) {
+            return std::any();
+        }
+        
+        if (valueToBool(conditionValue)) {
+            // Execute the if suite
+            visit(suites[0]);
+            return std::any();
+        }
+    }
+    
+    // Check elif conditions
+    for (size_t i = 1; i < tests.size(); i++) {
+        auto elifConditionAny = visit(tests[i]);
+        if (elifConditionAny.has_value()) {
+            Value elifConditionValue;
+            try {
+                elifConditionValue = std::any_cast<Value>(elifConditionAny);
+            } catch (...) {
+                continue;
+            }
+            
+            if (valueToBool(elifConditionValue)) {
+                // Execute the elif suite
+                visit(suites[i]);
+                return std::any();
+            }
+        }
+    }
+    
+    // If there's an else clause (more suites than tests), execute it
+    if (suites.size() > tests.size()) {
+        visit(suites.back());
+    }
+    
+    return std::any();
+}
+
+std::any EvalVisitor::visitSuite(Python3Parser::SuiteContext *ctx) {
+    // suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
+    // Visit all statements in the suite
+    return visitChildren(ctx);
+}
+
+std::any EvalVisitor::visitTest(Python3Parser::TestContext *ctx) {
+    // test: or_test
+    auto orTest = ctx->or_test();
+    if (orTest) {
+        return visit(orTest);
+    }
+    return std::any();
+}
+
+std::any EvalVisitor::visitOr_test(Python3Parser::Or_testContext *ctx) {
+    // or_test: and_test ('or' and_test)*
+    auto andTests = ctx->and_test();
+    if (andTests.empty()) {
+        return std::any();
+    }
+    
+    // Evaluate first and_test
+    auto resultAny = visit(andTests[0]);
+    if (!resultAny.has_value()) {
+        return Value(false);
+    }
+    
+    Value result;
+    try {
+        result = std::any_cast<Value>(resultAny);
+    } catch (...) {
+        return Value(false);
+    }
+    
+    // If there's only one and_test, return it
+    if (andTests.size() == 1) {
+        return result;
+    }
+    
+    // Short-circuit evaluation: if first is true, return it
+    if (valueToBool(result)) {
+        return result;
+    }
+    
+    // Otherwise, evaluate remaining and_tests
+    for (size_t i = 1; i < andTests.size(); i++) {
+        auto andTestAny = visit(andTests[i]);
+        if (andTestAny.has_value()) {
+            try {
+                result = std::any_cast<Value>(andTestAny);
+                if (valueToBool(result)) {
+                    return result;
+                }
+            } catch (...) {
+                // Continue to next and_test
+            }
+        }
+    }
+    
+    return result;
+}
+
+std::any EvalVisitor::visitAnd_test(Python3Parser::And_testContext *ctx) {
+    // and_test: not_test ('and' not_test)*
+    auto notTests = ctx->not_test();
+    if (notTests.empty()) {
+        return std::any();
+    }
+    
+    // Evaluate first not_test
+    auto resultAny = visit(notTests[0]);
+    if (!resultAny.has_value()) {
+        return Value(false);
+    }
+    
+    Value result;
+    try {
+        result = std::any_cast<Value>(resultAny);
+    } catch (...) {
+        return Value(false);
+    }
+    
+    // If there's only one not_test, return it
+    if (notTests.size() == 1) {
+        return result;
+    }
+    
+    // Short-circuit evaluation: if first is false, return it
+    if (!valueToBool(result)) {
+        return result;
+    }
+    
+    // Otherwise, evaluate remaining not_tests
+    for (size_t i = 1; i < notTests.size(); i++) {
+        auto notTestAny = visit(notTests[i]);
+        if (notTestAny.has_value()) {
+            try {
+                result = std::any_cast<Value>(notTestAny);
+                if (!valueToBool(result)) {
+                    return result;
+                }
+            } catch (...) {
+                return Value(false);
+            }
+        }
+    }
+    
+    return result;
+}
+
+std::any EvalVisitor::visitNot_test(Python3Parser::Not_testContext *ctx) {
+    // not_test: 'not' not_test | comparison
+    
+    // Check if this has a 'not' operator
+    auto notTest = ctx->not_test();
+    if (notTest) {
+        // This is 'not' not_test
+        auto notTestAny = visit(notTest);
+        if (!notTestAny.has_value()) {
+            return Value(true); // not None = True
+        }
+        
+        Value notTestValue;
+        try {
+            notTestValue = std::any_cast<Value>(notTestAny);
+        } catch (...) {
+            return Value(true);
+        }
+        
+        // Return the negation
+        return Value(!valueToBool(notTestValue));
+    }
+    
+    // Otherwise, this is just a comparison
+    auto comparison = ctx->comparison();
+    if (comparison) {
+        return visit(comparison);
+    }
+    
+    return std::any();
+}
