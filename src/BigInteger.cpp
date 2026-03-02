@@ -226,16 +226,21 @@ BigInteger BigInteger::multiplyAbs(const BigInteger& other) const {
     BigInteger result;
     result.digits.resize(digits.size() + other.digits.size(), 0);
     
+    // Phase 1: Accumulate all products
+    std::vector<unsigned long long> temp(digits.size() + other.digits.size(), 0);
     for (size_t i = 0; i < digits.size(); i++) {
-        long long carry = 0;
-        for (size_t j = 0; j < other.digits.size() || carry; j++) {
-            long long cur = result.digits[i + j] + carry;
-            if (j < other.digits.size()) {
-                cur += (long long)digits[i] * other.digits[j];
-            }
-            result.digits[i + j] = cur % BASE;
-            carry = cur / BASE;
+        for (size_t j = 0; j < other.digits.size(); j++) {
+            unsigned long long product = (unsigned long long)digits[i] * other.digits[j];
+            temp[i + j] += product;
         }
+    }
+    
+    // Phase 2: Propagate carries
+    unsigned long long carry = 0;
+    for (size_t i = 0; i < temp.size(); i++) {
+        unsigned long long cur = temp[i] + carry;
+        result.digits[i] = cur % BASE;
+        carry = cur / BASE;
     }
     
     result.normalize();
