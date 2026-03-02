@@ -1,0 +1,5 @@
+a = 100
+def foo(a):
+    print(a)
+foo(42)
+print(a)
