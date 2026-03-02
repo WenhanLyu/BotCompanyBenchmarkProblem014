@@ -100,6 +100,8 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                                     std::cout << std::get<std::string>(val) << std::endl;
                                 } else if (std::holds_alternative<int>(val)) {
                                     std::cout << std::get<int>(val) << std::endl;
+                                } else if (std::holds_alternative<double>(val)) {
+                                    std::cout << std::get<double>(val) << std::endl;
                                 } else if (std::holds_alternative<bool>(val)) {
                                     // Python prints True/False, not 1/0
                                     std::cout << (std::get<bool>(val) ? "True" : "False") << std::endl;
@@ -179,6 +181,183 @@ std::any EvalVisitor::visitAtom(Python3Parser::AtomContext *ctx) {
 std::any EvalVisitor::visitTrailer(Python3Parser::TrailerContext *ctx) {
     // Trailer is handled in visitAtom_expr
     return visitChildren(ctx);
+}
+
+std::any EvalVisitor::visitArith_expr(Python3Parser::Arith_exprContext *ctx) {
+    // arith_expr: term (addorsub_op term)*
+    auto terms = ctx->term();
+    if (terms.empty()) {
+        return std::any();
+    }
+    
+    // Visit the first term
+    auto resultAny = visit(terms[0]);
+    if (!resultAny.has_value()) {
+        return Value(0);
+    }
+    
+    Value result;
+    try {
+        result = std::any_cast<Value>(resultAny);
+    } catch (...) {
+        return Value(0);
+    }
+    
+    // Process remaining terms with operators
+    auto ops = ctx->addorsub_op();
+    for (size_t i = 0; i < ops.size(); i++) {
+        auto termValue = visit(terms[i + 1]);
+        if (!termValue.has_value()) {
+            continue;
+        }
+        
+        Value term;
+        try {
+            term = std::any_cast<Value>(termValue);
+        } catch (...) {
+            continue;
+        }
+        
+        std::string op = ops[i]->getText();
+        
+        // Type coercion and operation
+        if (std::holds_alternative<int>(result) && std::holds_alternative<int>(term)) {
+            // int op int -> int
+            int left = std::get<int>(result);
+            int right = std::get<int>(term);
+            if (op == "+") {
+                result = left + right;
+            } else if (op == "-") {
+                result = left - right;
+            }
+        } else if (std::holds_alternative<double>(result) || std::holds_alternative<double>(term)) {
+            // int op double -> double OR double op int -> double OR double op double -> double
+            double left = std::holds_alternative<double>(result) ? std::get<double>(result) : static_cast<double>(std::get<int>(result));
+            double right = std::holds_alternative<double>(term) ? std::get<double>(term) : static_cast<double>(std::get<int>(term));
+            if (op == "+") {
+                result = left + right;
+            } else if (op == "-") {
+                result = left - right;
+            }
+        }
+    }
+    
+    return result;
+}
+
+std::any EvalVisitor::visitTerm(Python3Parser::TermContext *ctx) {
+    // term: factor (muldivmod_op factor)*
+    auto factors = ctx->factor();
+    if (factors.empty()) {
+        return std::any();
+    }
+    
+    // Visit the first factor
+    auto resultAny = visit(factors[0]);
+    if (!resultAny.has_value()) {
+        return Value(0);
+    }
+    
+    Value result;
+    try {
+        result = std::any_cast<Value>(resultAny);
+    } catch (...) {
+        return Value(0);
+    }
+    
+    // Process remaining factors with operators
+    auto ops = ctx->muldivmod_op();
+    for (size_t i = 0; i < ops.size(); i++) {
+        auto factorValue = visit(factors[i + 1]);
+        if (!factorValue.has_value()) {
+            continue;
+        }
+        
+        Value factor;
+        try {
+            factor = std::any_cast<Value>(factorValue);
+        } catch (...) {
+            continue;
+        }
+        
+        std::string op = ops[i]->getText();
+        
+        // Type coercion and operation
+        if (op == "/") {
+            // Division always returns double
+            double left = std::holds_alternative<double>(result) ? std::get<double>(result) : static_cast<double>(std::get<int>(result));
+            double right = std::holds_alternative<double>(factor) ? std::get<double>(factor) : static_cast<double>(std::get<int>(factor));
+            result = left / right;
+        } else if (std::holds_alternative<int>(result) && std::holds_alternative<int>(factor)) {
+            // int op int -> int (except /)
+            int left = std::get<int>(result);
+            int right = std::get<int>(factor);
+            if (op == "*") {
+                result = left * right;
+            } else if (op == "//") {
+                result = left / right;
+            } else if (op == "%") {
+                result = left % right;
+            }
+        } else {
+            // int op double -> double OR double op int -> double OR double op double -> double
+            double left = std::holds_alternative<double>(result) ? std::get<double>(result) : static_cast<double>(std::get<int>(result));
+            double right = std::holds_alternative<double>(factor) ? std::get<double>(factor) : static_cast<double>(std::get<int>(factor));
+            if (op == "*") {
+                result = left * right;
+            } else if (op == "//") {
+                result = static_cast<int>(left) / static_cast<int>(right);
+            } else if (op == "%") {
+                result = static_cast<int>(left) % static_cast<int>(right);
+            }
+        }
+    }
+    
+    return result;
+}
+
+std::any EvalVisitor::visitFactor(Python3Parser::FactorContext *ctx) {
+    // factor: ('+'|'-') factor | atom_expr
+    
+    // Check if there's a unary operator
+    auto text = ctx->getText();
+    if (text.length() > 0 && (text[0] == '+' || text[0] == '-')) {
+        // This is a unary expression
+        auto factor = ctx->factor();
+        if (factor) {
+            auto factorValue = visit(factor);
+            if (!factorValue.has_value()) {
+                return Value(0);
+            }
+            
+            Value factorVal;
+            try {
+                factorVal = std::any_cast<Value>(factorValue);
+            } catch (...) {
+                return Value(0);
+            }
+            
+            if (text[0] == '-') {
+                // Unary negation
+                if (std::holds_alternative<int>(factorVal)) {
+                    return Value(-std::get<int>(factorVal));
+                } else if (std::holds_alternative<double>(factorVal)) {
+                    return Value(-std::get<double>(factorVal));
+                }
+            } else {
+                // Unary plus (no-op)
+                return factorVal;
+            }
+        }
+    } else {
+        // This is just an atom_expr
+        auto atomExpr = ctx->atom_expr();
+        if (atomExpr) {
+            return visit(atomExpr);
+        }
+    }
+    
+    return std::any();
 }
 
 std::string EvalVisitor::unquoteString(const std::string& str) {

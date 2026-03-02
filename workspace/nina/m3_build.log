@@ -1,0 +1,16 @@
+[ 12%] Building CXX object generated/CMakeFiles/PyAntlr.dir/Python3Lexer.cpp.o
+clang++: warning: argument '-Ofast' is deprecated; use '-O3 -ffast-math' for the same behavior, or '-O3' to enable only conforming optimizations [-Wdeprecated-ofast]
+[ 25%] Building CXX object generated/CMakeFiles/PyAntlr.dir/Python3Parser.cpp.o
+clang++: warning: argument '-Ofast' is deprecated; use '-O3 -ffast-math' for the same behavior, or '-O3' to enable only conforming optimizations [-Wdeprecated-ofast]
+[ 37%] Building CXX object generated/CMakeFiles/PyAntlr.dir/Python3ParserBaseVisitor.cpp.o
+clang++: warning: argument '-Ofast' is deprecated; use '-O3 -ffast-math' for the same behavior, or '-O3' to enable only conforming optimizations [-Wdeprecated-ofast]
+[ 50%] Building CXX object generated/CMakeFiles/PyAntlr.dir/Python3ParserVisitor.cpp.o
+clang++: warning: argument '-Ofast' is deprecated; use '-O3 -ffast-math' for the same behavior, or '-O3' to enable only conforming optimizations [-Wdeprecated-ofast]
+[ 62%] Linking CXX static library libPyAntlr.a
+[ 62%] Built target PyAntlr
+[ 75%] Building CXX object CMakeFiles/code.dir/src/Evalvisitor.cpp.o
+clang++: warning: argument '-Ofast' is deprecated; use '-O3 -ffast-math' for the same behavior, or '-O3' to enable only conforming optimizations [-Wdeprecated-ofast]
+[ 87%] Building CXX object CMakeFiles/code.dir/src/main.cpp.o
+clang++: warning: argument '-Ofast' is deprecated; use '-O3 -ffast-math' for the same behavior, or '-O3' to enable only conforming optimizations [-Wdeprecated-ofast]
+[100%] Linking CXX executable code
+[100%] Built target code
