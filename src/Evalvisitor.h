@@ -3,6 +3,7 @@
 #define PYTHON_INTERPRETER_EVALVISITOR_H
 
 #include "Python3ParserBaseVisitor.h"
+#include "BigInteger.h"
 #include <variant>
 #include <string>
 #include <iostream>
@@ -14,7 +15,7 @@
 
 // Value class using std::variant to represent Python values
 // std::monostate represents None in Python
-using Value = std::variant<std::monostate, int, bool, std::string, double>;
+using Value = std::variant<std::monostate, int, bool, std::string, double, BigInteger>;
 
 class EvalVisitor : public Python3ParserBaseVisitor {
 public:
