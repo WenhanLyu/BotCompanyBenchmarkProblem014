@@ -12,6 +12,7 @@
 #include <map>
 #include <cmath>
 #include <sstream>
+#include <climits>
 
 // Value class using std::variant to represent Python values
 // std::monostate represents None in Python
@@ -79,6 +80,13 @@ private:
     
     // Python-style modulo for integers (result has same sign as divisor)
     int pythonModulo(int a, int b);
+    
+    // Overflow detection helpers - check BEFORE operation
+    bool willOverflowAdd(int a, int b);
+    bool willOverflowSubtract(int a, int b);
+    bool willOverflowMultiply(int a, int b);
+    bool willOverflowFloorDiv(int a, int b);
+    bool willOverflowModulo(int a, int b);
 };
 
 #endif//PYTHON_INTERPRETER_EVALVISITOR_H
