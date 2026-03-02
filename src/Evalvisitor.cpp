@@ -369,6 +369,12 @@ std::any EvalVisitor::visitArith_expr(Python3Parser::Arith_exprContext *ctx) {
             } else if (op == "-") {
                 result = left - right;
             }
+        } else if (std::holds_alternative<std::string>(result) && std::holds_alternative<std::string>(term)) {
+            // string op string
+            if (op == "+") {
+                // String concatenation
+                result = std::get<std::string>(result) + std::get<std::string>(term);
+            }
         }
     }
     
