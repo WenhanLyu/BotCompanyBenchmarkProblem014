@@ -1,0 +1,94 @@
+=== M3 Validation: Detailed Test Outputs ===
+Date: 2026-03-02
+Branch: leo/arithmetic-operators
+Commit: 12c858d
+
+--- Test 0: Comments ---
+Input:
+$ cat testcases/basic-testcases/test0.in
+#This is a comment
+#Another comment
+
+Output:
+$ ./code < testcases/basic-testcases/test0.in
+(no output - correct)
+
+Status: ✅ PASS
+
+--- Test 1: Print String ---
+Input:
+$ cat testcases/basic-testcases/test1.in
+print("Hello World!") #Test
+
+Output:
+$ ./code < testcases/basic-testcases/test1.in
+Hello World!
+
+Status: ✅ PASS
+
+--- Test 2: Print Int/Bool/None ---
+Input:
+$ cat testcases/basic-testcases/test2.in
+print(65536)
+print(True)
+print(None)
+
+Output:
+$ ./code < testcases/basic-testcases/test2.in
+65536
+True
+None
+
+Status: ✅ PASS
+
+--- Test 3: Variable Assignment ---
+Input:
+$ cat testcases/basic-testcases/test3.in
+x = 1
+print(x)
+y = "Hello"
+print(y)
+
+Output:
+$ ./code < testcases/basic-testcases/test3.in
+1
+Hello
+
+Status: ✅ PASS
+
+--- Test 4: Case-Sensitive Variables ---
+Input:
+$ cat testcases/basic-testcases/test4.in
+Case = True
+case = False
+print(Case)
+print(case)
+
+Output:
+$ ./code < testcases/basic-testcases/test4.in
+True
+False
+
+Status: ✅ PASS
+
+--- Test 5: Arithmetic Addition (NEW in M3) ---
+Input:
+$ cat testcases/basic-testcases/test5.in
+#Simple Evaluation
+print(1 + 1) #Love
+print(1+1) #Hate
+
+Output:
+$ ./code < testcases/basic-testcases/test5.in
+2
+2
+
+Status: ✅ PASS
+
+=== Summary ===
+Total tests run: 6
+Passed: 6
+Failed: 0
+Success rate: 100%
+
+All M3 acceptance criteria met ✅
