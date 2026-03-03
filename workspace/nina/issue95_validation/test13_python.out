@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "<stdin>", line 76, in <module>
+  File "<stdin>", line 66, in pollard_rho
+  File "<stdin>", line 53, in random
+  File "<stdin>", line 47, in rand
+UnboundLocalError: cannot access local variable 'seed' where it is not associated with a value
