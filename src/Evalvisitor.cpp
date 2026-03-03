@@ -58,7 +58,16 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
             
             if (op == "+=") {
                 // Addition for numbers, concatenation for strings
-                if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
+                if (std::holds_alternative<BigInteger>(currentValue) || std::holds_alternative<BigInteger>(rightValue)) {
+                    // Promote to BigInteger if needed
+                    BigInteger left = std::holds_alternative<BigInteger>(currentValue) ? 
+                        std::get<BigInteger>(currentValue) : 
+                        (std::holds_alternative<int>(currentValue) ? BigInteger(std::get<int>(currentValue)) : BigInteger(0));
+                    BigInteger right = std::holds_alternative<BigInteger>(rightValue) ? 
+                        std::get<BigInteger>(rightValue) : 
+                        (std::holds_alternative<int>(rightValue) ? BigInteger(std::get<int>(rightValue)) : BigInteger(0));
+                    result = left + right;
+                } else if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
                     int left = std::get<int>(currentValue);
                     int right = std::get<int>(rightValue);
                     // Check for overflow BEFORE addition
@@ -75,7 +84,16 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                     result = std::get<std::string>(currentValue) + std::get<std::string>(rightValue);
                 }
             } else if (op == "-=") {
-                if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
+                if (std::holds_alternative<BigInteger>(currentValue) || std::holds_alternative<BigInteger>(rightValue)) {
+                    // Promote to BigInteger if needed
+                    BigInteger left = std::holds_alternative<BigInteger>(currentValue) ? 
+                        std::get<BigInteger>(currentValue) : 
+                        (std::holds_alternative<int>(currentValue) ? BigInteger(std::get<int>(currentValue)) : BigInteger(0));
+                    BigInteger right = std::holds_alternative<BigInteger>(rightValue) ? 
+                        std::get<BigInteger>(rightValue) : 
+                        (std::holds_alternative<int>(rightValue) ? BigInteger(std::get<int>(rightValue)) : BigInteger(0));
+                    result = left - right;
+                } else if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
                     int left = std::get<int>(currentValue);
                     int right = std::get<int>(rightValue);
                     // Check for overflow BEFORE subtraction
@@ -91,7 +109,16 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                 }
             } else if (op == "*=") {
                 // Multiplication for numbers, repetition for string * int
-                if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
+                if (std::holds_alternative<BigInteger>(currentValue) || std::holds_alternative<BigInteger>(rightValue)) {
+                    // Promote to BigInteger if needed
+                    BigInteger left = std::holds_alternative<BigInteger>(currentValue) ? 
+                        std::get<BigInteger>(currentValue) : 
+                        (std::holds_alternative<int>(currentValue) ? BigInteger(std::get<int>(currentValue)) : BigInteger(0));
+                    BigInteger right = std::holds_alternative<BigInteger>(rightValue) ? 
+                        std::get<BigInteger>(rightValue) : 
+                        (std::holds_alternative<int>(rightValue) ? BigInteger(std::get<int>(rightValue)) : BigInteger(0));
+                    result = left * right;
+                } else if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
                     int left = std::get<int>(currentValue);
                     int right = std::get<int>(rightValue);
                     // Check for overflow BEFORE multiplication
@@ -123,7 +150,16 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                 result = left / right;
             } else if (op == "//=") {
                 // Floor division
-                if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
+                if (std::holds_alternative<BigInteger>(currentValue) || std::holds_alternative<BigInteger>(rightValue)) {
+                    // Promote to BigInteger if needed
+                    BigInteger left = std::holds_alternative<BigInteger>(currentValue) ? 
+                        std::get<BigInteger>(currentValue) : 
+                        (std::holds_alternative<int>(currentValue) ? BigInteger(std::get<int>(currentValue)) : BigInteger(0));
+                    BigInteger right = std::holds_alternative<BigInteger>(rightValue) ? 
+                        std::get<BigInteger>(rightValue) : 
+                        (std::holds_alternative<int>(rightValue) ? BigInteger(std::get<int>(rightValue)) : BigInteger(0));
+                    result = left.floorDiv(right);
+                } else if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
                     int left = std::get<int>(currentValue);
                     int right = std::get<int>(rightValue);
                     // Check for overflow BEFORE floor division
@@ -139,7 +175,16 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                 }
             } else if (op == "%=") {
                 // Modulo
-                if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
+                if (std::holds_alternative<BigInteger>(currentValue) || std::holds_alternative<BigInteger>(rightValue)) {
+                    // Promote to BigInteger if needed
+                    BigInteger left = std::holds_alternative<BigInteger>(currentValue) ? 
+                        std::get<BigInteger>(currentValue) : 
+                        (std::holds_alternative<int>(currentValue) ? BigInteger(std::get<int>(currentValue)) : BigInteger(0));
+                    BigInteger right = std::holds_alternative<BigInteger>(rightValue) ? 
+                        std::get<BigInteger>(rightValue) : 
+                        (std::holds_alternative<int>(rightValue) ? BigInteger(std::get<int>(rightValue)) : BigInteger(0));
+                    result = left % right;
+                } else if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
                     int left = std::get<int>(currentValue);
                     int right = std::get<int>(rightValue);
                     // Check for overflow BEFORE modulo
