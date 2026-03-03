@@ -1,103 +1,100 @@
-# Nina's Notes - Issue #78: Testing Quick-Win Fixes
+# Nina's Notes - Issue #83: Retest test13 After Augmented Assignment Fix
 
-## What I Did (Latest - 2026-03-02)
+## What I Did (Latest - 2024-03-03)
 
-Tested the three OJ quick-win fixes (M8.1) per issue #78:
+Retested test13 after Leo's augmented assignment BigInteger fix (commit 10b9e61) was merged.
 
-1. ✅ Compiled code successfully (clean build)
-2. ✅ Tested all three quick-win fixes
-3. ✅ Ran M1 regression tests - all pass
-4. ✅ Created comprehensive test report
+### Key Findings
 
-## Test Results Summary
+✅ **Augmented assignment fix WORKS PERFECTLY**
+- All operators (+=, -=, *=, //=, %=) work correctly
+- BigInteger support in augmented assignments works
+- Global variables with augmented assignment work
+- All test13 individual components work
 
-### Fix #75: Multi-argument print() ✅ COMPLETE
-- ✅ print(1, 2, 3) outputs "1 2 3"
-- ✅ print("Hello", 42, "World") outputs "Hello 42 World"
-- ✅ Single argument print still works (no regression)
-- **Conclusion:** Fully working as expected
+❌ **test13 STILL FAILS due to DIFFERENT bug**
+- Root cause: Pre-existing tuple unpacking bug
+- Bug: `a, b = expr1, expr2` only evaluates first expression, rest become None
+- Example: `a, b = 1 + 2, 3 + 4` produces `a=3, b=None` instead of `a=3, b=7`
 
-### Fix #76: Exception Handling ✅ COMPLETE
-- ✅ Division by zero caught (exit code 0, no crash)
-- ✅ Floor division by zero caught with error message
-- ✅ Modulo by zero caught with error message
-- **Conclusion:** No SIGABRT crashes, all exceptions handled gracefully
+### Verification Process
 
-### Fix #77: String *= Performance ⚠️ PARTIAL
-- ❌ Regular string multiplication (s = "x" * 100000) NOT implemented → bad_variant_access
-- ✅ Augmented string multiplication (s *= 100000) WORKS and FAST (16ms)
-- ✅ Performance optimization using reserve() + append() confirmed
-- **Conclusion:** Augmented assignment optimized, but regular multiplication missing
+Created 13 test files to isolate the issue:
+1. Basic augmented assignment - ✅ PASS
+2. BigInteger augmented assignment - ✅ PASS  
+3. Modulo augmented assignment - ✅ PASS
+4. Function with augmented assignment - ✅ PASS
+5. Global variable with augmented assignment - ✅ PASS
+6. test13 quick_power function - ✅ PASS
+7. test13 miller_rabin function - ✅ PASS
+8. test13 is_prime function - ✅ PASS
+9. Global seed with rand() - ✅ PASS
+10. Simple tuple unpacking - ❌ FAIL (bug found)
+11. Full pollard_rho - ❌ FAIL (due to tuple bug)
 
-### Regression Tests ✅ ALL PASS
-- M1 tests: 2/2 passing
-- No regressions detected
+Verified tuple bug existed BEFORE augmented assignment fix by testing commit 5949158.
 
-## Key Findings
+### Technical Details
 
-**Overall Status: 2/3 complete (67%)**
+**Failing line in test13:**
+```python
+c , p = random(n - 1) + 1 , random(n - 1) + 1
+```
 
-1. **Working perfectly:**
-   - Multi-argument print() - all test cases pass
-   - Exception handling - no crashes, proper error messages
+**Simple reproduction:**
+```python
+a, b = 1 + 2, 3 + 4
+print(a, b)  # Output: 7 None (should be 3 7)
+```
 
-2. **Partially working:**
-   - String *= is optimized and fast
-   - BUT regular string * int throws bad_variant_access
-   - Only augmented assignment (s *= n) works, not regular (s = "x" * n)
+**Error when bug triggers:**
+```
+Runtime error: bad_variant_access
+```
 
-3. **Expected OJ Impact:**
-   - Original estimate: +15-19 tests
-   - Revised estimate: +13-19 tests (slightly lower due to missing string * int)
-   - Still significant improvement from 36/75 to 49-55/75
+### Assessment
 
-## Root Cause: String Multiplication Gap
-
-The string *= optimization (Fix #77) was only implemented in the augmented assignment handler (lines 107-118 in EvalVisitor.cpp), but NOT in the term/factor handlers where regular multiplication happens.
+**Issue #83 Result: PARTIAL SUCCESS**
+- ✅ Augmented assignment fix verified working
+- ❌ test13 blocked by separate tuple unpacking bug
+- ❌ Tuple bug is PRE-EXISTING (not caused by augmented fix)
 
 **Impact:** 
-- Minor - augmented assignment is the common use case
-- May block 2-4 OJ tests that use regular string * int syntax
+- Augmented assignment operators ready for production
+- test13 cannot pass until tuple unpacking is fixed
+- Tuple unpacking bug likely blocks other tests too
 
-**Fix if needed:**
-- Add string repetition logic to visitTerm() alongside numeric multiplication
-- Estimated: 15-20 minutes
-- Should wait for OJ feedback to see if it's actually blocking tests
-
-## Assessment
-
-✅ **SUBSTANTIAL SUCCESS - 2/3 fixes complete, 1/3 partial**
-
-**Strengths:**
-- ✅ Multi-arg print fully working
-- ✅ Exception handling fully working
-- ✅ String *= performance optimized
-- ✅ No regressions
-- ✅ Code compiles cleanly
-- ✅ Fast execution
-
-**Gap:**
-- ❌ Regular string * int not implemented (only string *= int)
-
-## Recommendation
-
-**Ready for OJ submission** to validate improvements:
-- The two complete fixes should improve score significantly
-- String *= will help some tests even if regular * doesn't work
-- OJ feedback will show if missing string * int is critical
-
-If OJ shows string * int is blocking many tests, can implement in 15-20 min follow-up.
+**Next Steps:**
+1. Need to create new issue for tuple unpacking bug
+2. Should be assigned to developer (Leo or Ares)
+3. Estimated fix: 30-45 minutes
 
 ## Files Created
 
-- `workspace/nina/quick_wins_test_results.md` - Comprehensive test report with all details
-- `workspace/nina/test1a.py` through `test3b_large.py` - Individual test cases
-- `workspace/nina/test_quick_wins.md` - Test plan
+### Test Files
+- `test_augment_simple.py` - Basic augmented assignment
+- `test_augment_bigint.py` - BigInteger augmented assignment
+- `test_augment_mod.py` - Modulo augmented assignment  
+- `test_func_augment.py` - Function with augmented assignment
+- `test_global.py` - Global variable test
+- `test_global_augment.py` - Global with augmented assignment
+- `test13_minimal.py` - Minimal quick_power test
+- `test13_minimal2.py` - miller_rabin test
+- `test13_minimal3.py` - is_prime test
+- `test13_minimal4.py` - Global seed test
+- `test_simple_tuple.py` - Simple tuple bug reproduction
+- `test_random_assign.py` - Function call tuple bug
+- `test13_809172.py` - Full pollard_rho test
+
+### Documentation
+- `test13_retest_report.md` - Comprehensive test report
+- `test13_build.log` - Build log
+- `test13_actual.out` - Full test13 output
 
 ## Context for Next Time
 
-- Branch: master
-- Commit: 7a86875 (Leo's string *= fix)
-- Issue #78 tested - 2/3 complete, 1/3 partial
-- Ready for OJ submission to validate
-- May need follow-up for regular string * int if OJ shows it's critical
+- Branch: master (commit 10b9e61)
+- Issue #83 tested - augmented assignment works, test13 blocked by tuple bug
+- Discovered critical tuple unpacking bug affecting multiple assignments
+- Bug is pre-existing, not caused by recent changes
+- Ready to report findings and recommend tuple unpacking fix
