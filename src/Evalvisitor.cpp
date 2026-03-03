@@ -109,8 +109,10 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                     std::string s = std::get<std::string>(currentValue);
                     int count = std::get<int>(rightValue);
                     std::string repeated;
+                    // Pre-allocate memory to avoid O(n²) behavior
+                    repeated.reserve(s.size() * count);
                     for (int i = 0; i < count; i++) {
-                        repeated += s;
+                        repeated.append(s);
                     }
                     result = repeated;
                 }
@@ -224,23 +226,30 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                 // Get the arguments
                 auto args = arglist->argument();
                 if (!args.empty()) {
-                    // Get the first argument's test expression
-                    auto arg = args[0];
-                    auto tests = arg->test();
-                    if (!tests.empty()) {
-                        // Visit the test to get its value
-                        auto argValue = visit(tests[0]);
-                        
-                        // If it's a Value, print it
-                        if (argValue.has_value()) {
-                            try {
-                                Value val = std::any_cast<Value>(argValue);
-                                std::cout << valueToString(val) << std::endl;
-                            } catch (...) {
-                                // Not a Value, ignore
+                    // Loop through all arguments and print them space-separated
+                    for (size_t i = 0; i < args.size(); ++i) {
+                        auto arg = args[i];
+                        auto tests = arg->test();
+                        if (!tests.empty()) {
+                            // Visit the test to get its value
+                            auto argValue = visit(tests[0]);
+                            
+                            // If it's a Value, print it
+                            if (argValue.has_value()) {
+                                try {
+                                    Value val = std::any_cast<Value>(argValue);
+                                    std::cout << valueToString(val);
+                                    // Print space after each argument except the last
+                                    if (i < args.size() - 1) {
+                                        std::cout << " ";
+                                    }
+                                } catch (...) {
+                                    // Not a Value, ignore
+                                }
                             }
                         }
                     }
+                    std::cout << std::endl;
                 }
             }
             return std::any();

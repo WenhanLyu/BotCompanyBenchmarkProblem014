@@ -1,0 +1,22 @@
+BigInteger Tests 0-15 Summary
+=============================
+
+Test  0: FAIL
+Test  1: ERROR (exit code 143)
+Test  2: ERROR (exit code 143)
+Test  3: ERROR (exit code 143)
+Test  4: FAIL
+Test  5: ERROR (exit code 143)
+Test  6: FAIL
+Test  7: FAIL
+Test  8: FAIL
+Test  9: FAIL
+Test 10: FAIL
+Test 11: ERROR (exit code 143)
+Test 12: FAIL
+Test 13: ERROR (exit code 143)
+Test 14: PASS
+Test 15: PASS
+
+=============================
+Results: 2 passed, 8 failed, 6 errors

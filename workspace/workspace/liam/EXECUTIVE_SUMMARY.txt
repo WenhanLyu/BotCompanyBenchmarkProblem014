@@ -1,0 +1,158 @@
+╔════════════════════════════════════════════════════════════════════════╗
+║                    ISSUE #61 - EXECUTIVE SUMMARY                       ║
+║         Return Statement and Global Keyword Evaluation                 ║
+╚════════════════════════════════════════════════════════════════════════╝
+
+ENGINEER:  Liam (Test Infrastructure Engineer)
+DATE:      2026-03-02
+STATUS:    ✅ COMPLETE - Ready for Implementation
+
+────────────────────────────────────────────────────────────────────────
+
+📊 KEY FINDINGS
+
+1. RETURN STATEMENTS
+   Complexity:  MEDIUM ⚠️
+   LOC:         ~30 lines
+   Effort:      2-3 cycles
+   Status:      NOT implemented, REQUIRED for test13
+   Approach:    Exception-based (ReturnException class)
+   Blocker for: test13 (Pollard Rho factorization)
+
+2. GLOBAL KEYWORD
+   Complexity:  ZERO ✅
+   LOC:         0 lines
+   Effort:      0 cycles
+   Status:      NOT in grammar, skip entirely
+   Reason:      Simplified Python scoping rules
+
+3. BREAK/CONTINUE (Bonus Finding)
+   Status:      NOT needed for any test case
+   Verified:    grep on all test files - zero occurrences
+   Recommendation: Defer until needed
+
+────────────────────────────────────────────────────────────────────────
+
+🎯 RECOMMENDATION
+
+Implement RETURN STATEMENTS ONLY as next milestone.
+Skip global keyword and break/continue entirely.
+
+────────────────────────────────────────────────────────────────────────
+
+📦 DELIVERABLES (18 files, ~45K)
+
+Analysis Documents (4 files):
+  • final_recommendations.md      ⭐ START HERE
+  • return_global_evaluation.md   (Executive analysis)
+  • return_implementation_guide.md (Developer guide)
+  • implementation_status.md      (Codebase analysis)
+
+Test Infrastructure (10 files):
+  • test_return_all.sh           ⭐ Automated test runner
+  • test_return_simple.py/.out   (7 test cases)
+  • test_return_early.py/.out    (9 test cases)
+  • test_return_recursive.py/.out (6 test cases)
+  • test13_reference.out         (47 lines reference)
+  • test13_with_global.py        (Modified for reference)
+
+Documentation (4 files):
+  • README.md                     (Quick start)
+  • DELIVERABLES.md              (Checklist)
+  • FILE_STRUCTURE.md            (File map)
+  • note.md                      (Cycle notes)
+
+────────────────────────────────────────────────────────────────────────
+
+✅ SUCCESS CRITERIA
+
+Implementation complete when:
+  □ All unit tests pass (test_return_all.sh shows 4/4 PASS)
+  □ test13 produces exact match with reference output
+  □ No regressions on test0-12
+  □ No memory leaks (valgrind clean)
+  □ Code review approved
+
+────────────────────────────────────────────────────────────────────────
+
+⏱️ TIMELINE
+
+Estimated: 2-3 cycles total
+
+  Cycle 1: Implementation (1-1.5 cycles)
+    - Add ReturnException class
+    - Implement visitReturn_stmt()
+    - Wrap function execution with try-catch
+
+  Cycle 2: Testing (0.5-1 cycle)
+    - Run test_return_all.sh
+    - Validate test13
+    - Fix any issues
+
+  Cycle 3: Validation (0.5 cycle)
+    - Regression testing
+    - Memory leak check
+    - Code review
+
+────────────────────────────────────────────────────────────────────────
+
+📋 NEXT ACTIONS
+
+For Managers:
+  1. Review final_recommendations.md for complete plan
+  2. Assign to developer (Leo or Ares recommended)
+  3. Update roadmap with return statement milestone
+  4. Set deadline: 2-3 cycles from assignment
+
+For Developers:
+  1. Read final_recommendations.md
+  2. Follow return_implementation_guide.md
+  3. Implement ~30 LOC changes
+  4. Run test_return_all.sh for validation
+  5. Verify test13 passes
+
+For Testers:
+  1. Use test_return_all.sh for automated testing
+  2. Verify test13 produces exact match
+  3. Check for regressions on test0-12
+
+────────────────────────────────────────────────────────────────────────
+
+📈 TEST COVERAGE
+
+Total Test Cases: 22
+  - Simple returns: 7 cases
+  - Early returns: 9 cases
+  - Recursive returns: 6 cases
+  - Integration (test13): 1 case (47 output lines)
+
+All reference outputs generated with Python 3 and validated.
+
+────────────────────────────────────────────────────────────────────────
+
+🎓 IMPLEMENTATION APPROACH
+
+Exception-based control flow (proven pattern):
+
+  1. Define ReturnException class with Value member
+  2. visitReturn_stmt() throws ReturnException
+  3. Function execution wrapped in try-catch
+  4. Catch ReturnException and extract value
+
+Same pattern can be used for break/continue if needed later.
+
+────────────────────────────────────────────────────────────────────────
+
+✨ CONCLUSION
+
+Return statements are straightforward to implement using exception-based
+control flow. Global keyword is not needed due to simplified scoping rules.
+All test infrastructure and documentation provided for immediate implementation.
+
+Status: ✅ Analysis complete, ready for implementation assignment.
+
+────────────────────────────────────────────────────────────────────────
+
+For complete details, see:
+  workspace/workspace/liam/final_recommendations.md
+

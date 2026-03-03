@@ -1,0 +1,2 @@
+Test 0: FAIL (expected 4 lines, got 4 lines)
+Test 1: ERROR (exit 143)

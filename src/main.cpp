@@ -15,6 +15,12 @@ int main(int argc, const char *argv[]) {
 	Python3Parser parser(&tokens);
 	tree::ParseTree *tree = parser.file_input();
 	EvalVisitor visitor;
-	visitor.visit(tree);
+	try {
+		visitor.visit(tree);
+	} catch (const std::exception& e) {
+		// Handle exceptions gracefully to prevent SIGABRT crashes
+		std::cerr << "Runtime error: " << e.what() << std::endl;
+		return 1;
+	}
 	return 0;
 }
