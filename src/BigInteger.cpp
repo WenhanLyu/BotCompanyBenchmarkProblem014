@@ -324,21 +324,36 @@ void BigInteger::divideAbs(const BigInteger& divisor, BigInteger& quotient, BigI
             if (estimate >= BASE) estimate = BASE - 1;
             if (estimate < 0) estimate = 0;
             
-            // Verify estimate and adjust if needed
-            count = (int)estimate;
-            while (count > 0) {
-                // Calculate divisor * count
-                BigInteger product(count);
+            // Verify estimate and adjust if needed using binary search
+            // This prevents O(n) behavior when estimate is significantly off
+            int low = 0;
+            int high = (int)estimate;
+            count = 0;
+            
+            while (low <= high) {
+                int mid = low + (high - low) / 2;
+                
+                // Calculate divisor * mid
+                BigInteger product(mid);
                 product = divisor * product;
                 
-                // Check if estimate is valid
-                if (remainder.compareAbs(product) >= 0) {
-                    // Good estimate - subtract and we're done
-                    remainder = remainder.subtractAbs(product);
-                    break;
+                // Check if mid is valid
+                int cmp = remainder.compareAbs(product);
+                if (cmp >= 0) {
+                    // mid works, but maybe we can go higher
+                    count = mid;
+                    low = mid + 1;
+                } else {
+                    // mid is too high
+                    high = mid - 1;
                 }
-                // Estimate was too high - reduce and try again
-                count--;
+            }
+            
+            // Subtract the final product
+            if (count > 0) {
+                BigInteger product(count);
+                product = divisor * product;
+                remainder = remainder.subtractAbs(product);
             }
         }
         
