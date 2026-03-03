@@ -2,7 +2,7 @@
 
 **Project:** BotCompanyBenchmarkProblem014 - Python Interpreter  
 **Created:** 2026-03-02  
-**Last Updated:** 2026-03-03 (Cycle 86 - Athena)
+**Last Updated:** 2026-03-03 (Cycle 87 - Athena)
 
 ---
 
@@ -19,7 +19,7 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 86 - Post OJ Submission #1)
+## Current State (Cycle 87 - Investigation Complete)
 
 - **OJ Score:** 0/66 (all subtasks scored 0) ⚠️
 - **Actual Passes:** 36/75 tests (48%)
@@ -255,24 +255,69 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-### **M4.4: Return Statements and Global Keyword**
-**Goal:** Implement return statements and global variable access  
-**Test Target:** test13  
-**Estimated Cycles:** 4-6
+### **M8.1: Quick Wins Bundle**
+**Goal:** Implement 3 small high-impact fixes identified from OJ feedback  
+**Test Target:** Multiple tests across all categories  
+**Estimated Cycles:** 2
 
 **Deliverables:**
-- Return statement implementation
-- Return value handling
-- Global keyword for variable access
-- Integration with existing function infrastructure
+1. **Multi-argument print()** - Fix to print all arguments separated by spaces ✅
+   - Modify lines 224-244 in EvalVisitor.cpp
+   - Loop through all args instead of just first
+   - 15 minute fix
+2. **Exception handling** - Add try-catch in main.cpp ✅
+   - Catch std::exception to prevent SIGABRT crashes
+   - 5-line change
+   - 15 minute fix
+3. **String concatenation performance** - Fix O(n²) *= operator ✅
+   - Add reserve() + use append() instead of repeated +=
+   - Modify line 113 in EvalVisitor.cpp
+   - 10 minute fix
 
 **Acceptance Criteria:**
-- test13 passes (Pollard Rho factorization)
-- Return statements work correctly
-- Global keyword accesses global scope
-- No regression on test0-12, test14-15
+- Multi-arg print works: `print(1, 2, 3)` outputs `1 2 3`
+- Division by zero doesn't crash (caught exception)
+- String *= 100000 completes in <1 second
+- No regression on currently passing tests
+- Expected improvement: +15-19 tests (36/75 → 51-55/75)
 
-**Note:** Currently deferred pending strategic evaluation of OJ submission timing.
+**Risk:** Minimal - all are defensive/additive changes
+
+---
+
+### **M8.2: Return Statements** (NEXT PRIORITY)
+**Goal:** Implement return statements to unblock function-based tests  
+**Test Target:** test13 and 15-20 AdvancedTests  
+**Estimated Cycles:** 4-5
+
+**Deliverables:**
+- Return statement implementation (visitReturn_stmt)
+- Return value propagation through call stack
+- Support for multiple return values
+- Early function exit handling
+
+**Acceptance Criteria:**
+- Functions can return values
+- test13 passes (Pollard Rho factorization)
+- Return values work in expressions
+- No regression on test0-15
+
+**Note:** Deferred until after M8.1 quick wins are validated.
+
+---
+
+### **M4.4: Function Scope Fix and Additional Features** (FUTURE)
+**Goal:** Fix global variable scope bug and add remaining features  
+**Test Target:** test13 global variables  
+**Estimated Cycles:** 3-4
+
+**Deliverables:**
+- Fix function scope restore bug (lines 278-290)
+- Global keyword support (if needed)
+- Break/continue statements
+- Type conversion functions (int, float, str, bool)
+
+**Note:** Deferred pending M8.2 completion.
 
 ---
 
@@ -593,11 +638,32 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
   - Created focused investigation issues for each failure category
   - Updated roadmap to reflect OJ reality
 - 🎯 **Strategic Pivot:** Must investigate failures before implementing fixes
-  - Wrong Answer ≠ missing features might be edge cases in existing code
-  - Runtime Errors need root cause analysis
-  - Performance issues might be exponential complexity bugs
 
-**Outcome:** Investigation phase initiated. Next milestone depends on findings - return statements are confirmed critical, but need to understand full scope of missing features before committing to implementation order.
+**Outcome:** Investigation phase initiated.
+
+### Cycle 87: Investigation Complete & Strategic Planning (Athena)
+- ✅ **All 3 workers completed investigations** (Kai, Mia, Noah)
+- 🔍 **Root causes identified for ALL 39 failing tests**
+- 📊 **Potential improvement:** +31-36 tests (48% → 89-96%)
+
+**Key Findings:**
+1. **Kai (Runtime Errors):** Uncaught exceptions in main.cpp → 15-min fix, +3 tests
+2. **Mia (Missing Features):** Top 5 features identified → +20-25 tests total
+   - Return statements (BLOCKING): +15-20 tests
+   - Multi-arg print() (QUICK WIN): +8-12 tests, 15 minutes
+   - Function scope bug: +5-10 tests
+   - Break/continue: +3-5 tests
+   - Type conversion: +3-5 tests
+3. **Noah (Performance):** 
+   - String *= memory bug → 10-min fix, +4 tests
+   - BigInteger O(n²) multiplication → Karatsuba algorithm, +4 tests
+
+**Strategic Decision:** Implement quick wins first (multi-arg print + exception handling + string perf)
+- **Rationale:** 3 small fixes (~40 min total), +15-19 tests, zero risk
+- **Then:** Return statements (the big one, 3-4 hrs)
+- **Philosophy:** Build momentum with quick wins before tackling complex features
+
+**Outcome:** M8.1 milestone defined (Quick Wins Bundle).
 
 ---
 
