@@ -284,8 +284,17 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                 }
             }
             
-            // Save the current variable context (for local scope)
-            std::map<std::string, Value> savedVariables = variables;
+            // Save only the parameters that might shadow globals
+            std::map<std::string, Value> savedParameters;
+            std::set<std::string> parameterNames;
+            for (size_t i = 0; i < funcDef.parameters.size(); i++) {
+                parameterNames.insert(funcDef.parameters[i]);
+                // Save the parameter if it exists as a global variable
+                auto it = variables.find(funcDef.parameters[i]);
+                if (it != variables.end()) {
+                    savedParameters[funcDef.parameters[i]] = it->second;
+                }
+            }
             
             // Bind parameters to arguments
             for (size_t i = 0; i < funcDef.parameters.size() && i < argValues.size(); i++) {
@@ -301,8 +310,16 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                 returnValue = e.returnValue;
             }
             
-            // Restore the variable context (local scope ends)
-            variables = savedVariables;
+            // Clean up: remove parameters and restore any shadowed globals
+            for (const auto& paramName : parameterNames) {
+                // Remove the parameter from variables
+                variables.erase(paramName);
+                // If it was shadowing a global, restore the global
+                auto savedIt = savedParameters.find(paramName);
+                if (savedIt != savedParameters.end()) {
+                    variables[paramName] = savedIt->second;
+                }
+            }
             
             // Return the value
             return returnValue;
