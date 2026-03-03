@@ -1,0 +1,251 @@
+Edge Case Test Results
+======================
+
+
+TEST: div_zero_1
+Description: Integer division by zero
+---
+Output: Runtime error: Division by zero
+Exit Code: 1
+Python Output: Traceback (most recent call last):
+  File "/Users/wenhanlyu/.thebotcompany/dev/src/github.com/WenhanLyu/BotCompanyBenchmarkProblem014/workspace/workspace/mia/tests/div_zero_1.py", line 1, in <module>
+    print(10 // 0)
+          ~~~^^~~
+ZeroDivisionError: integer division or modulo by zero
+Python Exit: 1
+RESULT: RUNTIME ERROR
+
+
+TEST: div_zero_2
+Description: Modulo by zero
+---
+Output: Runtime error: Modulo by zero
+Exit Code: 1
+Python Output: Traceback (most recent call last):
+  File "/Users/wenhanlyu/.thebotcompany/dev/src/github.com/WenhanLyu/BotCompanyBenchmarkProblem014/workspace/workspace/mia/tests/div_zero_2.py", line 1, in <module>
+    print(10 % 0)
+          ~~~^~~
+ZeroDivisionError: integer modulo by zero
+Python Exit: 1
+RESULT: RUNTIME ERROR
+
+
+TEST: div_zero_3
+Description: Division by zero variable
+---
+Output: Runtime error: Division by zero
+Exit Code: 1
+Python Output: Traceback (most recent call last):
+  File "/Users/wenhanlyu/.thebotcompany/dev/src/github.com/WenhanLyu/BotCompanyBenchmarkProblem014/workspace/workspace/mia/tests/div_zero_3.py", line 2, in <module>
+    print(10 // x)
+          ~~~^^~~
+ZeroDivisionError: integer division or modulo by zero
+Python Exit: 1
+RESULT: RUNTIME ERROR
+
+
+TEST: div_zero_4
+Description: BigInteger division by zero
+---
+Output: Runtime error: Division by zero
+Exit Code: 1
+Python Output: Traceback (most recent call last):
+  File "/Users/wenhanlyu/.thebotcompany/dev/src/github.com/WenhanLyu/BotCompanyBenchmarkProblem014/workspace/workspace/mia/tests/div_zero_4.py", line 2, in <module>
+    print(x // 0)
+          ~~^^~~
+ZeroDivisionError: integer division or modulo by zero
+Python Exit: 1
+RESULT: RUNTIME ERROR
+
+
+TEST: string_mult_1
+Description: String multiply by positive int
+---
+Output: Runtime error: bad_variant_access
+Exit Code: 1
+Python Output: ababab
+Python Exit: 0
+RESULT: CRASH (bad_variant_access)
+
+
+TEST: string_mult_2
+Description: String multiply by zero
+---
+Output: Runtime error: bad_variant_access
+Exit Code: 1
+Python Output: 
+Python Exit: 0
+RESULT: CRASH (bad_variant_access)
+
+
+TEST: string_mult_3
+Description: String multiply by negative
+---
+Output: Runtime error: bad_variant_access
+Exit Code: 1
+Python Output: 
+Python Exit: 0
+RESULT: CRASH (bad_variant_access)
+
+
+TEST: string_mult_4
+Description: String multiply with variable
+---
+Output: Runtime error: bad_variant_access
+Exit Code: 1
+Python Output: hellohello
+Python Exit: 0
+RESULT: CRASH (bad_variant_access)
+
+
+TEST: type_1
+Description: String multiply by string
+---
+Output: Runtime error: bad_variant_access
+Exit Code: 1
+Python Output: Traceback (most recent call last):
+  File "/Users/wenhanlyu/.thebotcompany/dev/src/github.com/WenhanLyu/BotCompanyBenchmarkProblem014/workspace/workspace/mia/tests/type_1.py", line 1, in <module>
+    print("ab" * "cd")
+          ~~~~~^~~~~~
+TypeError: can't multiply sequence by non-int of type 'str'
+Python Exit: 1
+RESULT: CRASH (bad_variant_access)
+
+
+TEST: type_2
+Description: Add int and string
+---
+Output: 5
+Exit Code: 0
+Python Output: Traceback (most recent call last):
+  File "/Users/wenhanlyu/.thebotcompany/dev/src/github.com/WenhanLyu/BotCompanyBenchmarkProblem014/workspace/workspace/mia/tests/type_2.py", line 1, in <module>
+    print(5 + "hello")
+          ~~^~~~~~~~~
+TypeError: unsupported operand type(s) for +: 'int' and 'str'
+Python Exit: 1
+RESULT: WRONG OUTPUT
+
+
+TEST: type_3
+Description: Divide string by int
+---
+Output: Runtime error: bad_variant_access
+Exit Code: 1
+Python Output: Traceback (most recent call last):
+  File "/Users/wenhanlyu/.thebotcompany/dev/src/github.com/WenhanLyu/BotCompanyBenchmarkProblem014/workspace/workspace/mia/tests/type_3.py", line 1, in <module>
+    print("hello" / 2)
+          ~~~~~~~~^~~
+TypeError: unsupported operand type(s) for /: 'str' and 'int'
+Python Exit: 1
+RESULT: CRASH (bad_variant_access)
+
+
+TEST: type_4
+Description: Add string and int variables
+---
+Output: test
+Exit Code: 0
+Python Output: Traceback (most recent call last):
+  File "/Users/wenhanlyu/.thebotcompany/dev/src/github.com/WenhanLyu/BotCompanyBenchmarkProblem014/workspace/workspace/mia/tests/type_4.py", line 3, in <module>
+    print(x + y)
+          ~~^~~
+TypeError: can only concatenate str (not "int") to str
+Python Exit: 1
+RESULT: WRONG OUTPUT
+
+
+TEST: bigint_1
+Description: BigInteger addition
+---
+Output: 100000000000000000000
+Exit Code: 0
+Python Output: 100000000000000000000
+Python Exit: 0
+RESULT: PASS
+
+
+TEST: bigint_2
+Description: BigInteger multiplication
+---
+Output: 9999999999999999999800000000000000000001
+Exit Code: 0
+Python Output: 9999999999999999999800000000000000000001
+Python Exit: 0
+RESULT: PASS
+
+
+TEST: bigint_3
+Description: BigInteger division
+---
+Output: 49999999999999999999
+Exit Code: 0
+Python Output: 49999999999999999999
+Python Exit: 0
+RESULT: PASS
+
+
+TEST: bigint_4
+Description: Negative BigInteger subtraction
+---
+Output: -100000000000000000000
+Exit Code: 0
+Python Output: -100000000000000000000
+Python Exit: 0
+RESULT: PASS
+
+
+TEST: edge_1
+Description: None + int
+---
+Output: None
+Exit Code: 0
+Python Output: Traceback (most recent call last):
+  File "/Users/wenhanlyu/.thebotcompany/dev/src/github.com/WenhanLyu/BotCompanyBenchmarkProblem014/workspace/workspace/mia/tests/edge_1.py", line 2, in <module>
+    print(x + 1)
+          ~~^~~
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'int'
+Python Exit: 1
+RESULT: WRONG OUTPUT
+
+
+TEST: edge_2
+Description: Undefined variable
+---
+Output: None
+Exit Code: 0
+Python Output: Traceback (most recent call last):
+  File "/Users/wenhanlyu/.thebotcompany/dev/src/github.com/WenhanLyu/BotCompanyBenchmarkProblem014/workspace/workspace/mia/tests/edge_2.py", line 1, in <module>
+    print(undefined_variable)
+          ^^^^^^^^^^^^^^^^^^
+NameError: name 'undefined_variable' is not defined
+Python Exit: 1
+RESULT: WRONG OUTPUT
+
+
+TEST: edge_3
+Description: String division
+---
+Output: Runtime error: bad_variant_access
+Exit Code: 1
+Python Output: Traceback (most recent call last):
+  File "/Users/wenhanlyu/.thebotcompany/dev/src/github.com/WenhanLyu/BotCompanyBenchmarkProblem014/workspace/workspace/mia/tests/edge_3.py", line 2, in <module>
+    print(x / 2)
+          ~~^~~
+TypeError: unsupported operand type(s) for /: 'str' and 'int'
+Python Exit: 1
+RESULT: CRASH (bad_variant_access)
+
+
+TEST: edge_4
+Description: Float division by zero
+---
+Output: inf
+Exit Code: 0
+Python Output: Traceback (most recent call last):
+  File "/Users/wenhanlyu/.thebotcompany/dev/src/github.com/WenhanLyu/BotCompanyBenchmarkProblem014/workspace/workspace/mia/tests/edge_4.py", line 3, in <module>
+    print(x / y)
+          ~~^~~
+ZeroDivisionError: float division by zero
+Python Exit: 1
+RESULT: WRONG OUTPUT
+
