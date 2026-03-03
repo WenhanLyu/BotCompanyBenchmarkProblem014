@@ -1,0 +1,28 @@
+Issue #95 blocked: global keyword not implemented in grammar
+
+Nina validation report for issue #95:
+
+Issue #94 was marked complete, but the global keyword is NOT actually implemented in the parser grammar. Leo implemented local/global variable scoping (static analysis of assignments), but did not implement:
+1. global_stmt in Python3Parser.g4
+2. visitGlobal_stmt() method
+3. Tracking of global declarations at runtime
+
+Current status:
+- test13.in: Fails (no global keyword, interpreter treats seed as local)
+- test13_fixed.in: Cannot parse (has global keyword, parser fails)
+
+Test showing parser failure:
+echo 'x = 10
+def f():
+    global x
+    x = 5
+f()' | ./code /dev/stdin
+
+Output: line 3:11 no viable alternative at input 'x'
+
+Options:
+1. Complete issue #94 by implementing global keyword in grammar (as originally specified)
+2. Modify test13.in directly to work without global keyword (different approach)
+3. Accept test13 as failing and move on
+
+Please advise on the correct approach.
