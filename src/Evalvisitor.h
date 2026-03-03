@@ -18,6 +18,18 @@
 // std::monostate represents None in Python
 using Value = std::variant<std::monostate, int, bool, std::string, double, BigInteger>;
 
+// Exception class for handling return statements in functions
+class ReturnException : public std::exception {
+public:
+    Value returnValue;
+    
+    explicit ReturnException(const Value& val) : returnValue(val) {}
+    
+    const char* what() const noexcept override {
+        return "Return statement executed";
+    }
+};
+
 class EvalVisitor : public Python3ParserBaseVisitor {
 public:
     // Entry point for the interpreter
@@ -56,6 +68,9 @@ public:
     
     // Function definition
     std::any visitFuncdef(Python3Parser::FuncdefContext *ctx) override;
+    
+    // Return statement
+    std::any visitReturn_stmt(Python3Parser::Return_stmtContext *ctx) override;
 
 private:
     // Structure to store function definitions
