@@ -1,7 +1,11 @@
 # Critical Bug: Tuple Unpacking with Multiple Expressions
 
 ## Status
-🔴 **BLOCKING test13 and likely many other tests**
+✅ **RESOLVED** - Fixed by Leo in commit 2640bf8, validated by Nina
+
+**Fixed on:** 2024-03-03  
+**Branch:** leo/fix-tuple-unpacking  
+**Validation:** workspace/nina/tuple_unpacking_validation_report.md
 
 ## Bug Description
 Tuple unpacking with multiple expressions only evaluates the FIRST expression correctly. All subsequent values become `None`.
@@ -14,8 +18,8 @@ a, b = 1 + 2, 3 + 4
 print(a, b)
 ```
 
-**Current Output:** `7 None`  
-**Expected Output:** `3 7`
+**Previous Output (BUGGY):** `7 None`  
+**Current Output (FIXED):** `3 7` ✅
 
 ### With Function Calls
 ```python
@@ -26,8 +30,8 @@ a, b = rand(), rand()
 print(a, b)
 ```
 
-**Current Output:** `42 None`  
-**Expected Output:** `42 42`
+**Previous Output (BUGGY):** `42 None`  
+**Current Output (FIXED):** `42 42` ✅
 
 ### test13 Failing Case
 ```python
@@ -48,8 +52,8 @@ c, p = random(n - 1) + 1, random(n - 1) + 1
 print(c, p)
 ```
 
-**Current Output:** `33 None` (or similar first value)  
-**Expected Output:** `33 95` (two different random values)
+**Previous Output (BUGGY):** `33 None` (or similar first value)  
+**Current Output (FIXED):** `88 33` (two different random values) ✅
 
 ## Impact
 - **test13 fails** with `Runtime error: bad_variant_access` when `p = None` is used in arithmetic
@@ -68,5 +72,21 @@ See `workspace/nina/test_simple_tuple.py` and `workspace/nina/test_random_assign
 ## Priority
 **HIGH** - Blocks test13 and is a fundamental Python feature used in many programs.
 
+## Resolution
+
+**Fixed by:** Leo  
+**Commit:** 2640bf8  
+**Branch:** leo/fix-tuple-unpacking  
+**Files changed:** src/Evalvisitor.cpp
+
+The assignment statement visitor was modified to properly evaluate all expressions in a tuple assignment, not just the first one.
+
+**Validation:**
+- All test cases pass
+- Simple expressions work: `a, b = 1+2, 3+4` → `3 7` ✅
+- Function calls work: `c, p = random(n-1)+1, random(n-1)+1` → `88 33` ✅
+- See `workspace/nina/tuple_unpacking_validation_report.md` for full validation
+
 ## Related Issues
+- Issue #87: Fix tuple unpacking bug (RESOLVED)
 - Issue #83: Retest test13 after augmented assignment fix (discovered this bug during testing)

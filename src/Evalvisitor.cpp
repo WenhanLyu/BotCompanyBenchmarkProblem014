@@ -211,37 +211,68 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
         // Just an expression, evaluate it
         return visit(testlists[0]);
     } else {
-        // Assignment: a = b = c = value
+        // Assignment: a = b = c = value  OR  a, b = expr1, expr2 (tuple unpacking)
         // The last testlist is the value to assign
         // All previous testlists are variables to assign to
         
-        // Evaluate the rightmost expression (the value)
-        auto valueAny = visit(testlists.back());
-        Value value;
+        // Get the right-hand side testlist (the values)
+        auto rightTestlist = testlists.back();
+        auto rightTests = rightTestlist->test();
         
-        if (valueAny.has_value()) {
-            try {
-                value = std::any_cast<Value>(valueAny);
-            } catch (...) {
-                // If not a Value, use None
+        // Evaluate all values from the right-hand side
+        std::vector<Value> values;
+        for (auto rightTest : rightTests) {
+            auto valueAny = visit(rightTest);
+            Value value;
+            
+            if (valueAny.has_value()) {
+                try {
+                    value = std::any_cast<Value>(valueAny);
+                } catch (...) {
+                    // If not a Value, use None
+                    value = Value(std::monostate{});
+                }
+            } else {
                 value = Value(std::monostate{});
             }
-        } else {
-            value = Value(std::monostate{});
+            values.push_back(value);
         }
         
-        // Assign to all variables on the left (right to left, excluding the last one)
+        // Assign to all variables on the left (excluding the last testlist which is the RHS)
         for (size_t i = 0; i < testlists.size() - 1; i++) {
-            // For simple assignment, testlist should contain a single test with a NAME
             auto testlist = testlists[i];
             auto tests = testlist->test();
-            if (!tests.empty()) {
-                // Get the variable name from the test
-                // We need to traverse: test -> or_test -> and_test -> not_test -> comparison -> arith_expr -> term -> factor -> atom_expr -> atom -> NAME
+            
+            // Check if this is tuple unpacking (multiple tests on the left)
+            if (tests.size() > 1) {
+                // Tuple unpacking: a, b = expr1, expr2
+                // Assign each value to the corresponding variable
+                for (size_t j = 0; j < tests.size(); j++) {
+                    std::string varName = tests[j]->getText();
+                    
+                    // Assign the corresponding value (or None if not enough values)
+                    if (j < values.size()) {
+                        variables[varName] = values[j];
+                    } else {
+                        variables[varName] = Value(std::monostate{});
+                    }
+                }
+            } else if (!tests.empty()) {
+                // Simple assignment: a = value (or a = b = c = value)
+                // Assign the first value (or all values if it's a single expression)
                 std::string varName = tests[0]->getText();
                 
-                // Store the value in the variables map
-                variables[varName] = value;
+                if (values.size() == 1) {
+                    variables[varName] = values[0];
+                } else {
+                    // If RHS has multiple values but LHS is single, assign the first value
+                    // This handles cases like: a = 1, 2, 3 (a gets 1)
+                    if (!values.empty()) {
+                        variables[varName] = values[0];
+                    } else {
+                        variables[varName] = Value(std::monostate{});
+                    }
+                }
             }
         }
         
