@@ -78,6 +78,7 @@ private:
     struct FunctionDef {
         std::vector<std::string> parameters;  // Parameter names
         Python3Parser::SuiteContext* body;     // Function body (suite)
+        std::set<std::string> assignedVars;    // Variables assigned in function (local vars)
     };
     
     // Variable storage: maps variable names to their values
@@ -85,6 +86,12 @@ private:
     
     // Function storage: maps function names to their definitions
     std::map<std::string, FunctionDef> functions;
+    
+    // Local variable storage during function execution (nullptr when not in function)
+    std::map<std::string, Value>* localVariables = nullptr;
+    
+    // Set of variables that are local in the current function (nullptr when not in function)
+    const std::set<std::string>* currentFunctionLocals = nullptr;
     
     // Helper to remove quotes from string literals
     std::string unquoteString(const std::string& str);
@@ -107,6 +114,10 @@ private:
     bool willOverflowMultiply(int a, int b);
     bool willOverflowFloorDiv(int a, int b);
     bool willOverflowModulo(int a, int b);
+    
+    // Helper to find all variables assigned in a function body
+    void findAssignedVariables(Python3Parser::SuiteContext* suite, std::set<std::string>& assigned);
+    void findAssignedInStmt(Python3Parser::StmtContext* stmt, std::set<std::string>& assigned);
 };
 
 #endif//PYTHON_INTERPRETER_EVALVISITOR_H

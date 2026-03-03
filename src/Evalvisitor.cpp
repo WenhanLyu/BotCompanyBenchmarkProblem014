@@ -29,13 +29,52 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
             // Get the variable name
             std::string varName = testlists[0]->getText();
             
+            // Determine if this variable is local
+            bool isLocal = (currentFunctionLocals != nullptr && 
+                           currentFunctionLocals->find(varName) != currentFunctionLocals->end());
+            
             // Get the current value of the variable
-            auto it = variables.find(varName);
-            if (it == variables.end()) {
-                // Variable doesn't exist, initialize to appropriate default
-                variables[varName] = Value(0);
+            Value currentValue;
+            bool found = false;
+            
+            if (isLocal) {
+                // This is a local variable - look in local scope only
+                if (localVariables != nullptr) {
+                    auto localIt = localVariables->find(varName);
+                    if (localIt != localVariables->end()) {
+                        currentValue = localIt->second;
+                        found = true;
+                    }
+                }
+            } else {
+                // Check parameters (in local scope but not in assignedVars)
+                if (localVariables != nullptr) {
+                    auto localIt = localVariables->find(varName);
+                    if (localIt != localVariables->end()) {
+                        currentValue = localIt->second;
+                        found = true;
+                    }
+                }
+                // Then check global
+                if (!found) {
+                    auto it = variables.find(varName);
+                    if (it != variables.end()) {
+                        currentValue = it->second;
+                        found = true;
+                    }
+                }
             }
-            Value currentValue = variables[varName];
+            
+            if (!found) {
+                // Variable doesn't exist - initialize to 0
+                // (In real Python, this would be UnboundLocalError for locals)
+                currentValue = Value(0);
+                if (isLocal && localVariables != nullptr) {
+                    (*localVariables)[varName] = Value(0);
+                } else {
+                    variables[varName] = Value(0);
+                }
+            }
             
             // Evaluate the right-hand side
             auto rightAny = visit(testlists[1]);
@@ -200,8 +239,23 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                 }
             }
             
-            // Store the result
-            variables[varName] = result;
+            // Store the result (in local scope if local variable, otherwise global)
+            // isLocal was already defined above
+            if (isLocal && localVariables != nullptr) {
+                (*localVariables)[varName] = result;
+            } else if (!isLocal && localVariables != nullptr) {
+                // It's a parameter or global being modified
+                auto localIt = localVariables->find(varName);
+                if (localIt != localVariables->end()) {
+                    // Modify the parameter (local copy)
+                    (*localVariables)[varName] = result;
+                } else {
+                    // Modify global
+                    variables[varName] = result;
+                }
+            } else {
+                variables[varName] = result;
+            }
         }
         
         return std::any();
@@ -249,29 +303,40 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                 // Assign each value to the corresponding variable
                 for (size_t j = 0; j < tests.size(); j++) {
                     std::string varName = tests[j]->getText();
+                    Value value = (j < values.size()) ? values[j] : Value(std::monostate{});
                     
-                    // Assign the corresponding value (or None if not enough values)
-                    if (j < values.size()) {
-                        variables[varName] = values[j];
+                    // Determine if this variable is local
+                    bool isLocal = (currentFunctionLocals != nullptr && 
+                                   currentFunctionLocals->find(varName) != currentFunctionLocals->end());
+                    
+                    // Assign to the appropriate scope
+                    if (isLocal && localVariables != nullptr) {
+                        (*localVariables)[varName] = value;
                     } else {
-                        variables[varName] = Value(std::monostate{});
+                        variables[varName] = value;
                     }
                 }
             } else if (!tests.empty()) {
                 // Simple assignment: a = value (or a = b = c = value)
-                // Assign the first value (or all values if it's a single expression)
                 std::string varName = tests[0]->getText();
+                Value value;
                 
                 if (values.size() == 1) {
-                    variables[varName] = values[0];
+                    value = values[0];
                 } else {
                     // If RHS has multiple values but LHS is single, assign the first value
-                    // This handles cases like: a = 1, 2, 3 (a gets 1)
-                    if (!values.empty()) {
-                        variables[varName] = values[0];
-                    } else {
-                        variables[varName] = Value(std::monostate{});
-                    }
+                    value = !values.empty() ? values[0] : Value(std::monostate{});
+                }
+                
+                // Determine if this variable is local
+                bool isLocal = (currentFunctionLocals != nullptr && 
+                               currentFunctionLocals->find(varName) != currentFunctionLocals->end());
+                
+                // Assign to the appropriate scope
+                if (isLocal && localVariables != nullptr) {
+                    (*localVariables)[varName] = value;
+                } else {
+                    variables[varName] = value;
                 }
             }
         }
@@ -361,21 +426,17 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                 }
             }
             
-            // Save only the parameters that might shadow globals
-            std::map<std::string, Value> savedParameters;
-            std::set<std::string> parameterNames;
-            for (size_t i = 0; i < funcDef.parameters.size(); i++) {
-                parameterNames.insert(funcDef.parameters[i]);
-                // Save the parameter if it exists as a global variable
-                auto it = variables.find(funcDef.parameters[i]);
-                if (it != variables.end()) {
-                    savedParameters[funcDef.parameters[i]] = it->second;
-                }
-            }
+            // Create local variable scope
+            std::map<std::string, Value> localVars;
+            std::map<std::string, Value>* savedLocalVariables = localVariables;
+            const std::set<std::string>* savedFunctionLocals = currentFunctionLocals;
             
-            // Bind parameters to arguments
+            localVariables = &localVars;
+            currentFunctionLocals = &funcDef.assignedVars;
+            
+            // Bind parameters to arguments (parameters are always local)
             for (size_t i = 0; i < funcDef.parameters.size() && i < argValues.size(); i++) {
-                variables[funcDef.parameters[i]] = argValues[i];
+                localVars[funcDef.parameters[i]] = argValues[i];
             }
             
             // Execute the function body
@@ -387,16 +448,9 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                 returnValue = e.returnValue;
             }
             
-            // Clean up: remove parameters and restore any shadowed globals
-            for (const auto& paramName : parameterNames) {
-                // Remove the parameter from variables
-                variables.erase(paramName);
-                // If it was shadowing a global, restore the global
-                auto savedIt = savedParameters.find(paramName);
-                if (savedIt != savedParameters.end()) {
-                    variables[paramName] = savedIt->second;
-                }
-            }
+            // Restore previous scope
+            localVariables = savedLocalVariables;
+            currentFunctionLocals = savedFunctionLocals;
             
             // Return the value
             return returnValue;
@@ -477,7 +531,25 @@ std::any EvalVisitor::visitAtom(Python3Parser::AtomContext *ctx) {
     auto name = ctx->NAME();
     if (name) {
         std::string varName = name->getText();
-        // Look up the variable in the map
+        // If we're in a function and this variable is local, look in local scope
+        if (currentFunctionLocals != nullptr && currentFunctionLocals->find(varName) != currentFunctionLocals->end()) {
+            // This is a local variable - must look in local scope only
+            if (localVariables != nullptr) {
+                auto localIt = localVariables->find(varName);
+                if (localIt != localVariables->end()) {
+                    return localIt->second;
+                }
+            }
+            // Local variable not initialized - return None (or should error)
+            return Value(std::monostate{});
+        }
+        // Otherwise, check global variables (includes parameters which are in local scope but not in assignedVars)
+        if (localVariables != nullptr) {
+            auto localIt = localVariables->find(varName);
+            if (localIt != localVariables->end()) {
+                return localIt->second;
+            }
+        }
         auto it = variables.find(varName);
         if (it != variables.end()) {
             return it->second;
@@ -1281,10 +1353,15 @@ std::any EvalVisitor::visitFuncdef(Python3Parser::FuncdefContext *ctx) {
     // Get the function body (suite)
     auto suite = ctx->suite();
     
+    // Find all variables assigned in the function body
+    std::set<std::string> assignedVars;
+    findAssignedVariables(suite, assignedVars);
+    
     // Store the function definition
     FunctionDef funcDef;
     funcDef.parameters = params;
     funcDef.body = suite;
+    funcDef.assignedVars = assignedVars;
     functions[funcName] = funcDef;
     
     return std::any();
@@ -1403,4 +1480,113 @@ bool EvalVisitor::willOverflowModulo(int a, int b) {
     // Modulo operation doesn't overflow in Python semantics
     // The only problematic case in C++ is INT_MIN % -1, but Python handles this
     return false;
+}
+
+void EvalVisitor::findAssignedVariables(Python3Parser::SuiteContext* suite, std::set<std::string>& assigned) {
+    // A suite contains either:
+    // 1. simple_stmt (singular, on the same line as the colon)
+    // 2. NEWLINE INDENT stmt+ DEDENT (multi-line block)
+    
+    auto simple_stmt = suite->simple_stmt();
+    if (simple_stmt) {
+        auto small_stmt = simple_stmt->small_stmt();
+        if (small_stmt) {
+            // Check if this is an expression statement
+            auto expr_stmt = small_stmt->expr_stmt();
+            if (expr_stmt) {
+                // expr_stmt: testlist ( (augassign testlist) | ('=' testlist)* )
+                auto testlists = expr_stmt->testlist();
+                if (!testlists.empty()) {
+                    // The first testlist contains the assigned variable(s)
+                    std::string varText = testlists[0]->getText();
+                    if (varText.find(',') != std::string::npos) {
+                        // Tuple unpacking - split by comma
+                        size_t start = 0;
+                        size_t comma = varText.find(',');
+                        while (comma != std::string::npos) {
+                            std::string var = varText.substr(start, comma - start);
+                            var.erase(0, var.find_first_not_of(" \t"));
+                            var.erase(var.find_last_not_of(" \t") + 1);
+                            if (!var.empty()) assigned.insert(var);
+                            start = comma + 1;
+                            comma = varText.find(',', start);
+                        }
+                        std::string var = varText.substr(start);
+                        var.erase(0, var.find_first_not_of(" \t"));
+                        var.erase(var.find_last_not_of(" \t") + 1);
+                        if (!var.empty()) assigned.insert(var);
+                    } else {
+                        // Simple assignment
+                        assigned.insert(varText);
+                    }
+                }
+            }
+        }
+    }
+    
+    auto stmts = suite->stmt();
+    for (auto stmt : stmts) {
+        findAssignedInStmt(stmt, assigned);
+    }
+}
+
+void EvalVisitor::findAssignedInStmt(Python3Parser::StmtContext* stmt, std::set<std::string>& assigned) {
+    // Check simple statements
+    auto simple_stmt = stmt->simple_stmt();
+    if (simple_stmt) {
+        auto small_stmt = simple_stmt->small_stmt();
+        if (small_stmt) {
+            auto expr_stmt = small_stmt->expr_stmt();
+            if (expr_stmt) {
+                auto testlists = expr_stmt->testlist();
+                if (!testlists.empty()) {
+                    std::string varText = testlists[0]->getText();
+                    if (varText.find(',') != std::string::npos) {
+                        // Tuple unpacking
+                        size_t start = 0;
+                        size_t comma = varText.find(',');
+                        while (comma != std::string::npos) {
+                            std::string var = varText.substr(start, comma - start);
+                            var.erase(0, var.find_first_not_of(" \t"));
+                            var.erase(var.find_last_not_of(" \t") + 1);
+                            if (!var.empty()) assigned.insert(var);
+                            start = comma + 1;
+                            comma = varText.find(',', start);
+                        }
+                        std::string var = varText.substr(start);
+                        var.erase(0, var.find_first_not_of(" \t"));
+                        var.erase(var.find_last_not_of(" \t") + 1);
+                        if (!var.empty()) assigned.insert(var);
+                    } else {
+                        assigned.insert(varText);
+                    }
+                }
+            }
+        }
+    }
+    
+    // Check compound statements (if, while, etc.)
+    auto compound_stmt = stmt->compound_stmt();
+    if (compound_stmt) {
+        // Check if-statement
+        auto if_stmt = compound_stmt->if_stmt();
+        if (if_stmt) {
+            // Recursively check the if body
+            auto suites = if_stmt->suite();
+            for (auto suite : suites) {
+                findAssignedVariables(suite, assigned);
+            }
+        }
+        
+        // Check while-statement
+        auto while_stmt = compound_stmt->while_stmt();
+        if (while_stmt) {
+            auto suite = while_stmt->suite();
+            if (suite) {
+                findAssignedVariables(suite, assigned);
+            }
+        }
+        
+        // We don't need to check funcdef since nested functions create their own scope
+    }
 }
