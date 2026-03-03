@@ -109,8 +109,10 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                     std::string s = std::get<std::string>(currentValue);
                     int count = std::get<int>(rightValue);
                     std::string repeated;
+                    // Pre-allocate memory to avoid O(n²) behavior
+                    repeated.reserve(s.size() * count);
                     for (int i = 0; i < count; i++) {
-                        repeated += s;
+                        repeated.append(s);
                     }
                     result = repeated;
                 }
