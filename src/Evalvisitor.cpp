@@ -790,8 +790,36 @@ std::any EvalVisitor::visitTerm(Python3Parser::TermContext *ctx) {
         std::string op = ops[i]->getText();
         
         // Type coercion and operation
-        // Handle BigInteger operations
-        if (std::holds_alternative<BigInteger>(result) || std::holds_alternative<BigInteger>(factor)) {
+        // Handle string multiplication: string * int or int * string
+        if (op == "*" && ((std::holds_alternative<std::string>(result) && std::holds_alternative<int>(factor)) ||
+                          (std::holds_alternative<int>(result) && std::holds_alternative<std::string>(factor)))) {
+            std::string s;
+            int count;
+            
+            if (std::holds_alternative<std::string>(result)) {
+                // string * int
+                s = std::get<std::string>(result);
+                count = std::get<int>(factor);
+            } else {
+                // int * string
+                count = std::get<int>(result);
+                s = std::get<std::string>(factor);
+            }
+            
+            // Handle edge cases
+            if (count <= 0) {
+                result = std::string("");
+            } else {
+                std::string repeated;
+                // Pre-allocate memory to avoid O(n²) behavior
+                repeated.reserve(s.size() * count);
+                for (int i = 0; i < count; i++) {
+                    repeated.append(s);
+                }
+                result = repeated;
+            }
+        } else if (std::holds_alternative<BigInteger>(result) || std::holds_alternative<BigInteger>(factor)) {
+            // Handle BigInteger operations
             // Promote to BigInteger if needed
             BigInteger left = std::holds_alternative<BigInteger>(result) ? 
                 std::get<BigInteger>(result) : 
