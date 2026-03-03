@@ -235,39 +235,7 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                         if (argValue.has_value()) {
                             try {
                                 Value val = std::any_cast<Value>(argValue);
-                                // Print based on the type
-                                if (std::holds_alternative<std::string>(val)) {
-                                    std::cout << std::get<std::string>(val) << std::endl;
-                                } else if (std::holds_alternative<int>(val)) {
-                                    std::cout << std::get<int>(val) << std::endl;
-                                } else if (std::holds_alternative<double>(val)) {
-                                    // Python always shows at least one decimal place for floats
-                                    double d = std::get<double>(val);
-                                    std::ostringstream oss;
-                                    oss << std::fixed << std::setprecision(6) << d;
-                                    std::string result = oss.str();
-                                    // Remove trailing zeros after decimal point
-                                    size_t dotPos = result.find('.');
-                                    if (dotPos != std::string::npos) {
-                                        size_t lastNonZero = result.find_last_not_of('0');
-                                        if (lastNonZero > dotPos) {
-                                            result = result.substr(0, lastNonZero + 1);
-                                        } else {
-                                            // Keep at least one decimal place
-                                            result = result.substr(0, dotPos + 2);
-                                        }
-                                    }
-                                    std::cout << result << std::endl;
-                                } else if (std::holds_alternative<bool>(val)) {
-                                    // Python prints True/False, not 1/0
-                                    std::cout << (std::get<bool>(val) ? "True" : "False") << std::endl;
-                                } else if (std::holds_alternative<std::monostate>(val)) {
-                                    // Python prints None
-                                    std::cout << "None" << std::endl;
-                                } else if (std::holds_alternative<BigInteger>(val)) {
-                                    // Print BigInteger
-                                    std::cout << std::get<BigInteger>(val).toString() << std::endl;
-                                }
+                                std::cout << valueToString(val) << std::endl;
                             } catch (...) {
                                 // Not a Value, ignore
                             }
@@ -332,6 +300,12 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
 }
 
 std::any EvalVisitor::visitAtom(Python3Parser::AtomContext *ctx) {
+    // Check if this is a format string (f-string)
+    auto format_string = ctx->format_string();
+    if (format_string) {
+        return visit(format_string);
+    }
+    
     // Check if this is a string literal
     auto strings = ctx->STRING();
     if (!strings.empty()) {
@@ -403,6 +377,12 @@ std::any EvalVisitor::visitAtom(Python3Parser::AtomContext *ctx) {
         }
     }
     
+    // Check if this is a parenthesized test expression: '(' test ')'
+    auto test = ctx->test();
+    if (test) {
+        return visit(test);
+    }
+    
     // For other atoms, return empty
     return std::any();
 }
@@ -410,6 +390,78 @@ std::any EvalVisitor::visitAtom(Python3Parser::AtomContext *ctx) {
 std::any EvalVisitor::visitTrailer(Python3Parser::TrailerContext *ctx) {
     // Trailer is handled in visitAtom_expr
     return visitChildren(ctx);
+}
+
+std::any EvalVisitor::visitFormat_string(Python3Parser::Format_stringContext *ctx) {
+    // f-string format: f"text {expr} more text {expr2} ..."
+    // Children are:
+    // - FORMAT_QUOTATION (f" or f')
+    // - Alternating FORMAT_STRING_LITERAL (static text) and testlist (expressions in {})
+    // - QUOTATION (closing " or ')
+    
+    std::string result;
+    
+    // Get all children and process them
+    auto children = ctx->children;
+    
+    for (size_t i = 0; i < children.size(); i++) {
+        auto child = children[i];
+        
+        // Skip the opening FORMAT_QUOTATION (f" or f')
+        if (auto terminal = dynamic_cast<antlr4::tree::TerminalNode*>(child)) {
+            if (terminal->getSymbol()->getType() == Python3Parser::FORMAT_QUOTATION) {
+                continue;
+            }
+            // Skip the closing QUOTATION (" or ')
+            if (terminal->getSymbol()->getType() == Python3Parser::QUOTATION) {
+                continue;
+            }
+            // Process FORMAT_STRING_LITERAL (static text)
+            if (terminal->getSymbol()->getType() == Python3Parser::FORMAT_STRING_LITERAL) {
+                std::string text = terminal->getText();
+                // Handle escaped braces: {{ -> {, }} -> }
+                std::string processed;
+                for (size_t j = 0; j < text.length(); j++) {
+                    if (j + 1 < text.length() && text[j] == '{' && text[j + 1] == '{') {
+                        processed += '{';
+                        j++; // Skip next character
+                    } else if (j + 1 < text.length() && text[j] == '}' && text[j + 1] == '}') {
+                        processed += '}';
+                        j++; // Skip next character
+                    } else {
+                        processed += text[j];
+                    }
+                }
+                result += processed;
+                continue;
+            }
+            // Skip OPEN_BRACE - it's handled by the testlist
+            if (terminal->getSymbol()->getType() == Python3Parser::OPEN_BRACE) {
+                continue;
+            }
+            // Skip CLOSE_BRACE - it's handled by the testlist
+            if (terminal->getSymbol()->getType() == Python3Parser::CLOSE_BRACE) {
+                continue;
+            }
+        }
+        
+        // Process testlist (expressions in {})
+        if (auto testlist = dynamic_cast<Python3Parser::TestlistContext*>(child)) {
+            // Evaluate the expression
+            auto exprValue = visit(testlist);
+            if (exprValue.has_value()) {
+                try {
+                    Value val = std::any_cast<Value>(exprValue);
+                    // Convert the value to string and append
+                    result += valueToString(val);
+                } catch (...) {
+                    // If conversion fails, skip
+                }
+            }
+        }
+    }
+    
+    return Value(result);
 }
 
 std::any EvalVisitor::visitArith_expr(Python3Parser::Arith_exprContext *ctx) {
@@ -789,6 +841,44 @@ std::string EvalVisitor::unquoteString(const std::string& str) {
         }
     }
     return str;
+}
+
+std::string EvalVisitor::valueToString(const Value& val) {
+    // Convert a Value to its string representation
+    // This is used for both print() and f-string interpolation
+    if (std::holds_alternative<std::string>(val)) {
+        return std::get<std::string>(val);
+    } else if (std::holds_alternative<int>(val)) {
+        return std::to_string(std::get<int>(val));
+    } else if (std::holds_alternative<double>(val)) {
+        // Python always shows at least one decimal place for floats
+        double d = std::get<double>(val);
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(6) << d;
+        std::string result = oss.str();
+        // Remove trailing zeros after decimal point
+        size_t dotPos = result.find('.');
+        if (dotPos != std::string::npos) {
+            size_t lastNonZero = result.find_last_not_of('0');
+            if (lastNonZero > dotPos) {
+                result = result.substr(0, lastNonZero + 1);
+            } else {
+                // Keep at least one decimal place
+                result = result.substr(0, dotPos + 2);
+            }
+        }
+        return result;
+    } else if (std::holds_alternative<bool>(val)) {
+        // Python prints True/False, not 1/0
+        return std::get<bool>(val) ? "True" : "False";
+    } else if (std::holds_alternative<std::monostate>(val)) {
+        // Python prints None
+        return "None";
+    } else if (std::holds_alternative<BigInteger>(val)) {
+        // Print BigInteger
+        return std::get<BigInteger>(val).toString();
+    }
+    return "";
 }
 
 bool EvalVisitor::valueToBool(const Value& val) {
