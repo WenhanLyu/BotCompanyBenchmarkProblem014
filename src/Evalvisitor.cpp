@@ -325,9 +325,10 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                             }
                         }
                     }
-                    std::cout << std::endl;
                 }
             }
+            // Always print newline, even if no arguments
+            std::cout << std::endl;
             return std::any();
         }
         
