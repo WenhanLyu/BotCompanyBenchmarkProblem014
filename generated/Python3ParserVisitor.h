@@ -47,6 +47,8 @@ public:
 
     virtual std::any visitReturn_stmt(Python3Parser::Return_stmtContext *context) = 0;
 
+    virtual std::any visitGlobal_stmt(Python3Parser::Global_stmtContext *context) = 0;
+
     virtual std::any visitCompound_stmt(Python3Parser::Compound_stmtContext *context) = 0;
 
     virtual std::any visitIf_stmt(Python3Parser::If_stmtContext *context) = 0;

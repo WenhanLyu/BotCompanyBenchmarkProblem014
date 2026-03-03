@@ -30,7 +30,9 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
             std::string varName = testlists[0]->getText();
             
             // Determine if this variable is local
-            bool isLocal = (currentFunctionLocals != nullptr && 
+            // If declared global, always use global scope
+            bool isGlobal = (currentFunctionGlobals.find(varName) != currentFunctionGlobals.end());
+            bool isLocal = !isGlobal && (currentFunctionLocals != nullptr && 
                            currentFunctionLocals->find(varName) != currentFunctionLocals->end());
             
             // Get the current value of the variable
@@ -306,7 +308,9 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                     Value value = (j < values.size()) ? values[j] : Value(std::monostate{});
                     
                     // Determine if this variable is local
-                    bool isLocal = (currentFunctionLocals != nullptr && 
+                    // If declared global, always use global scope
+                    bool isGlobal = (currentFunctionGlobals.find(varName) != currentFunctionGlobals.end());
+                    bool isLocal = !isGlobal && (currentFunctionLocals != nullptr && 
                                    currentFunctionLocals->find(varName) != currentFunctionLocals->end());
                     
                     // Assign to the appropriate scope
@@ -329,7 +333,9 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                 }
                 
                 // Determine if this variable is local
-                bool isLocal = (currentFunctionLocals != nullptr && 
+                // If declared global, always use global scope
+                bool isGlobal = (currentFunctionGlobals.find(varName) != currentFunctionGlobals.end());
+                bool isLocal = !isGlobal && (currentFunctionLocals != nullptr && 
                                currentFunctionLocals->find(varName) != currentFunctionLocals->end());
                 
                 // Assign to the appropriate scope
@@ -430,9 +436,11 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
             std::map<std::string, Value> localVars;
             std::map<std::string, Value>* savedLocalVariables = localVariables;
             const std::set<std::string>* savedFunctionLocals = currentFunctionLocals;
+            std::set<std::string> savedFunctionGlobals = currentFunctionGlobals;
             
             localVariables = &localVars;
             currentFunctionLocals = &funcDef.assignedVars;
+            currentFunctionGlobals = funcDef.globalVars;
             
             // Bind parameters to arguments (parameters are always local)
             for (size_t i = 0; i < funcDef.parameters.size() && i < argValues.size(); i++) {
@@ -451,6 +459,7 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
             // Restore previous scope
             localVariables = savedLocalVariables;
             currentFunctionLocals = savedFunctionLocals;
+            currentFunctionGlobals = savedFunctionGlobals;
             
             // Return the value
             return returnValue;
@@ -531,8 +540,11 @@ std::any EvalVisitor::visitAtom(Python3Parser::AtomContext *ctx) {
     auto name = ctx->NAME();
     if (name) {
         std::string varName = name->getText();
-        // If we're in a function and this variable is local, look in local scope
-        if (currentFunctionLocals != nullptr && currentFunctionLocals->find(varName) != currentFunctionLocals->end()) {
+        // Check if declared global
+        bool isGlobal = (currentFunctionGlobals.find(varName) != currentFunctionGlobals.end());
+        
+        // If we're in a function and this variable is local (and NOT global), look in local scope
+        if (!isGlobal && currentFunctionLocals != nullptr && currentFunctionLocals->find(varName) != currentFunctionLocals->end()) {
             // This is a local variable - must look in local scope only
             if (localVariables != nullptr) {
                 auto localIt = localVariables->find(varName);
@@ -543,8 +555,8 @@ std::any EvalVisitor::visitAtom(Python3Parser::AtomContext *ctx) {
             // Local variable not initialized - return None (or should error)
             return Value(std::monostate{});
         }
-        // Otherwise, check global variables (includes parameters which are in local scope but not in assignedVars)
-        if (localVariables != nullptr) {
+        // Otherwise, check global variables (includes parameters which are in local scope but not in assignedVars, and globals)
+        if (!isGlobal && localVariables != nullptr) {
             auto localIt = localVariables->find(varName);
             if (localIt != localVariables->end()) {
                 return localIt->second;
@@ -1357,11 +1369,16 @@ std::any EvalVisitor::visitFuncdef(Python3Parser::FuncdefContext *ctx) {
     std::set<std::string> assignedVars;
     findAssignedVariables(suite, assignedVars);
     
+    // Find all global declarations in the function body
+    std::set<std::string> globalVars;
+    findGlobalDeclarations(suite, globalVars);
+    
     // Store the function definition
     FunctionDef funcDef;
     funcDef.parameters = params;
     funcDef.body = suite;
     funcDef.assignedVars = assignedVars;
+    funcDef.globalVars = globalVars;
     functions[funcName] = funcDef;
     
     return std::any();
@@ -1391,6 +1408,13 @@ std::any EvalVisitor::visitReturn_stmt(Python3Parser::Return_stmtContext *ctx) {
     
     // Throw the exception to exit the function
     throw ReturnException(returnValue);
+}
+
+std::any EvalVisitor::visitGlobal_stmt(Python3Parser::Global_stmtContext *ctx) {
+    // global_stmt: GLOBAL NAME (',' NAME)*
+    // The global declarations were already collected during function definition parsing.
+    // This visitor method is here to handle global statements during execution (they're no-ops at runtime).
+    return nullptr;
 }
 
 // Python-style floor division: floors toward -∞
@@ -1584,6 +1608,76 @@ void EvalVisitor::findAssignedInStmt(Python3Parser::StmtContext* stmt, std::set<
             auto suite = while_stmt->suite();
             if (suite) {
                 findAssignedVariables(suite, assigned);
+            }
+        }
+        
+        // We don't need to check funcdef since nested functions create their own scope
+    }
+}
+
+void EvalVisitor::findGlobalDeclarations(Python3Parser::SuiteContext* suite, std::set<std::string>& globals) {
+    // A suite contains either:
+    // 1. simple_stmt (singular, on the same line as the colon)
+    // 2. NEWLINE INDENT stmt+ DEDENT (multi-line block)
+    
+    auto simple_stmt = suite->simple_stmt();
+    if (simple_stmt) {
+        auto small_stmt = simple_stmt->small_stmt();
+        if (small_stmt) {
+            // Check if this is a global statement
+            auto global_stmt = small_stmt->global_stmt();
+            if (global_stmt) {
+                // Extract all variable names from global statement
+                auto names = global_stmt->NAME();
+                for (auto name : names) {
+                    globals.insert(name->getText());
+                }
+            }
+        }
+    }
+    
+    auto stmts = suite->stmt();
+    for (auto stmt : stmts) {
+        findGlobalInStmt(stmt, globals);
+    }
+}
+
+void EvalVisitor::findGlobalInStmt(Python3Parser::StmtContext* stmt, std::set<std::string>& globals) {
+    // Check simple statements
+    auto simple_stmt = stmt->simple_stmt();
+    if (simple_stmt) {
+        auto small_stmt = simple_stmt->small_stmt();
+        if (small_stmt) {
+            auto global_stmt = small_stmt->global_stmt();
+            if (global_stmt) {
+                // Extract all variable names from global statement
+                auto names = global_stmt->NAME();
+                for (auto name : names) {
+                    globals.insert(name->getText());
+                }
+            }
+        }
+    }
+    
+    // Check compound statements (if, while, etc.)
+    auto compound_stmt = stmt->compound_stmt();
+    if (compound_stmt) {
+        // Check if-statement
+        auto if_stmt = compound_stmt->if_stmt();
+        if (if_stmt) {
+            // Recursively check the if body
+            auto suites = if_stmt->suite();
+            for (auto suite : suites) {
+                findGlobalDeclarations(suite, globals);
+            }
+        }
+        
+        // Check while-statement
+        auto while_stmt = compound_stmt->while_stmt();
+        if (while_stmt) {
+            auto suite = while_stmt->suite();
+            if (suite) {
+                findGlobalDeclarations(suite, globals);
             }
         }
         

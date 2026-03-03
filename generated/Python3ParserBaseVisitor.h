@@ -71,6 +71,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitGlobal_stmt(Python3Parser::Global_stmtContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitCompound_stmt(Python3Parser::Compound_stmtContext *ctx) override {
     return visitChildren(ctx);
   }

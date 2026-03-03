@@ -124,6 +124,7 @@ TRUE: 'True';
 FALSE: 'False';
 CONTINUE: 'continue';
 BREAK: 'break';
+GLOBAL: 'global';
 
 NEWLINE: (
 		{atStartOfInput()}? SPACES

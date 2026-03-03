@@ -72,6 +72,9 @@ public:
     
     // Return statement
     std::any visitReturn_stmt(Python3Parser::Return_stmtContext *ctx) override;
+    
+    // Global statement
+    std::any visitGlobal_stmt(Python3Parser::Global_stmtContext *ctx) override;
 
 private:
     // Structure to store function definitions
@@ -79,6 +82,7 @@ private:
         std::vector<std::string> parameters;  // Parameter names
         Python3Parser::SuiteContext* body;     // Function body (suite)
         std::set<std::string> assignedVars;    // Variables assigned in function (local vars)
+        std::set<std::string> globalVars;      // Variables declared with global keyword
     };
     
     // Variable storage: maps variable names to their values
@@ -92,6 +96,9 @@ private:
     
     // Set of variables that are local in the current function (nullptr when not in function)
     const std::set<std::string>* currentFunctionLocals = nullptr;
+    
+    // Track global declarations in current function (used during function body parsing)
+    std::set<std::string> currentFunctionGlobals;
     
     // Helper to remove quotes from string literals
     std::string unquoteString(const std::string& str);
@@ -118,6 +125,10 @@ private:
     // Helper to find all variables assigned in a function body
     void findAssignedVariables(Python3Parser::SuiteContext* suite, std::set<std::string>& assigned);
     void findAssignedInStmt(Python3Parser::StmtContext* stmt, std::set<std::string>& assigned);
+    
+    // Helper to find all global declarations in a function body
+    void findGlobalDeclarations(Python3Parser::SuiteContext* suite, std::set<std::string>& globals);
+    void findGlobalInStmt(Python3Parser::StmtContext* stmt, std::set<std::string>& globals);
 };
 
 #endif//PYTHON_INTERPRETER_EVALVISITOR_H
