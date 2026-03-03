@@ -284,8 +284,17 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                 }
             }
             
-            // Save the current variable context (for local scope)
-            std::map<std::string, Value> savedVariables = variables;
+            // Save only the parameters that might shadow globals
+            std::map<std::string, Value> savedParameters;
+            std::set<std::string> parameterNames;
+            for (size_t i = 0; i < funcDef.parameters.size(); i++) {
+                parameterNames.insert(funcDef.parameters[i]);
+                // Save the parameter if it exists as a global variable
+                auto it = variables.find(funcDef.parameters[i]);
+                if (it != variables.end()) {
+                    savedParameters[funcDef.parameters[i]] = it->second;
+                }
+            }
             
             // Bind parameters to arguments
             for (size_t i = 0; i < funcDef.parameters.size() && i < argValues.size(); i++) {
@@ -293,12 +302,27 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
             }
             
             // Execute the function body
-            visit(funcDef.body);
+            Value returnValue = Value(std::monostate{});  // Default return value is None
+            try {
+                visit(funcDef.body);
+            } catch (const ReturnException& e) {
+                // Function returned a value
+                returnValue = e.returnValue;
+            }
             
-            // Restore the variable context (local scope ends)
-            variables = savedVariables;
+            // Clean up: remove parameters and restore any shadowed globals
+            for (const auto& paramName : parameterNames) {
+                // Remove the parameter from variables
+                variables.erase(paramName);
+                // If it was shadowing a global, restore the global
+                auto savedIt = savedParameters.find(paramName);
+                if (savedIt != savedParameters.end()) {
+                    variables[paramName] = savedIt->second;
+                }
+            }
             
-            return std::any();
+            // Return the value
+            return returnValue;
         }
         
         return std::any();
@@ -1187,6 +1211,32 @@ std::any EvalVisitor::visitFuncdef(Python3Parser::FuncdefContext *ctx) {
     functions[funcName] = funcDef;
     
     return std::any();
+}
+
+std::any EvalVisitor::visitReturn_stmt(Python3Parser::Return_stmtContext *ctx) {
+    // return_stmt: 'return' [testlist]
+    // Evaluate the return expression (if present)
+    Value returnValue = Value(std::monostate{});  // Default to None
+    
+    auto testlist = ctx->testlist();
+    if (testlist) {
+        // testlist can have multiple tests, but typically just one for return
+        auto tests = testlist->test();
+        if (!tests.empty()) {
+            auto result = visit(tests[0]);
+            if (result.has_value()) {
+                try {
+                    returnValue = std::any_cast<Value>(result);
+                } catch (...) {
+                    // If cast fails, return None
+                    returnValue = Value(std::monostate{});
+                }
+            }
+        }
+    }
+    
+    // Throw the exception to exit the function
+    throw ReturnException(returnValue);
 }
 
 // Python-style floor division: floors toward -∞
