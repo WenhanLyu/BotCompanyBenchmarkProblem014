@@ -632,6 +632,28 @@ std::any EvalVisitor::visitTerm(Python3Parser::TermContext *ctx) {
             double left = std::holds_alternative<double>(result) ? std::get<double>(result) : static_cast<double>(std::get<int>(result));
             double right = std::holds_alternative<double>(factor) ? std::get<double>(factor) : static_cast<double>(std::get<int>(factor));
             result = left / right;
+        } else if (op == "*" && std::holds_alternative<std::string>(result) && std::holds_alternative<int>(factor)) {
+            // String * int
+            std::string s = std::get<std::string>(result);
+            int count = std::get<int>(factor);
+            std::string repeated;
+            // Pre-allocate memory to avoid O(n²) behavior
+            repeated.reserve(s.size() * count);
+            for (int i = 0; i < count; i++) {
+                repeated.append(s);
+            }
+            result = repeated;
+        } else if (op == "*" && std::holds_alternative<int>(result) && std::holds_alternative<std::string>(factor)) {
+            // int * String
+            int count = std::get<int>(result);
+            std::string s = std::get<std::string>(factor);
+            std::string repeated;
+            // Pre-allocate memory to avoid O(n²) behavior
+            repeated.reserve(s.size() * count);
+            for (int i = 0; i < count; i++) {
+                repeated.append(s);
+            }
+            result = repeated;
         } else if (std::holds_alternative<int>(result) && std::holds_alternative<int>(factor)) {
             // int op int -> int (except /)
             int left = std::get<int>(result);
