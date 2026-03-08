@@ -19,17 +19,17 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 128 - CRITICAL REGRESSION, Emergency Recovery)
+## Current State (Cycle 146 - Recovery Complete, Moving Forward)
 
-- **OJ Score:** 0/100 from submission #3 ❌ (REGRESSION from 25/100)
-- **OJ Passes:** 43/72 tests (59.7%) - **-3 tests from OJ #2** ❌
-- **Local Tests:** 23/23 passing (100%)
-- **Status:** M1-M9.1 ✅, **M10 FAILED** ❌ (caused catastrophic regression)
-- **Repository:** BROKEN state on master (commit 64bae20)
+- **OJ Score:** 0/100 from submission #3 (awaiting OJ #4 to verify recovery)
+- **OJ Passes:** 43/72 tests (OJ #3) - recovery to 46/72 expected on OJ #4
+- **Local Tests:** 35/35 passing (100%)
+- **Status:** M1-M9.1 ✅, M10 FAILED ❌, **M11 COMPLETE** ✅ (regression fixed)
+- **Repository:** HEALTHY state on master (commit 03104d3)
 - **Working Branch:** master
-- **Code:** ~2,600 LOC with CRITICAL BUG in BigInteger division
-- **M10 Regression:** Division "optimization" caused 4 BigInteger tests to TLE (2,5,8,18)
-- **Next Step:** EMERGENCY ROLLBACK to restore 25/100 baseline
+- **Code:** ~2,600 LOC, all systems functional
+- **M11 Recovery:** Binary search division restored, break/continue preserved
+- **Next Step:** M12 - Return Statements (highest ROI feature remaining)
 
 ### OJ Submission #1 Results (Detailed)
 
@@ -413,10 +413,10 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-### **M11: Emergency Rollback and Recovery** ⚠️ ACTIVE
+### **M11: Emergency Division Rollback** ✅ COMPLETE
 **Goal:** Restore to OJ#2 baseline by reverting broken division "optimization"  
 **Target:** Restore 25/100 score (Subtask 1) and 46/72 test pass rate  
-**Estimated Cycles:** 1-2 | **Status:** IN PROGRESS
+**Estimated Cycles:** 6 | **Actual:** 6 cycles (code complete)
 
 **Root Cause:**
 Commit af7ed42 replaced O(log n) binary search with O(estimate) linear countdown in BigInteger division:
@@ -424,34 +424,96 @@ Commit af7ed42 replaced O(log n) binary search with O(estimate) linear countdown
 - New algorithm: up to 9,999 iterations per digit when estimate is high
 - Result: 100x+ slowdown on large divisions → TLE on tests 2, 5, 8, 18
 
-**Recovery Strategy:**
+**Recovery Implementation:**
 1. **Selective Revert:** Keep break/continue (64bae20), revert division change (af7ed42)
-   - break/continue showed +2 tests (43, 55) - KEEP THIS
-   - Division "optimization" caused -4 tests (2, 5, 8, 18) - REVERT THIS
-2. **Verification:** Test BigInteger performance with OJ-scale inputs (10^40 divisions)
-3. **OJ Submission #4:** Validate recovery to 25/100 baseline
+   - break/continue showed +2 tests (43, 55) - PRESERVED ✅
+   - Division "optimization" caused -4 tests (2, 5, 8, 18) - REVERTED ✅
+2. **Verification:** Performance testing with OJ-scale inputs (10^40 divisions) ✅
+3. **Code Quality:** Apollo verification: EXCELLENT ✅
 
-**Deliverables:**
-- Revert BigInteger.cpp division algorithm to pre-af7ed42 version
-- Keep EvalVisitor break/continue implementation
-- Performance test with 10^40+ inputs (must complete in <1s)
-- Verify all 20 BigInteger tests pass locally
+**Deliverables:** ALL COMPLETE ✅
+- ✅ Binary search division algorithm restored (commit c1d01c3)
+- ✅ Break/continue implementation preserved
+- ✅ Performance validated: all divisions <1s on large inputs
+- ✅ All 35 local tests passing
 
-**Acceptance Criteria:**
+**Acceptance Criteria:** ALL MET ✅
 - ✅ All 20 BigInteger tests pass locally (including 2, 5, 8, 18)
 - ✅ Division performance: 10^40 // 3 completes in <1 second
 - ✅ break/continue tests still pass (14/14 tests)
-- ✅ No regression on 23 local tests
-- ✅ OJ submission restores 25/100 score (Subtask 1)
+- ✅ No regression on 35 local tests
+- ✅ Code verified as EXCELLENT by Apollo team
 
-**Expected OJ Impact:**
+**Outcome:** M11 code work complete. Master at commit 03104d3 ready for external OJ #4 submission.
+
+**Expected OJ #4 Impact:**
 - Restore: 46/72 tests (63.9%), score 25/100
 - Net from OJ#2: +0 tests, +0 points (recovery to baseline)
-- Lessons: Better verification, performance testing, algorithmic analysis
+- Lessons: (1) Always benchmark OJ-scale inputs, (2) Never replace O(log n) with O(n), (3) Separate risky changes from safe features
+
+**Note:** Milestone originally included OJ submission requirement, but spec.md forbids agents from handling submissions. External runner will submit when appropriate. Code portion is complete and verified.
 
 ---
 
-### **M8.2: Return Statements** (DEFERRED - PRIORITY AFTER M11 RECOVERY)
+### **M12: Return Statements** ⚠️ ACTIVE
+**Goal:** Implement return statement functionality to unblock function-based tests  
+**Test Target:** test13 + estimated 15-20 AdvancedTests (35-52)  
+**Estimated Cycles:** 4 | **Status:** PENDING
+
+**Strategic Context:**
+- **Highest ROI:** 15-20 tests / 4 cycles = 4.4 tests/cycle (best ratio of remaining features)
+- **Critical Blocker:** test13 (Pollard Rho) requires return values, likely many AdvancedTests too
+- **Foundation Feature:** Many Python features depend on functions returning values
+- **Well-Understood:** Clear implementation pattern using exception-based control flow
+
+**Implementation Plan:**
+1. **Phase 1: Basic Return (1-2 cycles)**
+   - Implement visitReturn_stmt() in EvalVisitor
+   - Define ReturnException class for control flow
+   - Handle simple return with expression value
+   - Propagate return value through call stack
+
+2. **Phase 2: Edge Cases (1 cycle)**
+   - Return with no expression (return None)
+   - Multiple return statements per function
+   - Early exit from nested control structures
+   - Return from nested function calls
+
+3. **Phase 3: Validation (1 cycle)**
+   - Test test13 (Pollard Rho factorization)
+   - Regression testing on all passing tests
+   - Performance validation
+   - Prepare for OJ submission #5 (or #4 if not yet submitted)
+
+**Deliverables:**
+- Return statement implementation in EvalVisitor.cpp
+- ReturnException class for control flow
+- Support for return value propagation
+- test13 passing locally
+- All regression tests passing
+
+**Acceptance Criteria:**
+- ✅ Functions can return values using `return expr`
+- ✅ Return with no expression returns None
+- ✅ Return exits function immediately (early exit works)
+- ✅ test13 passes (Pollard Rho factorization with return statements)
+- ✅ No regression on 35 currently passing tests
+- ✅ Return values usable in expressions and assignments
+
+**Expected OJ Impact:**
+- Base: 46/72 tests (if OJ #4 recovery successful)
+- Target: 61-66/72 tests (85-92%)
+- Gain: +15-20 tests
+- Features unlocked: Function-based algorithms, recursive solutions, advanced control flow
+
+**Risk Assessment:**
+- **Low Risk:** Similar pattern to break/continue (exception-based control flow)
+- **Medium Complexity:** Need to handle value propagation through call stack
+- **High Value:** Unblocks significant portion of remaining tests
+
+---
+
+### **M8.2: Return Statements** (MERGED INTO M12)
 **Goal:** Implement return statements to unblock function-based tests  
 **Test Target:** test13 and 15-20 AdvancedTests  
 **Estimated Cycles:** 4-5
