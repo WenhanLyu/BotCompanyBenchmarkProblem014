@@ -915,7 +915,13 @@ std::any EvalVisitor::visitFactor(Python3Parser::FactorContext *ctx) {
             if (text[0] == '-') {
                 // Unary negation
                 if (std::holds_alternative<int>(factorVal)) {
-                    return Value(-std::get<int>(factorVal));
+                    int value = std::get<int>(factorVal);
+                    // Check for INT_MIN overflow - promote to BigInteger
+                    if (value == INT_MIN) {
+                        BigInteger bigVal(value);
+                        return Value(-bigVal);
+                    }
+                    return Value(-value);
                 } else if (std::holds_alternative<double>(factorVal)) {
                     return Value(-std::get<double>(factorVal));
                 } else if (std::holds_alternative<BigInteger>(factorVal)) {
