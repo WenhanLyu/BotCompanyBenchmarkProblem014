@@ -324,26 +324,36 @@ void BigInteger::divideAbs(const BigInteger& divisor, BigInteger& quotient, BigI
             if (estimate >= BASE) estimate = BASE - 1;
             if (estimate < 0) estimate = 0;
             
-            // Use estimate directly and correct if needed (at most 1-2 iterations)
-            // This is O(1) instead of O(log n) per digit
-            count = (int)estimate;
+            // Verify estimate and adjust if needed using binary search
+            // This prevents O(n) behavior when estimate is significantly off
+            int low = 0;
+            int high = (int)estimate;
+            count = 0;
             
-            // Verify estimate and adjust downward if needed
-            // The estimate is almost always correct or off by 1-2
-            while (count > 0) {
-                BigInteger product(count);
+            while (low <= high) {
+                int mid = low + (high - low) / 2;
+                
+                // Calculate divisor * mid
+                BigInteger product(mid);
                 product = divisor * product;
                 
-                // Check if count is valid
+                // Check if mid is valid
                 int cmp = remainder.compareAbs(product);
                 if (cmp >= 0) {
-                    // count works, subtract and break
-                    remainder = remainder.subtractAbs(product);
-                    break;
+                    // mid works, but maybe we can go higher
+                    count = mid;
+                    low = mid + 1;
                 } else {
-                    // count is too high, decrement and try again
-                    count--;
+                    // mid is too high
+                    high = mid - 1;
                 }
+            }
+            
+            // Subtract the final product
+            if (count > 0) {
+                BigInteger product(count);
+                product = divisor * product;
+                remainder = remainder.subtractAbs(product);
             }
         }
         
