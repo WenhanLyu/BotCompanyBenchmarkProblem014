@@ -1,0 +1,101 @@
+=== Test 1: INT_MIN Negation ===
+2147483648
+<class 'int'>
+
+=== Test 2: INT_MIN Unary Negation ===
+2147483648
+
+=== Test 3: Negative String Repetition ===
+
+0
+''
+
+=== Test 4: Zero String Repetition ===
+
+0
+
+=== Test 5: String Repetition Edge Cases ===
+a
+
+
+
+
+=== Test 6: Division by Zero (would crash without fix) ===
+ZeroDivisionError: integer division or modulo by zero
+
+=== Test 7: Modulo by Zero (would crash without fix) ===
+ZeroDivisionError: integer modulo by zero
+
+=== Test 8: Float Division by Zero ===
+ZeroDivisionError: float division by zero
+
+=== Test 9: Variable Division by Zero ===
+ZeroDivisionError: integer division or modulo by zero
+
+=== Test 10: Augmented Assignment Division by Zero ===
+ZeroDivisionError: integer division or modulo by zero
+
+=== Test 11: Complex Expression with Zero ===
+ZeroDivisionError: integer division or modulo by zero
+
+=== Test 12: INT_MIN Division ===
+2147483648
+<class 'int'>
+
+=== Test 13: INT_MIN Modulo ===
+0
+
+=== Test 14: Large Negative Times Small Negative ===
+2147483648
+<class 'int'>
+
+=== Test 15: Overflow in Addition ===
+2147483648
+<class 'int'>
+
+=== Test 16: Overflow in Subtraction ===
+-2147483649
+<class 'int'>
+
+=== Test 17: Overflow in Multiplication ===
+4294967294
+<class 'int'>
+
+=== Test 18: String and Int Multiplication ===
+abcabcabc
+test
+xxxxxxxxxx
+
+=== Test 19: Floor Division with Doubles ===
+3.0
+<class 'float'>
+
+=== Test 20: Floor Division Sign Handling ===
+3
+-4
+-4
+3
+
+=== Test 21: Modulo Sign Handling ===
+1
+1
+-1
+-1
+
+=== Test 22: Combined Operations ===
+3
+
+=== Test 23: String Augmented Assignment ===
+hello world
+hello worldhello world
+
+=== Test 24: BigInteger Boundary ===
+10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001
+
+=== Test 25: Unary Plus ===
+5
+-5
+2147483647
+
+=== TESTS COMPLETE ===
