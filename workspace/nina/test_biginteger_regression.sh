@@ -1,6 +1,6 @@
 #!/bin/bash
-# Regression test script for Part A optimizations
-# Tests basic-testcases 0-15
+# BigInteger regression test script
+# Tests BigIntegerTest 0-19
 
 cd /Users/wenhanlyu/Documents/BotCompany/tbc_projdevbench_runs/tbc-pdb-014
 
@@ -8,14 +8,14 @@ PASS=0
 FAIL=0
 TOTAL=0
 
-echo "Running regression tests (test 0-15)..."
-echo "========================================"
+echo "Running BigInteger regression tests (0-19)..."
+echo "=============================================="
 
-for i in {0..15}; do
+for i in {0..19}; do
     TOTAL=$((TOTAL + 1))
-    INPUT="testcases/basic-testcases/test${i}.in"
-    EXPECTED="testcases/basic-testcases/test${i}.out"
-    ACTUAL="/tmp/test${i}_actual.out"
+    INPUT="testcases/bigint-testcases/BigIntegerTest${i}.in"
+    EXPECTED="testcases/bigint-testcases/BigIntegerTest${i}.out"
+    ACTUAL="/tmp/BigIntegerTest${i}_actual.out"
     
     if [ ! -f "$INPUT" ]; then
         echo "Test $i: SKIP (no input file)"
@@ -33,32 +33,30 @@ for i in {0..15}; do
     if ./code < "$INPUT" > "$ACTUAL" 2>&1; then
         # Compare outputs
         if diff -q "$EXPECTED" "$ACTUAL" > /dev/null 2>&1; then
-            echo "Test $i: PASS ✓"
+            echo "BigIntegerTest $i: PASS ✓"
             PASS=$((PASS + 1))
         else
-            echo "Test $i: FAIL (wrong output) ✗"
+            echo "BigIntegerTest $i: FAIL (wrong output) ✗"
             FAIL=$((FAIL + 1))
-            echo "  Expected vs Actual (first 5 lines):"
-            echo "  Expected:"
-            head -5 "$EXPECTED" | sed 's/^/    /'
-            echo "  Actual:"
-            head -5 "$ACTUAL" | sed 's/^/    /'
+            # Show first difference
+            echo "  First difference:"
+            diff "$EXPECTED" "$ACTUAL" | head -10 | sed 's/^/    /'
         fi
     else
         EXIT_CODE=$?
-        echo "Test $i: FAIL (runtime error, exit code: $EXIT_CODE) ✗"
+        echo "BigIntegerTest $i: FAIL (runtime error, exit code: $EXIT_CODE) ✗"
         FAIL=$((FAIL + 1))
     fi
 done
 
-echo "========================================"
+echo "=============================================="
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"
 echo ""
 
 if [ $FAIL -eq 0 ]; then
-    echo "✅ All regression tests passed!"
+    echo "✅ All BigInteger tests passed!"
     exit 0
 else
-    echo "❌ Some tests failed"
+    echo "❌ Some BigInteger tests failed"
     exit 1
 fi
