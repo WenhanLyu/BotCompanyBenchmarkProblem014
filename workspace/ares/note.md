@@ -1,63 +1,64 @@
-# Ares Cycle 40 - M4.3: Function Parameters
+# Ares Cycle 115 - M8.3: String Multiplication Fix
 
 ## Current State
-- 12/16 basic tests passing (75%)
-- M4.2 (String Operations) completed
-- test11 currently fails - prints "None" instead of numbers 0-9
-- test10 passes (functions without parameters work via default visitChildren behavior)
+- 15/16 basic tests passing (93.75%)
+- String multiplication causes bad_variant_access runtime errors
+- Blocks OJ tests 34, 55, 72 (SIGABRT crashes)
 
-## Milestone: M4.3 Function Parameters
-**Goal:** Enable functions to accept and use parameters
-**Test Target:** test11
-**Cycles Remaining:** 3/3
+## Milestone: M8.3 String Multiplication
+**Goal:** Implement string repetition for multiplication operator
+**Cycles Remaining:** 1/1
 **Acceptance Criteria:**
-1. test11 passes with exact output match
-2. Functions can accept multiple parameters
-3. Parameters are local to function scope
-4. Zero regressions on test0-10, test12
+1. echo 'print("ab" * 3)' outputs 'ababab'
+2. echo 'print(3 * "ab")' outputs 'ababab'
+3. echo 'print("x" * 0)' outputs empty string
+4. No regression on 35 passing local tests (15 basic + 20 bigint)
 
 ## Technical Analysis
-test11 code:
-```python
-def foo(a):
-    print(a)
-i = 0
-while i < 10:
-    foo(i)
-    i += 1
+
+### Current Implementation Gap
+visitTerm() in Evalvisitor.cpp (line ~848) handles numeric multiplication but not string repetition.
+
+**Error:** bad_variant_access when encountering string * int or int * string
+
+**Root cause:** The multiplication operator only handles numeric types (int, double, BigInteger), but Python supports string * int repetition.
+
+### Reference Implementation
+The *= operator (lines 175-186 in visitExpr_stmt) already implements string repetition correctly:
+```cpp
+} else if (std::holds_alternative<std::string>(currentValue) && std::holds_alternative<int>(rightValue)) {
+    // String repetition
+    std::string s = std::get<std::string>(currentValue);
+    int count = std::get<int>(rightValue);
+    std::string repeated;
+    // Pre-allocate memory to avoid O(n²) behavior
+    repeated.reserve(s.size() * count);
+    for (int i = 0; i < count; i++) {
+        repeated.append(s);
+    }
+    result = repeated;
+}
 ```
 
-Expected output: 0, 1, 2, ..., 9 (each on new line)
-Actual output: None
-
-**Current Implementation Gaps:**
-1. No visitFuncdef() implemented - functions are ignored by visitChildren()
-2. No function storage mechanism (need map<name, FunctionDef>)
-3. No parameter binding when calling functions
-4. Function calls in visitAtom_expr only handle special case of print()
-
-**What Needs Implementation:**
-1. Function storage structure to hold: name, parameters, body (suite)
-2. visitFuncdef() to store function definitions
-3. Modify visitAtom_expr() to handle user-defined function calls
-4. Parameter binding: map arguments to parameter names in local scope
-5. Local scope management (parameters shouldn't leak into global scope)
-
-**Parser Structure:**
-- FuncdefContext: NAME(), parameters(), suite()
-- ParametersContext: typedargslist()
-- TypedargslistContext: tfpdef() (vector of parameter definitions)
-- TfpdefContext: NAME() (parameter name)
+### What Needs Implementation
+In visitTerm() around line 848, after existing numeric multiplication cases, add:
+1. Check for string * int: `std::holds_alternative<std::string>(result) && std::holds_alternative<int>(factor)`
+2. Check for int * string: `std::holds_alternative<int>(result) && std::holds_alternative<std::string>(factor)`
+3. For both cases, use reserve() + append() pattern
+4. Handle edge cases:
+   - count = 0: return empty string
+   - count < 0: return empty string (Python behavior)
+   - Large count: reserve will handle properly
 
 ## Team
-- **Leo**: Core Language Features Engineer - will implement function parameters
-- **Nina**: Test Validation Engineer - will validate test11 and check regressions
+- **Leo**: Core Language Features Engineer - will implement string multiplication
 
 ## Strategy
-Small, focused implementation:
-1. Leo implements function parameters (visitFuncdef, function storage, parameter binding)
-2. Nina validates test11 passes and no regressions
-3. If needed, iterate on fixes
+Single-file fix:
+1. Leo adds string multiplication handling to visitTerm()
+2. Pattern after *= operator implementation
+3. Test with all three test cases
+4. Verify no regressions
 
 ## Next Steps
-Schedule Leo to implement function parameters, then Nina to validate.
+Assign Leo to implement string multiplication fix in visitTerm().

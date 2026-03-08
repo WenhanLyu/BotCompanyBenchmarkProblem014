@@ -31,6 +31,22 @@ public:
     }
 };
 
+// Exception class for handling break statements in loops
+class BreakException : public std::exception {
+public:
+    const char* what() const noexcept override {
+        return "Break statement executed";
+    }
+};
+
+// Exception class for handling continue statements in loops
+class ContinueException : public std::exception {
+public:
+    const char* what() const noexcept override {
+        return "Continue statement executed";
+    }
+};
+
 class EvalVisitor : public Python3ParserBaseVisitor {
 public:
     // Entry point for the interpreter
@@ -72,6 +88,12 @@ public:
     
     // Return statement
     std::any visitReturn_stmt(Python3Parser::Return_stmtContext *ctx) override;
+    
+    // Break statement
+    std::any visitBreak_stmt(Python3Parser::Break_stmtContext *ctx) override;
+    
+    // Continue statement
+    std::any visitContinue_stmt(Python3Parser::Continue_stmtContext *ctx) override;
     
     // Global statement
     std::any visitGlobal_stmt(Python3Parser::Global_stmtContext *ctx) override;

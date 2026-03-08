@@ -1165,7 +1165,15 @@ std::any EvalVisitor::visitWhile_stmt(Python3Parser::While_stmtContext *ctx) {
         }
         
         // Execute the suite (body of the while loop)
-        visit(suite);
+        try {
+            visit(suite);
+        } catch (const BreakException&) {
+            // Break out of the loop
+            break;
+        } catch (const ContinueException&) {
+            // Continue to next iteration
+            continue;
+        }
     }
     
     return std::any();
@@ -1442,6 +1450,18 @@ std::any EvalVisitor::visitReturn_stmt(Python3Parser::Return_stmtContext *ctx) {
     
     // Throw the exception to exit the function
     throw ReturnException(returnValue);
+}
+
+std::any EvalVisitor::visitBreak_stmt(Python3Parser::Break_stmtContext *ctx) {
+    // break_stmt: 'break'
+    // Throw exception to exit the loop
+    throw BreakException();
+}
+
+std::any EvalVisitor::visitContinue_stmt(Python3Parser::Continue_stmtContext *ctx) {
+    // continue_stmt: 'continue'
+    // Throw exception to skip to next iteration
+    throw ContinueException();
 }
 
 std::any EvalVisitor::visitGlobal_stmt(Python3Parser::Global_stmtContext *ctx) {
