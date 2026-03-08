@@ -19,16 +19,17 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 116 - OJ #2 Results Received)
+## Current State (Cycle 117 - Investigation Complete, Ready for M10)
 
 - **OJ Score:** 25/100 from submission #2 (Subtask 1 complete!) 🎉
 - **OJ Passes:** 44/75 tests (58.7%) - **+8 tests from OJ #1** (+22% improvement)
 - **Local Tests:** 35/36 passing (97.2%)
-- **Status:** M1, M2, M3, M3.1, M4.1, M4.2, M4.3, M5.1, M6/M7, M8.1, M8.3, **M9 COMPLETE** ✅
-- **Repository:** Clean, all work merged to master (commit 28572ee)
+- **Status:** M1, M2, M3, M3.1, M4.1, M4.2, M4.3, M5.1, M6/M7, M8.1, M8.3, **M9, M9.1 COMPLETE** ✅
+- **Repository:** Clean, all work merged to master (commit 2d27623)
 - **Working Branch:** master
 - **Code:** ~2,500 LOC with solid B+ architecture
-- **Recent Achievement:** String multiplication fix validated, +8 tests passing on OJ
+- **Investigation Phase:** 4 workers completed comprehensive analysis (Kai, Noah, Mia, Isaac, Liam)
+- **Next Milestone:** M10 - Performance & Loop Control (3 cycles, +8-13 tests expected)
 
 ### OJ Submission #1 Results (Detailed)
 
@@ -355,36 +356,69 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-### **M9.1: Investigation Round 2 - Analyze OJ #2 Failures** (CURRENT MILESTONE)
+### **M9.1: Investigation Round 2 - Analyze OJ #2 Failures** ✅ COMPLETE
 **Goal:** Understand the 31 remaining failures and prioritize next features  
-**Estimated Cycles:** 1-2
+**Estimated Cycles:** 1-2 | **Actual:** 1 cycle
 
 **Remaining Failures:**
 - 20 Wrong Answer (10 AdvancedTests, 10 CornerTests)
-- 6 Time Limit Exceeded (1 SampleTest, 3 ComplexTests)
+- 6 Time Limit Exceeded (2 algorithmic, 4 feature-blocking)
 - 5 tests uncategorized
 
-**Investigation Areas:**
-1. **Test 34 TLE** (19 seconds) - Changed from SIGABRT to TLE
-2. **Wrong Answer pattern** - What features are missing?
-3. **Performance issues** - Are TLEs algorithmic or feature-blocking?
-4. **Unexpected wins** - Why did tests 40-42, 70 suddenly pass?
+**Investigation Complete:**
+1. ✅ **Kai:** Test 34 TLE - BigInteger division O(n³) bottleneck identified
+2. ✅ **Noah:** 6 TLE tests - 2 algorithmic (division), 4 feature-blocking (break/continue)
+3. ✅ **Mia:** 20 WA tests - 4 feature categories identified, prioritized
+4. ✅ **Isaac:** Runtime errors - defensive programming gaps documented
+5. ✅ **Liam:** String multiplication impact validated - 2.67x multiplier confirmed
 
-**Deliverables:**
-- Root cause analysis for Test 34 TLE
-- Categorization of 20 Wrong Answer failures
-- Feature prioritization for next milestone
-- Performance bottleneck assessment
+**Key Findings:**
+- **BigInteger division:** O(n³) → needs optimization (1 cycle fix)
+- **break/continue:** Missing, causes infinite loops (2 cycle implementation)
+- **Type conversion:** int/float/str/bool() not implemented (2 cycle implementation)
+- **Keyword args/defaults:** Missing function features (3 cycle implementation)
+- **Defensive fixes:** 4 edge cases need hardening (20 minute fixes)
 
-**Acceptance Criteria:**
-- Top 3-5 missing features identified
-- Impact estimate for each feature (test count)
-- Clear recommendation for M10 milestone
-- Understanding of why +8 tests passed (not just +3 expected)
+**Outcome:** Crystal clear priorities for M10-M12. All workers converged on same top issues.
 
 ---
 
-### **M8.2: Return Statements** (DEFERRED - PRIORITY TBD AFTER M9.1)
+### **M10: Performance & Loop Control Bundle** (CURRENT MILESTONE)
+**Goal:** Fix BigInteger division performance + implement break/continue statements  
+**Test Target:** Tests 34, 37, 47, 54, 55, 56 + 6 WA tests  
+**Estimated Cycles:** 3
+
+**Part A: Division Optimization + Defensive Fixes (1 cycle)**
+- Replace BigInteger division binary search with estimate+correction algorithm
+- Fix INT_MIN negation vulnerability
+- Fix negative string repetition edge case
+- Strengthen type safety checks
+- Expected impact: +2-3 tests (34, 55, possibly 72)
+
+**Part B: Loop Control Statements (2 cycles)**
+- Implement break statement (using exception pattern)
+- Implement continue statement (using exception pattern)
+- Support in while loops
+- Expected impact: +6-10 tests (4 TLE + 6 WA)
+
+**Acceptance Criteria:**
+- ✅ BigInteger division completes in <1s for large numbers (was 19s)
+- ✅ break exits loops correctly, continue skips to next iteration
+- ✅ Tests 34, 37, 47, 54, 55, 56 improve from TLE
+- ✅ No INT_MIN or negative string repetition crashes
+- ✅ No regression on 44 currently passing tests
+- ✅ Expected: 52-57/75 tests passing (69-76%)
+
+**Strategic Rationale:**
+- Quick wins first: Division (1 cycle) before complex features
+- High impact/effort ratio: 8-13 tests in 3 cycles = 4.3 avg
+- Both are performance/control flow fixes (thematic coherence)
+- Low-medium risk: Proven patterns, no major architecture changes
+- Unblocks both TLE and WA categories simultaneously
+
+---
+
+### **M8.2: Return Statements** (DEFERRED - PRIORITY AFTER M10)
 **Goal:** Implement return statements to unblock function-based tests  
 **Test Target:** test13 and 15-20 AdvancedTests  
 **Estimated Cycles:** 4-5
@@ -829,6 +863,22 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 **Key Insight:** The string multiplication fix had ripple effects beyond the expected 3 tests. This suggests our incremental fixes are addressing foundational issues that unblock multiple test categories. Test 34's TLE pattern (19s) is a new type of failure - not a crash or wrong answer, but an algorithmic inefficiency that needs investigation.
 
 **Outcome:** M9 complete. Investigation round 2 needed to understand remaining 31 failures before defining next implementation milestone.
+
+---
+
+### Cycle 117: M9.1 Investigation Complete (Athena)
+- ✅ **ALL 4 workers completed comprehensive analysis** (Kai, Mia, Noah, Isaac, Liam)
+- 🔍 **Convergent evidence:** Multiple workers independently identified same critical issues
+- 📊 **Clear priorities emerged:**
+  1. BigInteger division optimization (1 cycle, +2-3 tests, O(n³) → O(n))
+  2. break/continue statements (2 cycles, +6-10 tests, proven pattern)
+  3. Type conversion functions (2 cycles, +4-6 tests, well-specified)
+  4. Keyword args/defaults (3 cycles, +5-8 tests, complex but high impact)
+- ✅ **M10 defined:** Performance & Loop Control Bundle (3 cycles)
+- 📝 **Roadmap updated:** M9.1 complete, M10 added with detailed breakdown
+- 🎯 **Strategic insight:** Investigation phase (1 cycle, 4 workers) produced crystal clear roadmap for next 8-10 cycles
+
+**Key Insight:** Investing 1 cycle in thorough investigation yields massive clarity. All workers converged on same top 2 priorities (division + break/continue), giving high confidence in M10 definition. The impact-effort analysis shows M10 will deliver 8-13 tests in 3 cycles (2.7-4.3 tests/cycle), which is excellent ROI.
 
 ---
 
