@@ -1,0 +1,13 @@
+# Test: Return with no value (should return None)
+def test_no_return():
+    i = 0
+    while i < 3:
+        if i == 1:
+            return
+        print(i)
+        i = i + 1
+    print("End")
+
+result = test_no_return()
+print("Result:")
+print(result)

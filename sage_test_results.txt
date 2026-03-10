@@ -1,0 +1,233 @@
+=== Running Basic Tests (test0-test15) ===
+
+=== test0 ===
+PASS
+
+=== test1 ===
+FAIL - output differs
+Expected:
+Hello, World!
+
+Actual:
+
+Diff:
+1d0
+< Hello, World!
+
+=== test2 ===
+FAIL - output differs
+Expected:
+65536
+True
+None
+
+Actual:
+
+Diff:
+1,3d0
+< 65536
+< True
+< None
+
+=== test3 ===
+FAIL - output differs
+Expected:
+WELCOME!
+
+Actual:
+
+Diff:
+1d0
+< WELCOME!
+
+=== test4 ===
+FAIL - output differs
+Expected:
+True
+
+Actual:
+
+Diff:
+1d0
+< True
+
+=== test5 ===
+FAIL - output differs
+Expected:
+2
+2
+
+Actual:
+
+Diff:
+1,2d0
+< 2
+< 2
+
+=== test6 ===
+FAIL - output differs
+Expected:
+True
+False
+True
+False
+False
+True
+
+Actual:
+
+Diff:
+1,6d0
+< True
+< False
+< True
+< False
+< False
+< True
+
+=== test7 ===
+FAIL - output differs
+Expected:
+Hello, World!
+Hello, Hello, Hello, is there anybody in there?
+True
+False
+
+Actual:
+
+Diff:
+1,4d0
+< Hello, World!
+< Hello, Hello, Hello, is there anybody in there?
+< True
+< False
+
+=== test8 ===
+FAIL - output differs
+Expected:
+2
+
+Actual:
+
+Diff:
+1d0
+< 2
+
+=== test9 ===
+FAIL - output differs
+Expected:
+**********
+**********
+**********
+**********
+**********
+**********
+**********
+**********
+**********
+**********
+
+Actual:
+
+Diff:
+1,10d0
+< **********
+< **********
+< **********
+< **********
+< **********
+< **********
+< **********
+< **********
+< **********
+< **********
+
+=== test10 ===
+PASS
+
+=== test11 ===
+FAIL - output differs
+Expected:
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+
+Actual:
+
+Diff:
+1,10d0
+< 0
+< 1
+< 2
+< 3
+< 4
+< 5
+< 6
+< 7
+< 8
+< 9
+
+=== test12 ===
+FAIL - output differs
+Expected:
+Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! 
+
+Actual:
+
+Diff:
+1d0
+< Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! Congratulations! 
+
+=== test13 ===
+SKIP - no expected output file
+
+=== test14 ===
+FAIL - output differs
+Expected:
+Formatted string with integer 114514 is correct.
+Formatted string with boolean True is correct.
+Formatted string with string Hello World is correct.
+Formatted string with floating number 1.0 is correct.
+Formatted string without formatting is correct.
+Formatted string without strings is also correct.
+Formatted string with complicated integer expression -1138630 is also correct.
+
+Actual:
+
+Diff:
+1,7d0
+< Formatted string with integer 114514 is correct.
+< Formatted string with boolean True is correct.
+< Formatted string with string Hello World is correct.
+< Formatted string with floating number 1.0 is correct.
+< Formatted string without formatting is correct.
+< Formatted string without strings is also correct.
+< Formatted string with complicated integer expression -1138630 is also correct.
+
+=== test15 ===
+FAIL - output differs
+Expected:
+This is a simple statement by Xiaoh
+The result of (3 * 4) * (6 * 16) + 1919810 // 114514 is 1168
+This is a simple statement
+
+Actual:
+
+Diff:
+1,3d0
+< This is a simple statement by Xiaoh
+< The result of (3 * 4) * (6 * 16) + 1919810 // 114514 is 1168
+< This is a simple statement
+
+=== SUMMARY ===
+Tests Passed: 2
+Tests Failed: 13
+Tests Skipped: 1
+Total Tests: 16

@@ -297,7 +297,7 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                     // If the value is a TupleValue AND we have multiple vars on LHS, unpack it
                     if (needsUnpacking && std::holds_alternative<TupleValue>(value)) {
                         TupleValue tuple = std::get<TupleValue>(value);
-                        values = tuple;
+                        values = tuple.elements;
                     } else {
                         // Single value or no unpacking needed - keep as-is
                         values.push_back(value);
@@ -386,18 +386,135 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
 }
 
 std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
-    // atom_expr: atom trailer?
+    // atom_expr: atom trailer*
     // Get the atom (function name or value)
     auto atom = ctx->atom();
     if (!atom) {
         return std::any();
     }
     
-    // Check if this is a function call (has trailer)
-    auto trailer = ctx->trailer();
-    if (trailer) {
-        // Get the function name from the atom
-        std::string funcName = atom->getText();
+    // Get all trailers
+    auto trailers = ctx->trailer();
+    
+    // If no trailers, just evaluate the atom
+    if (trailers.empty()) {
+        return visit(atom);
+    }
+    
+    // Process trailers left-to-right
+    // For the first trailer, we might have a function call
+    // For subsequent trailers, we have a value from the previous operation
+    std::any currentValue;
+    bool isFirstTrailer = true;
+    
+    for (size_t i = 0; i < trailers.size(); i++) {
+        auto trailer = trailers[i];
+        
+        // Check if this is a subscript operation: '[' test ']'
+        if (trailer->OPEN_BRACK()) {
+            // This is a subscript operation
+            // Get the sequence value (either from atom or from previous operation)
+            if (isFirstTrailer) {
+                currentValue = visit(atom);
+                isFirstTrailer = false;
+            }
+            
+            if (!currentValue.has_value()) {
+                throw std::runtime_error("Cannot subscript non-value");
+            }
+            
+            Value sequence = std::any_cast<Value>(currentValue);
+            
+            // Get the index expression
+            auto indexTest = trailer->test();
+            if (!indexTest) {
+                throw std::runtime_error("Subscript requires an index");
+            }
+            
+            auto indexValue = visit(indexTest);
+            if (!indexValue.has_value()) {
+                throw std::runtime_error("Index expression must evaluate to a value");
+            }
+            
+            Value indexVal = std::any_cast<Value>(indexValue);
+            
+            // Index must be an integer or BigInteger
+            int index;
+            if (std::holds_alternative<int>(indexVal)) {
+                index = std::get<int>(indexVal);
+            } else if (std::holds_alternative<BigInteger>(indexVal)) {
+                // Convert BigInteger to int for indexing
+                BigInteger bi = std::get<BigInteger>(indexVal);
+                try {
+                    index = static_cast<int>(bi.toLongLong());
+                } catch (...) {
+                    throw std::runtime_error("Index too large");
+                }
+            } else {
+                throw std::runtime_error("Index must be an integer");
+            }
+            
+            // Handle subscripting for different types
+            if (std::holds_alternative<std::string>(sequence)) {
+                // String indexing
+                std::string str = std::get<std::string>(sequence);
+                int size = static_cast<int>(str.size());
+                
+                // Handle negative indexing
+                if (index < 0) {
+                    index = size + index;
+                }
+                
+                // Bounds checking
+                if (index < 0 || index >= size) {
+                    throw std::runtime_error("String index out of range");
+                }
+                
+                // Set current value to the indexed character
+                currentValue = Value(std::string(1, str[index]));
+            } else if (std::holds_alternative<TupleValue>(sequence)) {
+                // Tuple indexing
+                const TupleValue& tuple = std::get<TupleValue>(sequence);
+                int size = static_cast<int>(tuple.elements.size());
+                
+                // Handle negative indexing
+                if (index < 0) {
+                    index = size + index;
+                }
+                
+                // Bounds checking
+                if (index < 0 || index >= size) {
+                    throw std::runtime_error("Tuple index out of range");
+                }
+                
+                currentValue = tuple.elements[index];
+            } else if (std::holds_alternative<ListValue>(sequence)) {
+                // List indexing
+                const ListValue& list = std::get<ListValue>(sequence);
+                int size = static_cast<int>(list.elements.size());
+                
+                // Handle negative indexing
+                if (index < 0) {
+                    index = size + index;
+                }
+                
+                // Bounds checking
+                if (index < 0 || index >= size) {
+                    throw std::runtime_error("List index out of range");
+                }
+                
+                currentValue = list.elements[index];
+            } else {
+                throw std::runtime_error("Object is not subscriptable");
+            }
+        } else {
+            // This is a function call - must be the first (and only) trailer
+            if (i != 0 || trailers.size() != 1) {
+                throw std::runtime_error("Invalid syntax: function call must be alone");
+            }
+            
+            // Get the function name from the atom
+            std::string funcName = atom->getText();
         
         // Handle print function
         if (funcName == "print") {
@@ -714,10 +831,15 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
         }
         
         return std::any();
-    } else {
-        // No trailer - this is just an atom expression, visit the atom
+        }
+    }
+    
+    // After processing all trailers, return the current value
+    // If no trailers, currentValue will be unset, so return the atom value
+    if (!currentValue.has_value()) {
         return visit(atom);
     }
+    return currentValue;
 }
 
 std::any EvalVisitor::visitAtom(Python3Parser::AtomContext *ctx) {
@@ -817,6 +939,30 @@ std::any EvalVisitor::visitAtom(Python3Parser::AtomContext *ctx) {
             // Variable not found, return None
             return Value(std::monostate{});
         }
+    }
+    
+    // Check if this is a list literal: '[' testlist? ']'
+    if (ctx->OPEN_BRACK()) {
+        // This is a list literal
+        std::vector<Value> elements;
+        auto testlist = ctx->testlist();
+        if (testlist) {
+            auto tests = testlist->test();
+            for (auto test : tests) {
+                auto result = visit(test);
+                if (result.has_value()) {
+                    try {
+                        elements.push_back(std::any_cast<Value>(result));
+                    } catch (...) {
+                        elements.push_back(Value(std::monostate{}));
+                    }
+                } else {
+                    elements.push_back(Value(std::monostate{}));
+                }
+            }
+        }
+        // Return list (empty if no testlist)
+        return Value(ListValue(elements));
     }
     
     // Check if this is a parenthesized test expression: '(' test ')'
@@ -1357,17 +1503,29 @@ std::string EvalVisitor::valueToString(const Value& val) {
         // Print tuple as (elem1, elem2, ...)
         const TupleValue& tuple = std::get<TupleValue>(val);
         std::string result = "(";
-        for (size_t i = 0; i < tuple.size(); i++) {
-            result += valueToString(tuple[i]);
-            if (i < tuple.size() - 1) {
+        for (size_t i = 0; i < tuple.elements.size(); i++) {
+            result += valueToString(tuple.elements[i]);
+            if (i < tuple.elements.size() - 1) {
                 result += ", ";
             }
         }
         // Special case: single-element tuple needs trailing comma
-        if (tuple.size() == 1) {
+        if (tuple.elements.size() == 1) {
             result += ",";
         }
         result += ")";
+        return result;
+    } else if (std::holds_alternative<ListValue>(val)) {
+        // Print list as [elem1, elem2, ...]
+        const ListValue& list = std::get<ListValue>(val);
+        std::string result = "[";
+        for (size_t i = 0; i < list.elements.size(); i++) {
+            result += valueToString(list.elements[i]);
+            if (i < list.elements.size() - 1) {
+                result += ", ";
+            }
+        }
+        result += "]";
         return result;
     }
     return "";
@@ -1390,7 +1548,9 @@ bool EvalVisitor::valueToBool(const Value& val) {
     } else if (std::holds_alternative<BigInteger>(val)) {
         return !std::get<BigInteger>(val).isZero();
     } else if (std::holds_alternative<TupleValue>(val)) {
-        return !std::get<TupleValue>(val).empty();
+        return !std::get<TupleValue>(val).elements.empty();
+    } else if (std::holds_alternative<ListValue>(val)) {
+        return !std::get<ListValue>(val).elements.empty();
     }
     return false;
 }
@@ -1713,21 +1873,21 @@ std::any EvalVisitor::visitReturn_stmt(Python3Parser::Return_stmtContext *ctx) {
             }
         } else if (tests.size() > 1) {
             // Multiple return values - return as tuple
-            TupleValue tuple;
+            std::vector<Value> elements;
             for (auto test : tests) {
                 auto result = visit(test);
                 if (result.has_value()) {
                     try {
-                        tuple.push_back(std::any_cast<Value>(result));
+                        elements.push_back(std::any_cast<Value>(result));
                     } catch (...) {
                         // If cast fails, add None to tuple
-                        tuple.push_back(Value(std::monostate{}));
+                        elements.push_back(Value(std::monostate{}));
                     }
                 } else {
-                    tuple.push_back(Value(std::monostate{}));
+                    elements.push_back(Value(std::monostate{}));
                 }
             }
-            returnValue = Value(tuple);
+            returnValue = Value(TupleValue(elements));
         }
     }
     

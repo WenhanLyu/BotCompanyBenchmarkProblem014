@@ -1,0 +1,34 @@
+================================
+Large Number Performance Tests
+Date: Sun Mar  8 15:14:08 EDT 2026
+================================
+
+Test: test1 - 10^40 // 10^20 (simple division)
+  ✓ PASS
+  Average time over 3 runs: 0.02304395039876302s
+  Performance: GOOD (<1s)
+
+Test: test2 - 10^40 // 7 (worst case - large by small)
+  ✓ PASS
+  Average time over 3 runs: 0.0241547425587972s
+  Performance: GOOD (<1s)
+
+Test: test3 - Similar magnitude large numbers
+  ✓ PASS
+  Average time over 3 runs: 0.023185253143310547s
+  Performance: GOOD (<1s)
+
+Test: test4 - Division resulting in 0
+  ✓ PASS
+  Average time over 3 runs: 0.023352702458699543s
+  Performance: GOOD (<1s)
+
+Test: test5 - 10^50 // 10^25 (even larger numbers)
+  ✓ PASS
+  Average time over 3 runs: 0.02337304751078288s
+  Performance: GOOD (<1s)
+
+================================
+Performance Test Summary
+All tests completed
+================================

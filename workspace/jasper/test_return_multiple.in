@@ -1,0 +1,18 @@
+# Test: Return multiple values from nested structure
+def find_position(target):
+    i = 0
+    while i < 5:
+        j = 0
+        while j < 5:
+            if i * j == target:
+                return i, j
+            j = j + 1
+        i = i + 1
+    return -1, -1
+
+x, y = find_position(6)
+print(x)
+print(y)
+a, b = find_position(100)
+print(a)
+print(b)

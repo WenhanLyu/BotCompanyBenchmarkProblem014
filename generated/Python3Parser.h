@@ -579,7 +579,8 @@ public:
     Atom_exprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     AtomContext *atom();
-    TrailerContext *trailer();
+    std::vector<TrailerContext *> trailer();
+    TrailerContext* trailer(size_t i);
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -619,8 +620,11 @@ public:
     antlr4::tree::TerminalNode *OPEN_PAREN();
     TestContext *test();
     antlr4::tree::TerminalNode *CLOSE_PAREN();
+    antlr4::tree::TerminalNode *OPEN_BRACK();
+    antlr4::tree::TerminalNode *CLOSE_BRACK();
     std::vector<antlr4::tree::TerminalNode *> STRING();
     antlr4::tree::TerminalNode* STRING(size_t i);
+    TestlistContext *testlist();
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
