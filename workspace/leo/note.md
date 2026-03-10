@@ -1,54 +1,82 @@
-# Leo's Notes - Issue #94: Variable Scoping Fix Complete
+# Leo's Notes - Issue #159: Keyword Arguments Implementation
+
+## Task Completed
+
+Implemented keyword arguments for Python function calls as specified in M21 Part B.
 
 ## What I Did
 
-Implemented proper Python-style local/global variable scoping in the interpreter.
+### Implementation (src/EvalVisitor.cpp)
 
-## Changes Made
+Replaced the simple positional argument evaluation (lines 777-830) with a comprehensive argument matching system that supports:
 
-### 1. Added Local Scope Tracking
-- Added `assignedVars` set to `FunctionDef` struct to track which variables are assigned in the function
-- Added `localVariables` pointer to track local variable values during function execution
-- Added `currentFunctionLocals` pointer to track which variables are local in current function
+1. **Positional arguments** - work as before
+2. **Keyword arguments** - `name=value` syntax
+3. **Mixed arguments** - positional followed by keyword
+4. **Integration with defaults** - seamlessly works with default parameters from M21 Part A
 
-### 2. Static Analysis of Function Bodies
-- Implemented `findAssignedVariables()` to scan function body and identify all assigned variables
-- Implemented `findAssignedInStmt()` to recursively scan statements (including if/while blocks)
-- Variables found in assignments become local variables for that function
+### Algorithm
 
-### 3. Updated Variable Read Logic
-- Variables in `currentFunctionLocals` set are read from local scope only
-- Other variables (parameters, globals) are read from local scope first, then global
-- This matches Python's scoping rules
+```
+1. Parse each argument to detect if it's keyword (test '=' test) or positional
+2. Validate: positional arguments must come before keyword arguments
+3. Bind positional arguments first (left-to-right to parameters)
+4. Bind keyword arguments by name matching
+5. Check for duplicate keywords and unknown parameter names
+6. Apply default values for any unmatched parameters
+7. Error if any required parameter is still unmatched
+```
 
-### 4. Updated Variable Write Logic
-- Variables in `assignedVars` set are written to local scope
-- Other variables are written to global scope (or parameter local copy)
-- Updated both regular assignment and augmented assignment (`+=`, `-=`, etc.)
+### Error Handling
 
-## Test Results
+- "Positional argument follows keyword argument" - if positional comes after keyword
+- "Duplicate keyword argument" - if same keyword specified twice
+- "Unknown parameter name" - if keyword doesn't match any parameter
+- "Parameter specified multiple times" - if parameter bound both positionally and by keyword
 
-✅ **All basic tests still passing**: test0-test12, test14-test15 (15/15 excluding test13)
-✅ **Scoping fix verified**:
-  - Local variables no longer leak to global scope
-  - Global variables can be read (but not modified without `global` keyword)
-  - Parameters work correctly as local variables
+## Testing Results
 
-## Known Limitations
+### Functional Tests (8 tests)
+All pass with exact Python 3 behavior:
+- All positional: `f(1, 2, 3)` ✅
+- All keyword: `f(c=30, a=10, b=20)` ✅
+- Mixed: `f(1, c=3, b=2)` ✅
+- With defaults: `f2(10)` where b=20, c=30 ✅
+- Keyword + defaults: `f2(10, c=300)` ✅
+- Complex combinations with multiple defaults ✅
 
-### test13 Issue
-test13.in is EXPECTED to fail because:
-1. It uses `seed += ...` in `rand()` function without `global seed` declaration
-2. In Python, this causes `UnboundLocalError` 
-3. In our interpreter, we initialize unbound locals to 0, which gives wrong results
-4. To fix test13, either:
-   - Add `global seed` to test13.in (creates test13_fixed.in)
-   - Implement `global` keyword support in grammar (not currently supported)
+### Error Tests (4 tests)
+All error cases properly detected and reported ✅
 
-### Minor Difference from Python
-When augmented assignment references an uninitialized local variable, Python raises `UnboundLocalError`.
-Our interpreter initializes it to 0 instead. This is a minor deviation that could be fixed later if needed.
+### Regression Tests
+- **test_all_36.sh**: 36/36 passing (100%) ✅
+- **test_default_params.sh**: All passing ✅
+- **No regressions introduced** ✅
 
-## Status
-✅ Issue #94 COMPLETE - Proper variable scoping implemented
-🎯 15/16 basic tests passing (93.75%)
+## Acceptance Criteria
+
+All M21 Part B criteria met:
+- [x] Functions accept keyword arguments
+- [x] Keyword args match parameter names correctly
+- [x] Keyword args can be in any order
+- [x] Can mix positional and keyword args
+- [x] Positional args must come before keyword args
+- [x] Error on duplicate or unknown keywords
+- [x] Works with default parameters
+- [x] All 36 local tests still passing
+- [x] No regressions
+
+## Commit & Branch
+
+**Branch:** `leo/keyword-arguments`
+**Commit:** `[Leo] Implement keyword arguments for function calls - Issue #159`
+**Pushed:** Yes
+**Status:** Ready for merge
+
+## Time Used
+
+~1 hour (1 cycle)
+
+## Next Steps
+
+Issue #159 is complete. Ready for merge to master. M21 Part B complete.
