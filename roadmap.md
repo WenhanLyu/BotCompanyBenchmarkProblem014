@@ -1236,3 +1236,122 @@ if (count > 0) {
 4. For loops - 3-4 cycles, impact unknown
 5. Lists - 5-6 cycles, impact unknown
 
+
+---
+
+### Cycles 158-160: M14 Division Optimization - FAILED (Invalid Hypothesis)
+
+**M14 Goal:** Fix BigInteger division O(n³) bottleneck to unblock Subtask 2
+**Cycles Budget:** 1 | **Cycles Used:** 1
+**Status:** ❌ FAILED - Hypothesis disproven
+
+**What Happened:**
+- Cycle 156-157 (Athena): Investigation found Test 34 TLE at 19,251ms
+- Kai's analysis: Recommended replacing binary search with estimate+correction
+- Cycle 158 (Ares): Assigned Leo to implement Kai's fix
+- **Cycle 158 (Leo): INVESTIGATION REVEALED FIX WOULD CAUSE REGRESSION**
+
+**Leo's Critical Finding:**
+- Implemented Kai's recommended fix
+- Tested with 1000+ digit numbers: Works correctly, 15ms ✅
+- Tested full BigInteger suite (20 tests):
+  - **Original code: 20/20 tests PASS** ✅
+  - **Modified code: 17/20 tests PASS** ❌ (Tests 5, 8, 18 timeout)
+- **Root cause:** For very large numbers (4000+ digits), correction loop runs hundreds of times, making hundreds of O(n) subtractions MORE expensive than 30 O(n²) multiplications
+
+**Decision:** Leo correctly REVERTED all changes. No code committed.
+
+**Key Insights:**
+1. **M14's hypothesis was wrong** - Current binary search is CORRECT and performant
+2. **Kai's analysis was flawed** - Assumption that "estimate off by 1-2" doesn't hold for very large numbers
+3. **Leo's investigation prevented catastrophic regression** - Would have repeated M10 disaster
+4. **Test 34 TLE likely not division-related** - Need different investigation approach
+
+**Lesson Learned:**
+> "Performance optimizations need OJ-scale testing. Small inputs (1000 digits) don't reveal 
+> the same behavior as large inputs (4000+ digits). Always benchmark with realistic data."
+
+**Outcome:** M14 complete but unsuccessful. Division performance is FINE. Pivot to actual high-ROI features.
+
+---
+
+### Cycle 160: M13 Investigation Summary & M15 Definition (Athena)
+
+**Investigation Complete - All Workers Reported:**
+
+1. **Kai (Test 34 TLE):** Recommended division fix - DISPROVEN by Leo's testing
+2. **Mia (AdvancedTests WA):** Type conversion functions missing - +4-6 tests, 85% confidence
+3. **Noah (CornerTests):** Type conversion functions missing - +5-7 tests, 95% confidence
+4. **Liam (Synthesis):** Convergent evidence - Type conversion is P0 priority
+
+**Convergent Finding:**
+- **Type conversion functions (int, float, str, bool) are NOT IMPLEMENTED**
+- Grammar-mandated feature (Section 11)
+- Only print() exists as built-in function
+- Expected impact: +9-13 tests (conservative)
+- Would unlock Subtask 3 (AdvancedTests 80%+)
+- ROI: 6-10 tests/cycle
+
+**Strategic Pivot:**
+- M14 focused on wrong problem (division is fine)
+- M15 will focus on highest-ROI feature gap
+- Investigation → Implementation pattern successful
+
+**Current Status:**
+- Code: Clean, all 36/36 tests passing
+- OJ: 25/100, 46/72 tests (63.9%)
+- Submissions: 11/18 remaining
+- Ready for M15 implementation
+
+---
+
+### M15: Type Conversion Functions (READY TO START)
+
+**Goal:** Implement int(), float(), str(), bool() built-in functions to unlock Subtask 3
+
+**Cycles Budget:** 2 (1 implementation, 1 testing/fixes)
+
+**Deliverables:**
+1. `int(x)` - Convert float/bool/str → int (truncate floats, parse strings)
+2. `float(x)` - Convert int/bool/str → float
+3. `str(x)` - Convert int/float/bool → str ("True"/"False" for bool, 6 decimals for float)
+4. `bool(x)` - Convert any type → bool (empty string → False, 0 → False, else True)
+
+**Implementation Location:**
+- File: `src/Evalvisitor.cpp`
+- Function: `visitCall()` - Add handling for built-in type conversion functions
+- Estimated LOC: 150-250 lines
+
+**Expected Impact:**
+- Conservative: +9 tests (4 AdvancedTests + 5 CornerTests)
+- Realistic: +11 tests (6 AdvancedTests + 5 CornerTests)
+- Optimistic: +13 tests (6 AdvancedTests + 7 CornerTests)
+- Target: 55-59/72 tests (76-82%), unlock Subtask 3
+
+**Acceptance Criteria:**
+1. All 4 type conversion functions implemented and working
+2. Edge cases handled correctly:
+   - int("123") → 123
+   - float("3.14") → 3.14
+   - bool("") → False, bool("hello") → True
+   - str(True) → "True", str(False) → "False"
+3. All 36 local tests still passing (no regression)
+4. New test cases for type conversion passing
+5. Ready for OJ submission #5
+
+**Success Metrics:**
+- Minimum success: +6 tests (reach 52/72 = 72%)
+- Target success: +9 tests (reach 55/72 = 76%)
+- Stretch success: +13 tests (reach 59/72 = 82%, unlock Subtask 3)
+
+**Risk Assessment:**
+- Risk: Low (well-defined feature, clear specification)
+- Complexity: Medium (string parsing, error handling)
+- Regression risk: Low (isolated feature, doesn't touch existing code)
+
+**References:**
+- Grammar Section 11: Built-in Functions specification
+- Mia's analysis: `workspace/mia/EXECUTIVE_SUMMARY.md`
+- Noah's analysis: `workspace/noah/corner_tests_analysis.md`
+- Liam's synthesis: `workspace/liam/M14_EXECUTIVE_SUMMARY.md`
+
