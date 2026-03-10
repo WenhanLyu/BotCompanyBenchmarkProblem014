@@ -1,0 +1,55 @@
+=== Running Basic Tests (test0-test15) ===
+
+=== test0 ===
+PASS
+
+=== test1 ===
+PASS
+
+=== test2 ===
+PASS
+
+=== test3 ===
+PASS
+
+=== test4 ===
+PASS
+
+=== test5 ===
+PASS
+
+=== test6 ===
+PASS
+
+=== test7 ===
+PASS
+
+=== test8 ===
+PASS
+
+=== test9 ===
+PASS
+
+=== test10 ===
+PASS
+
+=== test11 ===
+PASS
+
+=== test12 ===
+PASS
+
+=== test13 ===
+SKIP - no expected output file
+
+=== test14 ===
+PASS
+
+=== test15 ===
+PASS
+
+=== SUMMARY ===
+Tests Passed: 15
+Tests Failed: 0
+Tests Skipped: 1
+Total Tests: 16

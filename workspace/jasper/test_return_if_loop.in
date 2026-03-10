@@ -1,0 +1,18 @@
+# Test 2: Return from inside if/elif/else within loops
+def classify_number(n):
+    i = 0
+    while i < 10:
+        if n == i:
+            if i < 3:
+                return "small"
+            elif i < 7:
+                return "medium"
+            else:
+                return "large"
+        i = i + 1
+    return "unknown"
+
+print(classify_number(1))
+print(classify_number(5))
+print(classify_number(8))
+print(classify_number(15))

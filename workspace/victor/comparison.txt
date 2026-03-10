@@ -1,0 +1,146 @@
+=== RETURN STATEMENT TEST COMPARISON ===
+
+Test 1: test_simple_return.in
+  Status: NO EXPECTED OUTPUT PROVIDED
+  Actual Output:
+5
+
+Test: test_return_no_value.in
+  Expected Output:
+    0
+    Result:
+    None
+
+  Actual Output:
+    0
+    Result:
+    None
+
+  Status: ✅ PASS
+
+---
+
+Test: test_return_nested_loops.in
+  Expected Output:
+    3
+    34
+    -1
+
+  Actual Output:
+    3
+    34
+    -1
+
+  Status: ✅ PASS
+
+---
+
+Test: test_return_if_loop.in
+  Expected Output:
+    small
+    medium
+    large
+    unknown
+
+  Actual Output:
+    small
+    medium
+    large
+    unknown
+
+  Status: ✅ PASS
+
+---
+
+Test: test_return_early_exit.in
+  Expected Output:
+    Start
+    Negative
+    -1
+    ---
+    Start
+    After first check
+    Zero
+    0
+    ---
+    Start
+    After first check
+    After second check
+    Found 3
+    3
+    ---
+    Start
+    After first check
+    After second check
+    End of loop
+    2
+
+  Actual Output:
+    Start
+    Negative
+    -1
+    ---
+    Start
+    After first check
+    Zero
+    0
+    ---
+    Start
+    After first check
+    After second check
+    Found 3
+    3
+    ---
+    Start
+    After first check
+    After second check
+    End of loop
+    2
+
+  Status: ✅ PASS
+
+---
+
+Test: test_return_deep_nest.in
+  Expected Output:
+    110
+    111
+    112
+    -1
+
+  Actual Output:
+    110
+    111
+    112
+    -1
+
+  Status: ✅ PASS
+
+---
+
+Test: test_return_multiple.in
+  Expected Output:
+    2
+    3
+    -1
+    -1
+
+  Actual Output:
+    2
+    None
+    -1
+    None
+
+  Status: ❌ FAIL
+  Differences:
+    2c2
+    < 3
+    ---
+    > None
+    4c4
+    < -1
+    ---
+    > None
+
+---
+

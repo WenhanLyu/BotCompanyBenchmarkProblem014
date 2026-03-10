@@ -17,10 +17,22 @@
 
 // Value class using std::variant to represent Python values
 // std::monostate represents None in Python
-// TupleValue is a recursive type defined after Value
+// TupleValue and ListValue are recursive types with wrapper structs to differentiate them
 struct Value;
-using TupleValue = std::vector<Value>;
-struct Value : std::variant<std::monostate, int, bool, std::string, double, BigInteger, TupleValue> {
+
+struct TupleValue {
+    std::vector<Value> elements;
+    TupleValue() = default;
+    TupleValue(const std::vector<Value>& elems) : elements(elems) {}
+};
+
+struct ListValue {
+    std::vector<Value> elements;
+    ListValue() = default;
+    ListValue(const std::vector<Value>& elems) : elements(elems) {}
+};
+
+struct Value : std::variant<std::monostate, int, bool, std::string, double, BigInteger, TupleValue, ListValue> {
     using variant::variant;
 };
 

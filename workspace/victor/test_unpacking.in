@@ -1,0 +1,7 @@
+# Test tuple unpacking
+def return_single():
+    return 42
+
+x, y = return_single()
+print(x)
+print(y)

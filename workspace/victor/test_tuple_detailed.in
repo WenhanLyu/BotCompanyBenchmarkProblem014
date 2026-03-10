@@ -1,0 +1,23 @@
+# Test multiple return values
+def test1():
+    return 5, 10
+
+def test2():
+    return 1, 2, 3
+
+a = test1()
+print("test1 result:")
+print(a)
+
+b = test2()
+print("test2 result:")
+print(b)
+
+# Test explicit tuple creation
+def test3():
+    x = (7, 8)
+    return x
+
+c = test3()
+print("test3 result:")
+print(c)

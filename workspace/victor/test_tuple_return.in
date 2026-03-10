@@ -1,0 +1,12 @@
+# Test to isolate the issue: is it return or unpacking?
+
+# Test 1: Can we return a tuple?
+def return_tuple():
+    return 1, 2
+
+result = return_tuple()
+print("Result of return_tuple():")
+print(result)
+
+# Test 2: Can we unpack a tuple?
+# This will help us determine if the problem is with unpacking

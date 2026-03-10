@@ -36,9 +36,9 @@ addorsub_op: '+'|'-';
 term: factor (muldivmod_op factor)*;
 muldivmod_op: '*'|'/'|'//'|'%';
 factor: ('+'|'-') factor | atom_expr;
-atom_expr: atom trailer?;
-trailer: '(' (arglist)? ')' ;
-atom: (NAME | NUMBER | STRING+| 'None' | 'True' | 'False' | ('(' test ')') | format_string);
+atom_expr: atom trailer*;
+trailer: '(' (arglist)? ')' | '[' test ']' ;
+atom: (NAME | NUMBER | STRING+| 'None' | 'True' | 'False' | ('(' test ')') | ('[' testlist? ']') | format_string);
 format_string: FORMAT_QUOTATION (FORMAT_STRING_LITERAL | '{' testlist '}')* QUOTATION;
 testlist: test (',' test)* (',')?;// arithmetic expressions  eg: a,b   a   a+b
 arglist: argument (',' argument)*  (',')?;
