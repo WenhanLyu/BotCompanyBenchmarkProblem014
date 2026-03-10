@@ -277,21 +277,45 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
         
         // Evaluate all values from the right-hand side
         std::vector<Value> values;
-        for (auto rightTest : rightTests) {
-            auto valueAny = visit(rightTest);
-            Value value;
-            
+        
+        // Special case: if there's only one test on the RHS, check if it's a tuple
+        if (rightTests.size() == 1) {
+            auto valueAny = visit(rightTests[0]);
             if (valueAny.has_value()) {
                 try {
-                    value = std::any_cast<Value>(valueAny);
+                    Value value = std::any_cast<Value>(valueAny);
+                    // If the value is a TupleValue, unpack it
+                    if (std::holds_alternative<TupleValue>(value)) {
+                        TupleValue tuple = std::get<TupleValue>(value);
+                        values = tuple;
+                    } else {
+                        // Single non-tuple value
+                        values.push_back(value);
+                    }
                 } catch (...) {
-                    // If not a Value, use None
-                    value = Value(std::monostate{});
+                    values.push_back(Value(std::monostate{}));
                 }
             } else {
-                value = Value(std::monostate{});
+                values.push_back(Value(std::monostate{}));
             }
-            values.push_back(value);
+        } else {
+            // Multiple tests on RHS - evaluate each one
+            for (auto rightTest : rightTests) {
+                auto valueAny = visit(rightTest);
+                Value value;
+                
+                if (valueAny.has_value()) {
+                    try {
+                        value = std::any_cast<Value>(valueAny);
+                    } catch (...) {
+                        // If not a Value, use None
+                        value = Value(std::monostate{});
+                    }
+                } else {
+                    value = Value(std::monostate{});
+                }
+                values.push_back(value);
+            }
         }
         
         // Assign to all variables on the left (excluding the last testlist which is the RHS)
@@ -1319,13 +1343,29 @@ std::string EvalVisitor::valueToString(const Value& val) {
     } else if (std::holds_alternative<BigInteger>(val)) {
         // Print BigInteger
         return std::get<BigInteger>(val).toString();
+    } else if (std::holds_alternative<TupleValue>(val)) {
+        // Print tuple as (elem1, elem2, ...)
+        const TupleValue& tuple = std::get<TupleValue>(val);
+        std::string result = "(";
+        for (size_t i = 0; i < tuple.size(); i++) {
+            result += valueToString(tuple[i]);
+            if (i < tuple.size() - 1) {
+                result += ", ";
+            }
+        }
+        // Special case: single-element tuple needs trailing comma
+        if (tuple.size() == 1) {
+            result += ",";
+        }
+        result += ")";
+        return result;
     }
     return "";
 }
 
 bool EvalVisitor::valueToBool(const Value& val) {
     // Convert Python value to bool using Python's truthiness rules
-    // False values: None, False, 0, 0.0, empty string "", BigInteger(0)
+    // False values: None, False, 0, 0.0, empty string "", BigInteger(0), empty tuple ()
     // True values: everything else
     if (std::holds_alternative<std::monostate>(val)) {
         return false; // None is falsy
@@ -1339,6 +1379,8 @@ bool EvalVisitor::valueToBool(const Value& val) {
         return !std::get<std::string>(val).empty();
     } else if (std::holds_alternative<BigInteger>(val)) {
         return !std::get<BigInteger>(val).isZero();
+    } else if (std::holds_alternative<TupleValue>(val)) {
+        return !std::get<TupleValue>(val).empty();
     }
     return false;
 }
@@ -1647,9 +1689,9 @@ std::any EvalVisitor::visitReturn_stmt(Python3Parser::Return_stmtContext *ctx) {
     
     auto testlist = ctx->testlist();
     if (testlist) {
-        // testlist can have multiple tests, but typically just one for return
         auto tests = testlist->test();
-        if (!tests.empty()) {
+        if (tests.size() == 1) {
+            // Single return value
             auto result = visit(tests[0]);
             if (result.has_value()) {
                 try {
@@ -1659,6 +1701,23 @@ std::any EvalVisitor::visitReturn_stmt(Python3Parser::Return_stmtContext *ctx) {
                     returnValue = Value(std::monostate{});
                 }
             }
+        } else if (tests.size() > 1) {
+            // Multiple return values - return as tuple
+            TupleValue tuple;
+            for (auto test : tests) {
+                auto result = visit(test);
+                if (result.has_value()) {
+                    try {
+                        tuple.push_back(std::any_cast<Value>(result));
+                    } catch (...) {
+                        // If cast fails, add None to tuple
+                        tuple.push_back(Value(std::monostate{}));
+                    }
+                } else {
+                    tuple.push_back(Value(std::monostate{}));
+                }
+            }
+            returnValue = Value(tuple);
         }
     }
     
