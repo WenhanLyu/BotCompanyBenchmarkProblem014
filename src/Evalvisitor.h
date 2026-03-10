@@ -119,6 +119,7 @@ private:
     // Structure to store function definitions
     struct FunctionDef {
         std::vector<std::string> parameters;  // Parameter names
+        std::vector<Value> defaultValues;      // Default values (aligned with parameters, None if no default)
         Python3Parser::SuiteContext* body;     // Function body (suite)
         std::set<std::string> assignedVars;    // Variables assigned in function (local vars)
         std::set<std::string> globalVars;      // Variables declared with global keyword

@@ -1813,6 +1813,7 @@ std::any EvalVisitor::visitFuncdef(Python3Parser::FuncdefContext *ctx) {
     // Get the parameters
     auto parametersCtx = ctx->parameters();
     std::vector<std::string> params;
+    std::vector<Value> defaults;
     
     if (parametersCtx) {
         // parameters: '(' typedargslist? ')'
@@ -1821,10 +1822,37 @@ std::any EvalVisitor::visitFuncdef(Python3Parser::FuncdefContext *ctx) {
             // typedargslist: (tfpdef ('=' test)? (',' tfpdef ('=' test)?)*);
             // tfpdef: NAME
             auto tfpdefs = typedargslist->tfpdef();
+            auto tests = typedargslist->test();  // Default value expressions
+            
+            // Parse parameter names
             for (auto tfpdef : tfpdefs) {
                 auto paramName = tfpdef->NAME();
                 if (paramName) {
                     params.push_back(paramName->getText());
+                }
+            }
+            
+            // Calculate default values
+            // The number of tests equals the number of parameters with defaults
+            // Default parameters must be at the end, so:
+            // - First (params.size() - tests.size()) parameters have no default (None)
+            // - Last tests.size() parameters have defaults from tests
+            size_t numParams = params.size();
+            size_t numDefaults = tests.size();
+            size_t numNonDefaults = numParams - numDefaults;
+            
+            // Add None for parameters without defaults
+            for (size_t i = 0; i < numNonDefaults; i++) {
+                defaults.push_back(Value(std::monostate{}));  // None
+            }
+            
+            // Add evaluated default expressions for parameters with defaults
+            for (size_t i = 0; i < numDefaults; i++) {
+                auto defaultExpr = visit(tests[i]);
+                if (defaultExpr.has_value()) {
+                    defaults.push_back(std::any_cast<Value>(defaultExpr));
+                } else {
+                    defaults.push_back(Value(std::monostate{}));  // None
                 }
             }
         }
@@ -1844,6 +1872,7 @@ std::any EvalVisitor::visitFuncdef(Python3Parser::FuncdefContext *ctx) {
     // Store the function definition
     FunctionDef funcDef;
     funcDef.parameters = params;
+    funcDef.defaultValues = defaults;
     funcDef.body = suite;
     funcDef.assignedVars = assignedVars;
     funcDef.globalVars = globalVars;
