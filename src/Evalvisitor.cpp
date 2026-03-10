@@ -362,8 +362,8 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                 if (values.size() == 1) {
                     value = values[0];
                 } else {
-                    // If RHS has multiple values but LHS is single, assign the first value
-                    value = !values.empty() ? values[0] : Value(std::monostate{});
+                    // If RHS has multiple values but LHS is single, create a tuple
+                    value = TupleValue(values);
                 }
                 
                 // Determine if this variable is local
