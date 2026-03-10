@@ -1,0 +1,17 @@
+# Memory Leak Detection Test
+# This test performs 100000 type conversions to detect memory leaks
+# If memory leaks exist, execution time will increase or program will crash
+
+print("Memory leak test: 100000 type conversions")
+count = 0
+i = 0
+while i < 100000:
+    # Create temporary objects that should be freed
+    a = int(3.14)
+    b = float(42)
+    c = str(123)
+    d = bool(1)
+    count = count + 1
+    i = i + 1
+print(count)
+print("Memory leak test completed successfully")

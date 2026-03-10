@@ -1,0 +1,21 @@
+Test 1: Converting 10000 floats to int
+10000
+Test 2: Converting 10000 ints to float
+10000
+Test 3: Converting 10000 numbers to str
+10000
+Test 4: Converting 10000 values to bool
+10000
+Test 5: Mixed type conversions - 5000 iterations
+5000
+Test 6: Nested conversions - 1000 iterations
+1000
+Test 7: String to number conversions - 5000 iterations
+5000
+Test 8: Large BigInteger to string conversions - 1000 iterations
+1000
+Test 9: Memory stress test - 10000 str allocations
+10000
+Test 10: Conversion chain - 2000 iterations
+2000
+All performance tests completed successfully

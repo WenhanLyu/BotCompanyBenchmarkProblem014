@@ -1,0 +1,38 @@
+# BigInteger Performance Test
+# Tests conversion of large BigInteger to string and back
+
+print("Test 1: Creating large BigInteger")
+big = 123456789
+big = big * big
+print("BigInteger created")
+
+print("Test 2: Converting large BigInteger to string 10000 times")
+count = 0
+i = 0
+while i < 10000:
+    s = str(big)
+    count = count + 1
+    i = i + 1
+print(count)
+
+print("Test 3: Converting string back to int 5000 times")
+count = 0
+i = 0
+bigstr = str(big)
+while i < 5000:
+    num = int(bigstr)
+    count = count + 1
+    i = i + 1
+print(count)
+
+print("Test 4: Round-trip conversion 1000 times")
+count = 0
+i = 0
+while i < 1000:
+    s = str(big)
+    n = int(s)
+    count = count + 1
+    i = i + 1
+print(count)
+
+print("All BigInteger performance tests completed successfully")
