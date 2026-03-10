@@ -1751,3 +1751,218 @@ M18 identifies 1-2 high-confidence features for M19 implementation, OR confirms 
 
 **Next Milestone:** M20 (defining based on independent analysis)
 
+
+---
+
+## M20: Subscript Operations ✅ COMPLETE
+
+**Goal:** Implement subscript/indexing operations for lists, tuples, and strings
+
+**Cycles Budget:** 2 | **Cycles Used:** 2 | **Status:** ✅ COMPLETE
+
+**Implementation Summary (Cycles 177-179):**
+- Grammar updated to support subscript syntax `[expr]` in trailer rule
+- Parser regenerated with ANTLR4
+- Implemented `visitAtom_expr()` to handle subscripting
+- Added ListValue and TupleValue types to Value variant
+- Positive indexing: `[1,2,3][0] → 1`, `'hello'[1] → 'e'`
+- Negative indexing: `[1,2,3][-1] → 3`, `'hello'[-1] → 'o'`
+- Bounds checking with proper error messages
+- Fixed tuple creation in assignment statements
+
+**Merged:** PR #16 (commit 319c715)  
+**Verified:** Diana (commit 9359143)
+
+**Acceptance Criteria:** ALL MET ✅
+- [x] List indexing: `[1,2,3][0] → 1`, `[1,2,3][2] → 3`
+- [x] Tuple indexing: `(10,20,30)[1] → 20`
+- [x] String indexing: `'hello'[1] → 'e'`, `'hello'[4] → 'o'`
+- [x] Negative indexing: `[1,2,3][-1] → 3`, `'abc'[-2] → 'b'`
+- [x] Bounds checking: Proper error messages, no crashes
+- [x] All 36 local tests passing (100%)
+- [x] Code compiles cleanly
+
+**Post-M20 Analysis (Elena):**
+Identified 3 potential features for M21:
+1. Default Parameters - tested, NOT working ❌
+2. Keyword Arguments - tested, NOT working ❌
+3. Chained Comparisons - tested, ALREADY WORKS ✅
+
+**Outcome:** M20 complete. Subscript operations fully functional for all sequence types.
+
+---
+
+## M21: Function Arguments Enhancement (DEFINED)
+
+**Goal:** Implement default parameters and keyword arguments to unlock AdvancedTest category
+
+**Cycles Budget:** 5-6 cycles (3 for defaults, 2-3 for keywords)
+
+**Status:** READY TO START
+
+**Strategic Context:**
+- Grammar explicitly supports both features (Section 6, tfpdef rules)
+- Current implementation only handles positional arguments
+- Manual testing confirms both features are broken
+- Expected to unlock 10-20% of remaining OJ tests (primarily AdvancedTests)
+
+**Part A: Default Parameters (3 cycles)**
+
+**Current Behavior (BROKEN):**
+```python
+def f(a, b=5):
+    print(a, b)
+
+f(10)      # Outputs: 10 None (WRONG - should be: 10 5)
+f(10, 20)  # Outputs: 10 20 (correct)
+```
+
+**Implementation Requirements:**
+1. Parse default value expressions at function definition time
+2. Store defaults in FunctionDef structure: `std::vector<Value> defaultValues`
+3. Evaluate default expressions when function is defined (not when called)
+4. Allow fewer arguments than parameters if defaults exist
+5. Apply defaults from right to left (Python standard behavior)
+
+**Code Changes:**
+- `src/Evalvisitor.h`: Add `defaultValues` field to `FunctionDef` struct
+- `src/Evalvisitor.cpp`:
+  - `visitFuncdef()`: Parse and evaluate default expressions, store in FunctionDef
+  - `visitTrailer()`: Check if args provided < params required, use defaults for missing
+
+**Test Cases:**
+```python
+# Basic default
+def greet(name, greeting="Hello"):
+    print(greeting, name)
+greet("Alice")           # Hello Alice
+greet("Bob", "Hi")       # Hi Bob
+
+# Multiple defaults
+def info(a, b=10, c=20):
+    print(a, b, c)
+info(1)                  # 1 10 20
+info(1, 2)               # 1 2 20
+info(1, 2, 3)            # 1 2 3
+
+# Expression defaults
+def f(x, y=2*3):
+    print(x, y)
+f(5)                     # 5 6
+```
+
+**Acceptance Criteria (Part A):**
+- [ ] Functions can define default parameter values
+- [ ] Defaults evaluated at definition time (not call time)
+- [ ] Can call with fewer args than params (use defaults)
+- [ ] Cannot omit non-default params before defaults
+- [ ] Expressions in defaults work (e.g., `b=2+3`)
+- [ ] All 36 local tests still passing
+- [ ] No regressions
+
+---
+
+**Part B: Keyword Arguments (2-3 cycles)**
+
+**Current Behavior (BROKEN):**
+```python
+def f(a, b, c):
+    print(a, b, c)
+
+f(1, 2, 3)              # Outputs: 1 2 3 (correct)
+f(c=30, a=10, b=20)     # Outputs: None None None (WRONG - should be: 10 20 30)
+```
+
+**Implementation Requirements:**
+1. Parse keyword argument syntax: `name=expr` in function calls
+2. Distinguish positional vs keyword arguments
+3. Match keyword arguments to parameter names
+4. Enforce: all positional arguments before keyword arguments
+5. Support mixing: `f(1, c=3, b=2)` → matches a=1, b=2, c=3
+6. Error handling: duplicate keywords, unknown parameter names
+
+**Code Changes:**
+- `src/Evalvisitor.cpp`:
+  - `visitArgument()`: Detect `test '=' test` pattern for keyword args
+  - Create data structure to hold both positional and keyword args
+  - `visitTrailer()`: Implement argument matching algorithm
+
+**Argument Matching Algorithm:**
+```
+1. Create param→value map (initially all None)
+2. Process positional args first (match left-to-right)
+3. Process keyword args (match by name)
+4. Apply defaults for unmatched params (if defaults exist)
+5. Error if any param still unmatched
+```
+
+**Test Cases:**
+```python
+# All positional
+def f(a, b, c): print(a, b, c)
+f(1, 2, 3)              # 1 2 3
+
+# All keyword (any order)
+f(c=30, a=10, b=20)     # 10 20 30
+f(b=2, a=1, c=3)        # 1 2 3
+
+# Mixed (positional before keyword)
+f(1, c=3, b=2)          # 1 2 3
+f(1, 2, c=3)            # 1 2 3
+
+# With defaults
+def g(a, b=20, c=30): print(a, b, c)
+g(10)                   # 10 20 30
+g(10, c=300)            # 10 20 300
+g(10, 200, c=300)       # 10 200 300
+g(c=3, a=1)             # 1 20 3
+```
+
+**Acceptance Criteria (Part B):**
+- [ ] Functions accept keyword arguments
+- [ ] Keyword args match parameter names correctly
+- [ ] Keyword args can be in any order
+- [ ] Can mix positional and keyword args
+- [ ] Positional args must come before keyword args
+- [ ] Error on duplicate or unknown keywords
+- [ ] Works with default parameters
+- [ ] All 36 local tests still passing
+- [ ] No regressions
+
+---
+
+**M21 Total Deliverables:**
+1. Default parameter implementation (Part A)
+2. Keyword argument implementation (Part B)  
+3. Integration: defaults + keywords work together
+4. Comprehensive test suite for both features
+5. All regression tests passing
+6. Code committed and pushed to master
+
+**Expected OJ Impact:**
+- Conservative: +7-10 tests (AdvancedTests category)
+- Realistic: +12-15 tests (reach 58-61/72, 81-85%)
+- Optimistic: +18-20 tests (reach 64-66/72, 89-92%)
+
+**Success Metrics:**
+- Minimum: Both features implemented and working
+- Target: +10 tests on next OJ submission
+- Stretch: Unlock Subtask 3 (AdvancedTests threshold)
+
+**Risk Assessment:**
+- Technical: Medium (complex argument matching logic)
+- Regression: Low (isolated to function call mechanism)
+- Time: Medium (5-6 cycles estimated, could extend to 7-8)
+
+**Testing Strategy:**
+1. Create comprehensive local test files
+2. Compare against Python 3 reference implementation
+3. Test all edge cases (no args, all defaults, mixed, etc.)
+4. Regression test all 36 existing tests
+5. Performance check (ensure no slowdowns)
+
+**Next Steps After M21:**
+- If successful: OJ submission #6 to validate
+- If OJ #5 arrives: Adjust M22 based on empirical data
+- Continue with remaining features: for loops, list methods, etc.
+
