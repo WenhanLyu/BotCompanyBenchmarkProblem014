@@ -1,0 +1,5 @@
+def f(a, b):
+    print(a)
+    print(b)
+
+f(1, 2)

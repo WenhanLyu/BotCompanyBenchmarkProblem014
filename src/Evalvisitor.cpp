@@ -774,25 +774,57 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
             // This is a user-defined function call
             const FunctionDef& funcDef = funcIt->second;
             
-            // Evaluate the arguments
-            std::vector<Value> argValues;
+            // Evaluate the arguments - support both positional and keyword arguments
+            std::vector<Value> positionalArgs;
+            std::map<std::string, Value> keywordArgs;
+            bool seenKeyword = false;
+            
             auto arglist = trailer->arglist();
             if (arglist) {
                 auto args = arglist->argument();
                 for (auto arg : args) {
                     auto tests = arg->test();
-                    if (!tests.empty()) {
-                        auto argValue = visit(tests[0]);
+                    
+                    // Check if this is a keyword argument: test '=' test
+                    if (tests.size() == 2) {
+                        // This is a keyword argument
+                        seenKeyword = true;
+                        
+                        // The first test must be a simple name (identifier)
+                        std::string paramName = tests[0]->getText();
+                        
+                        // Evaluate the value (second test)
+                        auto argValue = visit(tests[1]);
+                        Value val = Value(std::monostate{});
                         if (argValue.has_value()) {
                             try {
-                                Value val = std::any_cast<Value>(argValue);
-                                argValues.push_back(val);
+                                val = std::any_cast<Value>(argValue);
                             } catch (...) {
-                                argValues.push_back(Value(std::monostate{}));
+                                // Keep as None
                             }
-                        } else {
-                            argValues.push_back(Value(std::monostate{}));
                         }
+                        
+                        // Store the keyword argument
+                        if (keywordArgs.find(paramName) != keywordArgs.end()) {
+                            throw std::runtime_error("Duplicate keyword argument: " + paramName);
+                        }
+                        keywordArgs[paramName] = val;
+                    } else if (!tests.empty()) {
+                        // This is a positional argument
+                        if (seenKeyword) {
+                            throw std::runtime_error("Positional argument follows keyword argument");
+                        }
+                        
+                        auto argValue = visit(tests[0]);
+                        Value val = Value(std::monostate{});
+                        if (argValue.has_value()) {
+                            try {
+                                val = std::any_cast<Value>(argValue);
+                            } catch (...) {
+                                // Keep as None
+                            }
+                        }
+                        positionalArgs.push_back(val);
                     }
                 }
             }
@@ -807,24 +839,57 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
             currentFunctionLocals = &funcDef.assignedVars;
             currentFunctionGlobals = funcDef.globalVars;
             
-            // Check if too many arguments provided
-            if (argValues.size() > funcDef.parameters.size()) {
-                throw std::runtime_error("Too many arguments provided to function");
+            // Argument Matching Algorithm:
+            // 1. Initialize all parameters to None
+            // 2. Bind positional arguments first (left-to-right)
+            // 3. Bind keyword arguments (by name)
+            // 4. Apply default values for unmatched parameters
+            // 5. Error if any required parameter is still unmatched
+            
+            std::set<std::string> boundParams;
+            
+            // Step 1 & 2: Bind positional arguments
+            if (positionalArgs.size() > funcDef.parameters.size()) {
+                throw std::runtime_error("Too many positional arguments");
             }
             
-            // Bind parameters to arguments (parameters are always local)
+            for (size_t i = 0; i < positionalArgs.size(); i++) {
+                localVars[funcDef.parameters[i]] = positionalArgs[i];
+                boundParams.insert(funcDef.parameters[i]);
+            }
+            
+            // Step 3: Bind keyword arguments
+            for (const auto& kwarg : keywordArgs) {
+                const std::string& paramName = kwarg.first;
+                const Value& argValue = kwarg.second;
+                
+                // Check if parameter exists
+                auto it = std::find(funcDef.parameters.begin(), funcDef.parameters.end(), paramName);
+                if (it == funcDef.parameters.end()) {
+                    throw std::runtime_error("Unknown parameter name: " + paramName);
+                }
+                
+                // Check if already bound by positional argument
+                if (boundParams.find(paramName) != boundParams.end()) {
+                    throw std::runtime_error("Parameter " + paramName + " specified multiple times");
+                }
+                
+                localVars[paramName] = argValue;
+                boundParams.insert(paramName);
+            }
+            
+            // Step 4 & 5: Apply defaults or error for unmatched required parameters
             for (size_t i = 0; i < funcDef.parameters.size(); i++) {
-                if (i < argValues.size()) {
-                    // Use provided argument
-                    localVars[funcDef.parameters[i]] = argValues[i];
-                } else {
-                    // Use default value if available
+                const std::string& paramName = funcDef.parameters[i];
+                
+                if (boundParams.find(paramName) == boundParams.end()) {
+                    // Parameter not bound - try to use default
                     if (i < funcDef.defaultValues.size() && 
                         !std::holds_alternative<std::monostate>(funcDef.defaultValues[i])) {
-                        localVars[funcDef.parameters[i]] = funcDef.defaultValues[i];
+                        localVars[paramName] = funcDef.defaultValues[i];
                     } else {
-                        // No argument provided and no default value - error
-                        throw std::runtime_error("Missing required parameter: " + funcDef.parameters[i]);
+                        // No default value - this is an error
+                        throw std::runtime_error("Missing required parameter: " + paramName);
                     }
                 }
             }
