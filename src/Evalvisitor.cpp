@@ -807,9 +807,26 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
             currentFunctionLocals = &funcDef.assignedVars;
             currentFunctionGlobals = funcDef.globalVars;
             
+            // Check if too many arguments provided
+            if (argValues.size() > funcDef.parameters.size()) {
+                throw std::runtime_error("Too many arguments provided to function");
+            }
+            
             // Bind parameters to arguments (parameters are always local)
-            for (size_t i = 0; i < funcDef.parameters.size() && i < argValues.size(); i++) {
-                localVars[funcDef.parameters[i]] = argValues[i];
+            for (size_t i = 0; i < funcDef.parameters.size(); i++) {
+                if (i < argValues.size()) {
+                    // Use provided argument
+                    localVars[funcDef.parameters[i]] = argValues[i];
+                } else {
+                    // Use default value if available
+                    if (i < funcDef.defaultValues.size() && 
+                        !std::holds_alternative<std::monostate>(funcDef.defaultValues[i])) {
+                        localVars[funcDef.parameters[i]] = funcDef.defaultValues[i];
+                    } else {
+                        // No argument provided and no default value - error
+                        throw std::runtime_error("Missing required parameter: " + funcDef.parameters[i]);
+                    }
+                }
             }
             
             // Execute the function body
