@@ -1524,17 +1524,67 @@ Analysis framework ready for 4 scenarios:
 2. Define M18 based on empirical data (likely 1 cycle investigation)
 3. Define M19 (Next Implementation) based on M18 findings
 
-**Outcome:** M17 BLOCKED on external dependency. No new milestone defined. Project in waiting state.
+**Outcome:** M17 BLOCKED on external dependency. Creating M18 (Investigation Round 5) to proceed independently.
 
 ---
 
-## Project Status Summary (Cycle 171)
+### M18: Investigation Round 5 - Independent Feature Analysis (DEFINED)
 
-**Phase:** Waiting for OJ #5 results (external dependency)
+**Goal:** Identify next highest-priority feature WITHOUT relying on OJ #5 data
+
+**Cycles Budget:** 1 | **Status:** READY TO START
+
+**Strategic Context:**
+- OJ #5 results unavailable 4+ hours after tag push
+- Cannot wait indefinitely - must make progress
+- Use grammar analysis + test analysis instead of OJ feedback
+- Prepare for immediate pivot if OJ #5 arrives
+
+**Investigation Approach:**
+1. **Grammar Analysis** - What Python features are grammatically required but not implemented?
+2. **Test Case Scanning** - What features appear in our test files?
+3. **Confidence Ranking** - Which features are DEFINITELY needed (grammar-mandated)?
+4. **Implementation Planning** - Prepare detailed plans for top 3 features
+
+**Known Candidate Features** (from M13 analysis based on OJ #4):
+1. Keyword Arguments & Default Parameters (3 cycles, +5-8 tests estimated)
+2. List Operations (indexing, slicing, methods) (2-3 cycles, +3-5 tests)
+3. Tuple Unpacking & Multiple Returns (2 cycles, +2-4 tests)
+4. For Loops (3 cycles, impact unknown)
+5. Advanced subscripting (2 cycles, impact unknown)
+
+**Deliverables:**
+1. List of confirmed missing features with HIGH confidence (grammar/test evidence)
+2. Conservative impact estimates (avoid speculation)
+3. Implementation complexity assessment
+4. Recommendation for M19 implementation milestone
+
+**Acceptance Criteria:**
+- At least 3 features identified with objective evidence (not speculation)
+- Each feature has: confidence level, estimated cycles, estimated impact
+- Implementation plans detailed enough to start immediately
+- **Pivot plan ready:** If OJ #5 arrives, switch to empirical analysis
+
+**Risk Mitigation:**
+- Focus on grammar-mandated features (objective evidence)
+- Avoid guessing about OJ test contents
+- Prepare multiple options, don't commit to single feature
+- Keep investigation short (1 cycle) - can iterate if needed
+
+**Expected Outcome:**
+M18 identifies 1-2 high-confidence features for M19 implementation, OR confirms we need OJ #5 data to proceed further.
+
+---
+
+## Project Status Summary (Cycle 172)
+
+**Phase:** Investigation (proceeding independently while OJ #5 pending)
 
 **Completed Milestones:** M1-M16 ✅ (all major features implemented)
 
-**Current Blocker:** External OJ submission system (issue #145 escalated to HUMAN)
+**Current Situation:** 
+- M17 blocked on external OJ #5 results (issue #145 escalated)
+- M18 created to investigate independently while waiting
 
 **Repository Health:** ✅ Excellent
 - Clean build, no warnings
