@@ -1,0 +1,136 @@
+=== SECTION 1: LIST INDEXING TESTS ===
+Test 1.1: List positive indexing
+1
+2
+3
+Test 1.2: List negative indexing
+40
+30
+20
+10
+Test 1.3: Single element list
+42
+42
+Test 1.4: Empty list creation
+[]
+Test 1.5: Multi-element list
+5
+30
+50
+50
+30
+5
+=== SECTION 2: TUPLE INDEXING TESTS ===
+Test 2.1: Tuple positive indexing
+10
+20
+30
+Test 2.2: Tuple negative indexing
+400
+300
+200
+100
+Test 2.3: Single value (not tuple)
+99
+Test 2.4: Mixed type tuple
+1
+hello
+3
+Test 2.5: Two-element tuple
+first
+second
+second
+first
+=== SECTION 3: STRING INDEXING TESTS ===
+Test 3.1: String positive indexing
+h
+e
+l
+l
+o
+Test 3.2: String negative indexing
+d
+l
+r
+o
+w
+Test 3.3: Single character string
+x
+x
+Test 3.4: Empty string
+
+Test 3.5: Multi-word string
+h
+w
+d
+ 
+Test 3.6: String with numbers
+a
+1
+3
+=== SECTION 4: EDGE CASES ===
+Test 4.1: Index = 0
+5
+a
+Test 4.2: Last element (positive index)
+7
+c
+Test 4.3: Last element (negative index)
+7
+c
+Test 4.4: BigInteger as index
+0
+111
+Test 4.5: Zero index
+99
+t
+Test 4.6: Computed indices
+30
+=== SECTION 5: INTEGRATION TESTS ===
+Test 5.1: Variable as index
+300
+400
+100
+Test 5.2: Expression as index
+30
+30
+s
+s
+Test 5.3: Nested subscripts
+1
+2
+3
+4
+4
+1
+Test 5.4: Subscripts in functions
+10
+p
+9
+Test 5.5: Subscripts in loops
+2
+4
+6
+8
+10
+Test 5.6: Subscripts with range
+a
+b
+c
+d
+e
+Test 5.7: Mixed subscript operations
+result
+42
+1
+2
+3
+Test 5.8: Subscript on return value
+77
+88
+99
+Test 5.9: Subscript on string expressions
+h
+w
+d
+=== ALL TESTS COMPLETE ===
