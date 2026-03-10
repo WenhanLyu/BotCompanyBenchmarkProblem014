@@ -278,18 +278,28 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
         // Evaluate all values from the right-hand side
         std::vector<Value> values;
         
+        // Check how many variables are on the LHS (for tuple unpacking decision)
+        bool needsUnpacking = false;
+        for (size_t i = 0; i < testlists.size() - 1; i++) {
+            auto tests = testlists[i]->test();
+            if (tests.size() > 1) {
+                needsUnpacking = true;
+                break;
+            }
+        }
+        
         // Special case: if there's only one test on the RHS, check if it's a tuple
         if (rightTests.size() == 1) {
             auto valueAny = visit(rightTests[0]);
             if (valueAny.has_value()) {
                 try {
                     Value value = std::any_cast<Value>(valueAny);
-                    // If the value is a TupleValue, unpack it
-                    if (std::holds_alternative<TupleValue>(value)) {
+                    // If the value is a TupleValue AND we have multiple vars on LHS, unpack it
+                    if (needsUnpacking && std::holds_alternative<TupleValue>(value)) {
                         TupleValue tuple = std::get<TupleValue>(value);
                         values = tuple;
                     } else {
-                        // Single non-tuple value
+                        // Single value or no unpacking needed - keep as-is
                         values.push_back(value);
                     }
                 } catch (...) {
