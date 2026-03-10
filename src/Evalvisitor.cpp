@@ -403,6 +403,220 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
             return std::any();
         }
         
+        // Handle int() type conversion function
+        if (funcName == "int") {
+            // Get the argument
+            auto arglist = trailer->arglist();
+            if (arglist) {
+                auto args = arglist->argument();
+                if (!args.empty() && args.size() == 1) {
+                    auto arg = args[0];
+                    auto tests = arg->test();
+                    if (!tests.empty()) {
+                        auto argValue = visit(tests[0]);
+                        if (argValue.has_value()) {
+                            try {
+                                Value val = std::any_cast<Value>(argValue);
+                                
+                                // Convert to int based on the type
+                                if (std::holds_alternative<int>(val)) {
+                                    // Already an int
+                                    return val;
+                                } else if (std::holds_alternative<double>(val)) {
+                                    // float → int: truncate decimal part
+                                    int intVal = static_cast<int>(std::get<double>(val));
+                                    return Value(intVal);
+                                } else if (std::holds_alternative<bool>(val)) {
+                                    // bool → int: True → 1, False → 0
+                                    return Value(std::get<bool>(val) ? 1 : 0);
+                                } else if (std::holds_alternative<std::string>(val)) {
+                                    // str → int: parse string as integer
+                                    std::string str = std::get<std::string>(val);
+                                    // Check if it's a large number that needs BigInteger
+                                    bool negative = !str.empty() && str[0] == '-';
+                                    std::string absStr = negative ? str.substr(1) : str;
+                                    if (absStr.length() > 10 || 
+                                        (absStr.length() == 10 && absStr > "2147483647")) {
+                                        // Use BigInteger for large integers
+                                        return Value(BigInteger(str));
+                                    } else {
+                                        // Use regular int
+                                        return Value(std::stoi(str));
+                                    }
+                                } else if (std::holds_alternative<BigInteger>(val)) {
+                                    // BigInteger → keep as BigInteger
+                                    return val;
+                                }
+                            } catch (...) {
+                                // Error in conversion
+                            }
+                        }
+                    }
+                }
+            }
+            // Return 0 if conversion failed
+            return Value(0);
+        }
+        
+        // Handle float() type conversion function
+        if (funcName == "float") {
+            // Get the argument
+            auto arglist = trailer->arglist();
+            if (arglist) {
+                auto args = arglist->argument();
+                if (!args.empty() && args.size() == 1) {
+                    auto arg = args[0];
+                    auto tests = arg->test();
+                    if (!tests.empty()) {
+                        auto argValue = visit(tests[0]);
+                        if (argValue.has_value()) {
+                            try {
+                                Value val = std::any_cast<Value>(argValue);
+                                
+                                // Convert to float based on the type
+                                if (std::holds_alternative<double>(val)) {
+                                    // Already a float
+                                    return val;
+                                } else if (std::holds_alternative<int>(val)) {
+                                    // int → float: direct conversion
+                                    return Value(static_cast<double>(std::get<int>(val)));
+                                } else if (std::holds_alternative<bool>(val)) {
+                                    // bool → float: True → 1.0, False → 0.0
+                                    return Value(std::get<bool>(val) ? 1.0 : 0.0);
+                                } else if (std::holds_alternative<std::string>(val)) {
+                                    // str → float: parse string as float
+                                    std::string str = std::get<std::string>(val);
+                                    return Value(std::stod(str));
+                                } else if (std::holds_alternative<BigInteger>(val)) {
+                                    // BigInteger → float: convert to double
+                                    BigInteger bi = std::get<BigInteger>(val);
+                                    // Try to convert to long long first, then to double
+                                    try {
+                                        long long ll = bi.toLongLong();
+                                        return Value(static_cast<double>(ll));
+                                    } catch (...) {
+                                        // If too large for long long, parse the string representation
+                                        return Value(std::stod(bi.toString()));
+                                    }
+                                }
+                            } catch (...) {
+                                // Error in conversion
+                            }
+                        }
+                    }
+                }
+            }
+            // Return 0.0 if conversion failed
+            return Value(0.0);
+        }
+        
+        // Handle str() type conversion function
+        if (funcName == "str") {
+            // Get the argument
+            auto arglist = trailer->arglist();
+            if (arglist) {
+                auto args = arglist->argument();
+                if (!args.empty() && args.size() == 1) {
+                    auto arg = args[0];
+                    auto tests = arg->test();
+                    if (!tests.empty()) {
+                        auto argValue = visit(tests[0]);
+                        if (argValue.has_value()) {
+                            try {
+                                Value val = std::any_cast<Value>(argValue);
+                                
+                                // Convert to str based on the type
+                                if (std::holds_alternative<std::string>(val)) {
+                                    // Already a string
+                                    return val;
+                                } else if (std::holds_alternative<int>(val)) {
+                                    // int → str: convert to string
+                                    return Value(std::to_string(std::get<int>(val)));
+                                } else if (std::holds_alternative<double>(val)) {
+                                    // float → str: format with 6 decimal places, remove trailing zeros
+                                    double d = std::get<double>(val);
+                                    std::ostringstream oss;
+                                    oss << std::fixed << std::setprecision(6) << d;
+                                    std::string result = oss.str();
+                                    // Remove trailing zeros after decimal point
+                                    size_t dotPos = result.find('.');
+                                    if (dotPos != std::string::npos) {
+                                        size_t lastNonZero = result.find_last_not_of('0');
+                                        if (lastNonZero > dotPos) {
+                                            result = result.substr(0, lastNonZero + 1);
+                                        } else {
+                                            // Keep at least one decimal place
+                                            result = result.substr(0, dotPos + 2);
+                                        }
+                                    }
+                                    return Value(result);
+                                } else if (std::holds_alternative<bool>(val)) {
+                                    // bool → str: "True" or "False"
+                                    return Value(std::get<bool>(val) ? "True" : "False");
+                                } else if (std::holds_alternative<BigInteger>(val)) {
+                                    // BigInteger → str: toString()
+                                    return Value(std::get<BigInteger>(val).toString());
+                                } else if (std::holds_alternative<std::monostate>(val)) {
+                                    // None → str: "None"
+                                    return Value("None");
+                                }
+                            } catch (...) {
+                                // Error in conversion
+                            }
+                        }
+                    }
+                }
+            }
+            // Return empty string if conversion failed
+            return Value("");
+        }
+        
+        // Handle bool() type conversion function
+        if (funcName == "bool") {
+            // Get the argument
+            auto arglist = trailer->arglist();
+            if (arglist) {
+                auto args = arglist->argument();
+                if (!args.empty() && args.size() == 1) {
+                    auto arg = args[0];
+                    auto tests = arg->test();
+                    if (!tests.empty()) {
+                        auto argValue = visit(tests[0]);
+                        if (argValue.has_value()) {
+                            try {
+                                Value val = std::any_cast<Value>(argValue);
+                                
+                                // Convert to bool based on the type
+                                if (std::holds_alternative<bool>(val)) {
+                                    // Already a bool
+                                    return val;
+                                } else if (std::holds_alternative<int>(val)) {
+                                    // int → bool: 0 → False, non-zero → True
+                                    return Value(std::get<int>(val) != 0);
+                                } else if (std::holds_alternative<double>(val)) {
+                                    // float → bool: 0.0 → False, non-zero → True
+                                    return Value(std::get<double>(val) != 0.0);
+                                } else if (std::holds_alternative<std::string>(val)) {
+                                    // str → bool: "" → False, non-empty → True
+                                    return Value(!std::get<std::string>(val).empty());
+                                } else if (std::holds_alternative<BigInteger>(val)) {
+                                    // BigInteger → bool: 0 → False, non-zero → True
+                                    return Value(!std::get<BigInteger>(val).isZero());
+                                } else if (std::holds_alternative<std::monostate>(val)) {
+                                    // None → bool: False
+                                    return Value(false);
+                                }
+                            } catch (...) {
+                                // Error in conversion
+                            }
+                        }
+                    }
+                }
+            }
+            // Return False if conversion failed
+            return Value(false);
+        }
+        
         // Check if this is a user-defined function
         auto funcIt = functions.find(funcName);
         if (funcIt != functions.end()) {
