@@ -3,7 +3,7 @@
 #include <regex>
 
 
-// Generated from Python3Lexer.g4 by ANTLR 4.13.2
+// Generated from resources/Python3Lexer.g4 by ANTLR 4.13.2
 
 
 #include "Python3Lexer.h"

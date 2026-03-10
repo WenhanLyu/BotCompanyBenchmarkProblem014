@@ -1,5 +1,5 @@
 
-// Generated from Python3Parser.g4 by ANTLR 4.13.2
+// Generated from resources/Python3Parser.g4 by ANTLR 4.13.2
 
 #pragma once
 
@@ -595,6 +595,9 @@ public:
     antlr4::tree::TerminalNode *OPEN_PAREN();
     antlr4::tree::TerminalNode *CLOSE_PAREN();
     ArglistContext *arglist();
+    antlr4::tree::TerminalNode *OPEN_BRACK();
+    TestContext *test();
+    antlr4::tree::TerminalNode *CLOSE_BRACK();
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
