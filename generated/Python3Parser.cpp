@@ -2,6 +2,7 @@
 // Generated from resources/Python3Parser.g4 by ANTLR 4.13.2
 
 
+#include "Python3ParserListener.h"
 #include "Python3ParserVisitor.h"
 
 #include "Python3Parser.h"
@@ -89,7 +90,7 @@ void python3parserParserInitialize() {
     }
   );
   static const int32_t serializedATNSegment[] = {
-  	4,1,84,347,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,6,2,
+  	4,1,84,348,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,6,2,
   	7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,2,12,7,12,2,13,7,13,2,14,7,
   	14,2,15,7,15,2,16,7,16,2,17,7,17,2,18,7,18,2,19,7,19,2,20,7,20,2,21,7,
   	21,2,22,7,22,2,23,7,23,2,24,7,24,2,25,7,25,2,26,7,26,2,27,7,27,2,28,7,
@@ -111,98 +112,99 @@ void python3parserParserInitialize() {
   	1,27,5,27,253,8,27,10,27,12,27,256,9,27,1,28,1,28,1,29,1,29,1,29,3,29,
   	263,8,29,1,30,1,30,5,30,267,8,30,10,30,12,30,270,9,30,1,31,1,31,3,31,
   	274,8,31,1,31,1,31,1,31,1,31,1,31,3,31,281,8,31,1,32,1,32,1,32,4,32,286,
-  	8,32,11,32,12,32,287,1,32,1,32,1,32,1,32,1,32,1,32,1,32,1,32,1,32,3,32,
-  	299,8,32,1,32,1,32,3,32,303,8,32,1,33,1,33,1,33,1,33,1,33,1,33,5,33,311,
-  	8,33,10,33,12,33,314,9,33,1,33,1,33,1,34,1,34,1,34,5,34,321,8,34,10,34,
-  	12,34,324,9,34,1,34,3,34,327,8,34,1,35,1,35,1,35,5,35,332,8,35,10,35,
-  	12,35,335,9,35,1,35,3,35,338,8,35,1,36,1,36,1,36,1,36,1,36,3,36,345,8,
-  	36,1,36,0,0,37,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,
-  	40,42,44,46,48,50,52,54,56,58,60,62,64,66,68,70,72,0,4,3,0,68,70,72,73,
-  	80,80,2,0,59,63,65,65,1,0,51,52,2,0,36,36,53,55,357,0,78,1,0,0,0,2,83,
-  	1,0,0,0,4,89,1,0,0,0,6,95,1,0,0,0,8,111,1,0,0,0,10,115,1,0,0,0,12,117,
-  	1,0,0,0,14,123,1,0,0,0,16,125,1,0,0,0,18,138,1,0,0,0,20,143,1,0,0,0,22,
-  	145,1,0,0,0,24,147,1,0,0,0,26,149,1,0,0,0,28,153,1,0,0,0,30,165,1,0,0,
-  	0,32,167,1,0,0,0,34,186,1,0,0,0,36,201,1,0,0,0,38,203,1,0,0,0,40,205,
-  	1,0,0,0,42,213,1,0,0,0,44,224,1,0,0,0,46,226,1,0,0,0,48,235,1,0,0,0,50,
-  	237,1,0,0,0,52,246,1,0,0,0,54,248,1,0,0,0,56,257,1,0,0,0,58,262,1,0,0,
-  	0,60,264,1,0,0,0,62,280,1,0,0,0,64,302,1,0,0,0,66,304,1,0,0,0,68,317,
-  	1,0,0,0,70,328,1,0,0,0,72,344,1,0,0,0,74,77,5,23,0,0,75,77,3,10,5,0,76,
-  	74,1,0,0,0,76,75,1,0,0,0,77,80,1,0,0,0,78,76,1,0,0,0,78,79,1,0,0,0,79,
-  	81,1,0,0,0,80,78,1,0,0,0,81,82,5,0,0,1,82,1,1,0,0,0,83,84,5,6,0,0,84,
-  	85,5,24,0,0,85,86,3,4,2,0,86,87,5,40,0,0,87,88,3,36,18,0,88,3,1,0,0,0,
-  	89,91,5,37,0,0,90,92,3,6,3,0,91,90,1,0,0,0,91,92,1,0,0,0,92,93,1,0,0,
-  	0,93,94,5,38,0,0,94,5,1,0,0,0,95,98,3,8,4,0,96,97,5,43,0,0,97,99,3,38,
-  	19,0,98,96,1,0,0,0,98,99,1,0,0,0,99,108,1,0,0,0,100,101,5,39,0,0,101,
-  	104,3,8,4,0,102,103,5,43,0,0,103,105,3,38,19,0,104,102,1,0,0,0,104,105,
-  	1,0,0,0,105,107,1,0,0,0,106,100,1,0,0,0,107,110,1,0,0,0,108,106,1,0,0,
-  	0,108,109,1,0,0,0,109,7,1,0,0,0,110,108,1,0,0,0,111,112,5,24,0,0,112,
-  	9,1,0,0,0,113,116,3,12,6,0,114,116,3,30,15,0,115,113,1,0,0,0,115,114,
-  	1,0,0,0,116,11,1,0,0,0,117,118,3,14,7,0,118,119,5,23,0,0,119,13,1,0,0,
-  	0,120,124,3,16,8,0,121,124,3,20,10,0,122,124,3,28,14,0,123,120,1,0,0,
-  	0,123,121,1,0,0,0,123,122,1,0,0,0,124,15,1,0,0,0,125,136,3,68,34,0,126,
-  	127,3,18,9,0,127,128,3,68,34,0,128,137,1,0,0,0,129,130,5,43,0,0,130,132,
-  	3,68,34,0,131,129,1,0,0,0,132,135,1,0,0,0,133,131,1,0,0,0,133,134,1,0,
-  	0,0,134,137,1,0,0,0,135,133,1,0,0,0,136,126,1,0,0,0,136,133,1,0,0,0,137,
-  	17,1,0,0,0,138,139,7,0,0,0,139,19,1,0,0,0,140,144,3,22,11,0,141,144,3,
-  	24,12,0,142,144,3,26,13,0,143,140,1,0,0,0,143,141,1,0,0,0,143,142,1,0,
-  	0,0,144,21,1,0,0,0,145,146,5,21,0,0,146,23,1,0,0,0,147,148,5,20,0,0,148,
-  	25,1,0,0,0,149,151,5,7,0,0,150,152,3,68,34,0,151,150,1,0,0,0,151,152,
-  	1,0,0,0,152,27,1,0,0,0,153,154,5,22,0,0,154,159,5,24,0,0,155,156,5,39,
-  	0,0,156,158,5,24,0,0,157,155,1,0,0,0,158,161,1,0,0,0,159,157,1,0,0,0,
-  	159,160,1,0,0,0,160,29,1,0,0,0,161,159,1,0,0,0,162,166,3,32,16,0,163,
-  	166,3,34,17,0,164,166,3,2,1,0,165,162,1,0,0,0,165,163,1,0,0,0,165,164,
-  	1,0,0,0,166,31,1,0,0,0,167,168,5,8,0,0,168,169,3,38,19,0,169,170,5,40,
-  	0,0,170,178,3,36,18,0,171,172,5,9,0,0,172,173,3,38,19,0,173,174,5,40,
-  	0,0,174,175,3,36,18,0,175,177,1,0,0,0,176,171,1,0,0,0,177,180,1,0,0,0,
-  	178,176,1,0,0,0,178,179,1,0,0,0,179,184,1,0,0,0,180,178,1,0,0,0,181,182,
-  	5,10,0,0,182,183,5,40,0,0,183,185,3,36,18,0,184,181,1,0,0,0,184,185,1,
-  	0,0,0,185,33,1,0,0,0,186,187,5,11,0,0,187,188,3,38,19,0,188,189,5,40,
-  	0,0,189,190,3,36,18,0,190,35,1,0,0,0,191,202,3,12,6,0,192,193,5,23,0,
-  	0,193,195,5,1,0,0,194,196,3,10,5,0,195,194,1,0,0,0,196,197,1,0,0,0,197,
-  	195,1,0,0,0,197,198,1,0,0,0,198,199,1,0,0,0,199,200,5,2,0,0,200,202,1,
-  	0,0,0,201,191,1,0,0,0,201,192,1,0,0,0,202,37,1,0,0,0,203,204,3,40,20,
-  	0,204,39,1,0,0,0,205,210,3,42,21,0,206,207,5,14,0,0,207,209,3,42,21,0,
-  	208,206,1,0,0,0,209,212,1,0,0,0,210,208,1,0,0,0,210,211,1,0,0,0,211,41,
-  	1,0,0,0,212,210,1,0,0,0,213,218,3,44,22,0,214,215,5,15,0,0,215,217,3,
-  	44,22,0,216,214,1,0,0,0,217,220,1,0,0,0,218,216,1,0,0,0,218,219,1,0,0,
-  	0,219,43,1,0,0,0,220,218,1,0,0,0,221,222,5,16,0,0,222,225,3,44,22,0,223,
-  	225,3,46,23,0,224,221,1,0,0,0,224,223,1,0,0,0,225,45,1,0,0,0,226,232,
-  	3,50,25,0,227,228,3,48,24,0,228,229,3,50,25,0,229,231,1,0,0,0,230,227,
-  	1,0,0,0,231,234,1,0,0,0,232,230,1,0,0,0,232,233,1,0,0,0,233,47,1,0,0,
-  	0,234,232,1,0,0,0,235,236,7,1,0,0,236,49,1,0,0,0,237,243,3,54,27,0,238,
-  	239,3,52,26,0,239,240,3,54,27,0,240,242,1,0,0,0,241,238,1,0,0,0,242,245,
-  	1,0,0,0,243,241,1,0,0,0,243,244,1,0,0,0,244,51,1,0,0,0,245,243,1,0,0,
-  	0,246,247,7,2,0,0,247,53,1,0,0,0,248,254,3,58,29,0,249,250,3,56,28,0,
-  	250,251,3,58,29,0,251,253,1,0,0,0,252,249,1,0,0,0,253,256,1,0,0,0,254,
-  	252,1,0,0,0,254,255,1,0,0,0,255,55,1,0,0,0,256,254,1,0,0,0,257,258,7,
-  	3,0,0,258,57,1,0,0,0,259,260,7,2,0,0,260,263,3,58,29,0,261,263,3,60,30,
-  	0,262,259,1,0,0,0,262,261,1,0,0,0,263,59,1,0,0,0,264,268,3,64,32,0,265,
-  	267,3,62,31,0,266,265,1,0,0,0,267,270,1,0,0,0,268,266,1,0,0,0,268,269,
-  	1,0,0,0,269,61,1,0,0,0,270,268,1,0,0,0,271,273,5,37,0,0,272,274,3,70,
-  	35,0,273,272,1,0,0,0,273,274,1,0,0,0,274,275,1,0,0,0,275,281,5,38,0,0,
-  	276,277,5,44,0,0,277,278,3,38,19,0,278,279,5,45,0,0,279,281,1,0,0,0,280,
-  	271,1,0,0,0,280,276,1,0,0,0,281,63,1,0,0,0,282,303,5,24,0,0,283,303,5,
-  	4,0,0,284,286,5,3,0,0,285,284,1,0,0,0,286,287,1,0,0,0,287,285,1,0,0,0,
-  	287,288,1,0,0,0,288,303,1,0,0,0,289,303,5,17,0,0,290,303,5,18,0,0,291,
-  	303,5,19,0,0,292,293,5,37,0,0,293,294,3,38,19,0,294,295,5,38,0,0,295,
-  	303,1,0,0,0,296,298,5,44,0,0,297,299,3,68,34,0,298,297,1,0,0,0,298,299,
-  	1,0,0,0,299,300,1,0,0,0,300,303,5,45,0,0,301,303,3,66,33,0,302,282,1,
-  	0,0,0,302,283,1,0,0,0,302,285,1,0,0,0,302,289,1,0,0,0,302,290,1,0,0,0,
-  	302,291,1,0,0,0,302,292,1,0,0,0,302,296,1,0,0,0,302,301,1,0,0,0,303,65,
-  	1,0,0,0,304,312,5,81,0,0,305,311,5,26,0,0,306,307,5,57,0,0,307,308,3,
-  	68,34,0,308,309,5,58,0,0,309,311,1,0,0,0,310,305,1,0,0,0,310,306,1,0,
-  	0,0,311,314,1,0,0,0,312,310,1,0,0,0,312,313,1,0,0,0,313,315,1,0,0,0,314,
-  	312,1,0,0,0,315,316,5,82,0,0,316,67,1,0,0,0,317,322,3,38,19,0,318,319,
-  	5,39,0,0,319,321,3,38,19,0,320,318,1,0,0,0,321,324,1,0,0,0,322,320,1,
-  	0,0,0,322,323,1,0,0,0,323,326,1,0,0,0,324,322,1,0,0,0,325,327,5,39,0,
-  	0,326,325,1,0,0,0,326,327,1,0,0,0,327,69,1,0,0,0,328,333,3,72,36,0,329,
-  	330,5,39,0,0,330,332,3,72,36,0,331,329,1,0,0,0,332,335,1,0,0,0,333,331,
-  	1,0,0,0,333,334,1,0,0,0,334,337,1,0,0,0,335,333,1,0,0,0,336,338,5,39,
-  	0,0,337,336,1,0,0,0,337,338,1,0,0,0,338,71,1,0,0,0,339,345,3,38,19,0,
-  	340,341,3,38,19,0,341,342,5,43,0,0,342,343,3,38,19,0,343,345,1,0,0,0,
-  	344,339,1,0,0,0,344,340,1,0,0,0,345,73,1,0,0,0,38,76,78,91,98,104,108,
-  	115,123,133,136,143,151,159,165,178,184,197,201,210,218,224,232,243,254,
-  	262,268,273,280,287,298,302,310,312,322,326,333,337,344
+  	8,32,11,32,12,32,287,1,32,1,32,1,32,1,32,1,32,3,32,295,8,32,1,32,1,32,
+  	1,32,3,32,300,8,32,1,32,1,32,3,32,304,8,32,1,33,1,33,1,33,1,33,1,33,1,
+  	33,5,33,312,8,33,10,33,12,33,315,9,33,1,33,1,33,1,34,1,34,1,34,5,34,322,
+  	8,34,10,34,12,34,325,9,34,1,34,3,34,328,8,34,1,35,1,35,1,35,5,35,333,
+  	8,35,10,35,12,35,336,9,35,1,35,3,35,339,8,35,1,36,1,36,1,36,1,36,1,36,
+  	3,36,346,8,36,1,36,0,0,37,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,
+  	32,34,36,38,40,42,44,46,48,50,52,54,56,58,60,62,64,66,68,70,72,0,4,3,
+  	0,68,70,72,73,80,80,2,0,59,63,65,65,1,0,51,52,2,0,36,36,53,55,359,0,78,
+  	1,0,0,0,2,83,1,0,0,0,4,89,1,0,0,0,6,95,1,0,0,0,8,111,1,0,0,0,10,115,1,
+  	0,0,0,12,117,1,0,0,0,14,123,1,0,0,0,16,125,1,0,0,0,18,138,1,0,0,0,20,
+  	143,1,0,0,0,22,145,1,0,0,0,24,147,1,0,0,0,26,149,1,0,0,0,28,153,1,0,0,
+  	0,30,165,1,0,0,0,32,167,1,0,0,0,34,186,1,0,0,0,36,201,1,0,0,0,38,203,
+  	1,0,0,0,40,205,1,0,0,0,42,213,1,0,0,0,44,224,1,0,0,0,46,226,1,0,0,0,48,
+  	235,1,0,0,0,50,237,1,0,0,0,52,246,1,0,0,0,54,248,1,0,0,0,56,257,1,0,0,
+  	0,58,262,1,0,0,0,60,264,1,0,0,0,62,280,1,0,0,0,64,303,1,0,0,0,66,305,
+  	1,0,0,0,68,318,1,0,0,0,70,329,1,0,0,0,72,345,1,0,0,0,74,77,5,23,0,0,75,
+  	77,3,10,5,0,76,74,1,0,0,0,76,75,1,0,0,0,77,80,1,0,0,0,78,76,1,0,0,0,78,
+  	79,1,0,0,0,79,81,1,0,0,0,80,78,1,0,0,0,81,82,5,0,0,1,82,1,1,0,0,0,83,
+  	84,5,6,0,0,84,85,5,24,0,0,85,86,3,4,2,0,86,87,5,40,0,0,87,88,3,36,18,
+  	0,88,3,1,0,0,0,89,91,5,37,0,0,90,92,3,6,3,0,91,90,1,0,0,0,91,92,1,0,0,
+  	0,92,93,1,0,0,0,93,94,5,38,0,0,94,5,1,0,0,0,95,98,3,8,4,0,96,97,5,43,
+  	0,0,97,99,3,38,19,0,98,96,1,0,0,0,98,99,1,0,0,0,99,108,1,0,0,0,100,101,
+  	5,39,0,0,101,104,3,8,4,0,102,103,5,43,0,0,103,105,3,38,19,0,104,102,1,
+  	0,0,0,104,105,1,0,0,0,105,107,1,0,0,0,106,100,1,0,0,0,107,110,1,0,0,0,
+  	108,106,1,0,0,0,108,109,1,0,0,0,109,7,1,0,0,0,110,108,1,0,0,0,111,112,
+  	5,24,0,0,112,9,1,0,0,0,113,116,3,12,6,0,114,116,3,30,15,0,115,113,1,0,
+  	0,0,115,114,1,0,0,0,116,11,1,0,0,0,117,118,3,14,7,0,118,119,5,23,0,0,
+  	119,13,1,0,0,0,120,124,3,16,8,0,121,124,3,20,10,0,122,124,3,28,14,0,123,
+  	120,1,0,0,0,123,121,1,0,0,0,123,122,1,0,0,0,124,15,1,0,0,0,125,136,3,
+  	68,34,0,126,127,3,18,9,0,127,128,3,68,34,0,128,137,1,0,0,0,129,130,5,
+  	43,0,0,130,132,3,68,34,0,131,129,1,0,0,0,132,135,1,0,0,0,133,131,1,0,
+  	0,0,133,134,1,0,0,0,134,137,1,0,0,0,135,133,1,0,0,0,136,126,1,0,0,0,136,
+  	133,1,0,0,0,137,17,1,0,0,0,138,139,7,0,0,0,139,19,1,0,0,0,140,144,3,22,
+  	11,0,141,144,3,24,12,0,142,144,3,26,13,0,143,140,1,0,0,0,143,141,1,0,
+  	0,0,143,142,1,0,0,0,144,21,1,0,0,0,145,146,5,21,0,0,146,23,1,0,0,0,147,
+  	148,5,20,0,0,148,25,1,0,0,0,149,151,5,7,0,0,150,152,3,68,34,0,151,150,
+  	1,0,0,0,151,152,1,0,0,0,152,27,1,0,0,0,153,154,5,22,0,0,154,159,5,24,
+  	0,0,155,156,5,39,0,0,156,158,5,24,0,0,157,155,1,0,0,0,158,161,1,0,0,0,
+  	159,157,1,0,0,0,159,160,1,0,0,0,160,29,1,0,0,0,161,159,1,0,0,0,162,166,
+  	3,32,16,0,163,166,3,34,17,0,164,166,3,2,1,0,165,162,1,0,0,0,165,163,1,
+  	0,0,0,165,164,1,0,0,0,166,31,1,0,0,0,167,168,5,8,0,0,168,169,3,38,19,
+  	0,169,170,5,40,0,0,170,178,3,36,18,0,171,172,5,9,0,0,172,173,3,38,19,
+  	0,173,174,5,40,0,0,174,175,3,36,18,0,175,177,1,0,0,0,176,171,1,0,0,0,
+  	177,180,1,0,0,0,178,176,1,0,0,0,178,179,1,0,0,0,179,184,1,0,0,0,180,178,
+  	1,0,0,0,181,182,5,10,0,0,182,183,5,40,0,0,183,185,3,36,18,0,184,181,1,
+  	0,0,0,184,185,1,0,0,0,185,33,1,0,0,0,186,187,5,11,0,0,187,188,3,38,19,
+  	0,188,189,5,40,0,0,189,190,3,36,18,0,190,35,1,0,0,0,191,202,3,12,6,0,
+  	192,193,5,23,0,0,193,195,5,1,0,0,194,196,3,10,5,0,195,194,1,0,0,0,196,
+  	197,1,0,0,0,197,195,1,0,0,0,197,198,1,0,0,0,198,199,1,0,0,0,199,200,5,
+  	2,0,0,200,202,1,0,0,0,201,191,1,0,0,0,201,192,1,0,0,0,202,37,1,0,0,0,
+  	203,204,3,40,20,0,204,39,1,0,0,0,205,210,3,42,21,0,206,207,5,14,0,0,207,
+  	209,3,42,21,0,208,206,1,0,0,0,209,212,1,0,0,0,210,208,1,0,0,0,210,211,
+  	1,0,0,0,211,41,1,0,0,0,212,210,1,0,0,0,213,218,3,44,22,0,214,215,5,15,
+  	0,0,215,217,3,44,22,0,216,214,1,0,0,0,217,220,1,0,0,0,218,216,1,0,0,0,
+  	218,219,1,0,0,0,219,43,1,0,0,0,220,218,1,0,0,0,221,222,5,16,0,0,222,225,
+  	3,44,22,0,223,225,3,46,23,0,224,221,1,0,0,0,224,223,1,0,0,0,225,45,1,
+  	0,0,0,226,232,3,50,25,0,227,228,3,48,24,0,228,229,3,50,25,0,229,231,1,
+  	0,0,0,230,227,1,0,0,0,231,234,1,0,0,0,232,230,1,0,0,0,232,233,1,0,0,0,
+  	233,47,1,0,0,0,234,232,1,0,0,0,235,236,7,1,0,0,236,49,1,0,0,0,237,243,
+  	3,54,27,0,238,239,3,52,26,0,239,240,3,54,27,0,240,242,1,0,0,0,241,238,
+  	1,0,0,0,242,245,1,0,0,0,243,241,1,0,0,0,243,244,1,0,0,0,244,51,1,0,0,
+  	0,245,243,1,0,0,0,246,247,7,2,0,0,247,53,1,0,0,0,248,254,3,58,29,0,249,
+  	250,3,56,28,0,250,251,3,58,29,0,251,253,1,0,0,0,252,249,1,0,0,0,253,256,
+  	1,0,0,0,254,252,1,0,0,0,254,255,1,0,0,0,255,55,1,0,0,0,256,254,1,0,0,
+  	0,257,258,7,3,0,0,258,57,1,0,0,0,259,260,7,2,0,0,260,263,3,58,29,0,261,
+  	263,3,60,30,0,262,259,1,0,0,0,262,261,1,0,0,0,263,59,1,0,0,0,264,268,
+  	3,64,32,0,265,267,3,62,31,0,266,265,1,0,0,0,267,270,1,0,0,0,268,266,1,
+  	0,0,0,268,269,1,0,0,0,269,61,1,0,0,0,270,268,1,0,0,0,271,273,5,37,0,0,
+  	272,274,3,70,35,0,273,272,1,0,0,0,273,274,1,0,0,0,274,275,1,0,0,0,275,
+  	281,5,38,0,0,276,277,5,44,0,0,277,278,3,38,19,0,278,279,5,45,0,0,279,
+  	281,1,0,0,0,280,271,1,0,0,0,280,276,1,0,0,0,281,63,1,0,0,0,282,304,5,
+  	24,0,0,283,304,5,4,0,0,284,286,5,3,0,0,285,284,1,0,0,0,286,287,1,0,0,
+  	0,287,285,1,0,0,0,287,288,1,0,0,0,288,304,1,0,0,0,289,304,5,17,0,0,290,
+  	304,5,18,0,0,291,304,5,19,0,0,292,294,5,37,0,0,293,295,3,68,34,0,294,
+  	293,1,0,0,0,294,295,1,0,0,0,295,296,1,0,0,0,296,304,5,38,0,0,297,299,
+  	5,44,0,0,298,300,3,68,34,0,299,298,1,0,0,0,299,300,1,0,0,0,300,301,1,
+  	0,0,0,301,304,5,45,0,0,302,304,3,66,33,0,303,282,1,0,0,0,303,283,1,0,
+  	0,0,303,285,1,0,0,0,303,289,1,0,0,0,303,290,1,0,0,0,303,291,1,0,0,0,303,
+  	292,1,0,0,0,303,297,1,0,0,0,303,302,1,0,0,0,304,65,1,0,0,0,305,313,5,
+  	81,0,0,306,312,5,26,0,0,307,308,5,57,0,0,308,309,3,68,34,0,309,310,5,
+  	58,0,0,310,312,1,0,0,0,311,306,1,0,0,0,311,307,1,0,0,0,312,315,1,0,0,
+  	0,313,311,1,0,0,0,313,314,1,0,0,0,314,316,1,0,0,0,315,313,1,0,0,0,316,
+  	317,5,82,0,0,317,67,1,0,0,0,318,323,3,38,19,0,319,320,5,39,0,0,320,322,
+  	3,38,19,0,321,319,1,0,0,0,322,325,1,0,0,0,323,321,1,0,0,0,323,324,1,0,
+  	0,0,324,327,1,0,0,0,325,323,1,0,0,0,326,328,5,39,0,0,327,326,1,0,0,0,
+  	327,328,1,0,0,0,328,69,1,0,0,0,329,334,3,72,36,0,330,331,5,39,0,0,331,
+  	333,3,72,36,0,332,330,1,0,0,0,333,336,1,0,0,0,334,332,1,0,0,0,334,335,
+  	1,0,0,0,335,338,1,0,0,0,336,334,1,0,0,0,337,339,5,39,0,0,338,337,1,0,
+  	0,0,338,339,1,0,0,0,339,71,1,0,0,0,340,346,3,38,19,0,341,342,3,38,19,
+  	0,342,343,5,43,0,0,343,344,3,38,19,0,344,346,1,0,0,0,345,340,1,0,0,0,
+  	345,341,1,0,0,0,346,73,1,0,0,0,39,76,78,91,98,104,108,115,123,133,136,
+  	143,151,159,165,178,184,197,201,210,218,224,232,243,254,262,268,273,280,
+  	287,294,299,303,311,313,323,327,334,338,345
   };
   staticData->serializedATN = antlr4::atn::SerializedATNView(serializedATNSegment, sizeof(serializedATNSegment) / sizeof(serializedATNSegment[0]));
 
@@ -280,6 +282,18 @@ Python3Parser::StmtContext* Python3Parser::File_inputContext::stmt(size_t i) {
 
 size_t Python3Parser::File_inputContext::getRuleIndex() const {
   return Python3Parser::RuleFile_input;
+}
+
+void Python3Parser::File_inputContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterFile_input(this);
+}
+
+void Python3Parser::File_inputContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitFile_input(this);
 }
 
 
@@ -393,6 +407,18 @@ size_t Python3Parser::FuncdefContext::getRuleIndex() const {
   return Python3Parser::RuleFuncdef;
 }
 
+void Python3Parser::FuncdefContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterFuncdef(this);
+}
+
+void Python3Parser::FuncdefContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitFuncdef(this);
+}
+
 
 std::any Python3Parser::FuncdefContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -456,6 +482,18 @@ Python3Parser::TypedargslistContext* Python3Parser::ParametersContext::typedargs
 
 size_t Python3Parser::ParametersContext::getRuleIndex() const {
   return Python3Parser::RuleParameters;
+}
+
+void Python3Parser::ParametersContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterParameters(this);
+}
+
+void Python3Parser::ParametersContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitParameters(this);
 }
 
 
@@ -546,6 +584,18 @@ size_t Python3Parser::TypedargslistContext::getRuleIndex() const {
   return Python3Parser::RuleTypedargslist;
 }
 
+void Python3Parser::TypedargslistContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterTypedargslist(this);
+}
+
+void Python3Parser::TypedargslistContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitTypedargslist(this);
+}
+
 
 std::any Python3Parser::TypedargslistContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -628,6 +678,18 @@ size_t Python3Parser::TfpdefContext::getRuleIndex() const {
   return Python3Parser::RuleTfpdef;
 }
 
+void Python3Parser::TfpdefContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterTfpdef(this);
+}
+
+void Python3Parser::TfpdefContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitTfpdef(this);
+}
+
 
 std::any Python3Parser::TfpdefContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -679,6 +741,18 @@ Python3Parser::Compound_stmtContext* Python3Parser::StmtContext::compound_stmt()
 
 size_t Python3Parser::StmtContext::getRuleIndex() const {
   return Python3Parser::RuleStmt;
+}
+
+void Python3Parser::StmtContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterStmt(this);
+}
+
+void Python3Parser::StmtContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitStmt(this);
 }
 
 
@@ -768,6 +842,18 @@ size_t Python3Parser::Simple_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleSimple_stmt;
 }
 
+void Python3Parser::Simple_stmtContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterSimple_stmt(this);
+}
+
+void Python3Parser::Simple_stmtContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitSimple_stmt(this);
+}
+
 
 std::any Python3Parser::Simple_stmtContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -825,6 +911,18 @@ Python3Parser::Global_stmtContext* Python3Parser::Small_stmtContext::global_stmt
 
 size_t Python3Parser::Small_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleSmall_stmt;
+}
+
+void Python3Parser::Small_stmtContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterSmall_stmt(this);
+}
+
+void Python3Parser::Small_stmtContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitSmall_stmt(this);
 }
 
 
@@ -927,6 +1025,18 @@ tree::TerminalNode* Python3Parser::Expr_stmtContext::ASSIGN(size_t i) {
 
 size_t Python3Parser::Expr_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleExpr_stmt;
+}
+
+void Python3Parser::Expr_stmtContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterExpr_stmt(this);
+}
+
+void Python3Parser::Expr_stmtContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitExpr_stmt(this);
 }
 
 
@@ -1035,6 +1145,18 @@ size_t Python3Parser::AugassignContext::getRuleIndex() const {
   return Python3Parser::RuleAugassign;
 }
 
+void Python3Parser::AugassignContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterAugassign(this);
+}
+
+void Python3Parser::AugassignContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitAugassign(this);
+}
+
 
 std::any Python3Parser::AugassignContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -1099,6 +1221,18 @@ Python3Parser::Return_stmtContext* Python3Parser::Flow_stmtContext::return_stmt(
 
 size_t Python3Parser::Flow_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleFlow_stmt;
+}
+
+void Python3Parser::Flow_stmtContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterFlow_stmt(this);
+}
+
+void Python3Parser::Flow_stmtContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitFlow_stmt(this);
 }
 
 
@@ -1174,6 +1308,18 @@ size_t Python3Parser::Break_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleBreak_stmt;
 }
 
+void Python3Parser::Break_stmtContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterBreak_stmt(this);
+}
+
+void Python3Parser::Break_stmtContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitBreak_stmt(this);
+}
+
 
 std::any Python3Parser::Break_stmtContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -1221,6 +1367,18 @@ tree::TerminalNode* Python3Parser::Continue_stmtContext::CONTINUE() {
 
 size_t Python3Parser::Continue_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleContinue_stmt;
+}
+
+void Python3Parser::Continue_stmtContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterContinue_stmt(this);
+}
+
+void Python3Parser::Continue_stmtContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitContinue_stmt(this);
 }
 
 
@@ -1274,6 +1432,18 @@ Python3Parser::TestlistContext* Python3Parser::Return_stmtContext::testlist() {
 
 size_t Python3Parser::Return_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleReturn_stmt;
+}
+
+void Python3Parser::Return_stmtContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterReturn_stmt(this);
+}
+
+void Python3Parser::Return_stmtContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitReturn_stmt(this);
 }
 
 
@@ -1351,6 +1521,18 @@ size_t Python3Parser::Global_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleGlobal_stmt;
 }
 
+void Python3Parser::Global_stmtContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterGlobal_stmt(this);
+}
+
+void Python3Parser::Global_stmtContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitGlobal_stmt(this);
+}
+
 
 std::any Python3Parser::Global_stmtContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -1421,6 +1603,18 @@ Python3Parser::FuncdefContext* Python3Parser::Compound_stmtContext::funcdef() {
 
 size_t Python3Parser::Compound_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleCompound_stmt;
+}
+
+void Python3Parser::Compound_stmtContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterCompound_stmt(this);
+}
+
+void Python3Parser::Compound_stmtContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitCompound_stmt(this);
 }
 
 
@@ -1532,6 +1726,18 @@ size_t Python3Parser::If_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleIf_stmt;
 }
 
+void Python3Parser::If_stmtContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterIf_stmt(this);
+}
+
+void Python3Parser::If_stmtContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitIf_stmt(this);
+}
+
 
 std::any Python3Parser::If_stmtContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -1628,6 +1834,18 @@ size_t Python3Parser::While_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleWhile_stmt;
 }
 
+void Python3Parser::While_stmtContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterWhile_stmt(this);
+}
+
+void Python3Parser::While_stmtContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitWhile_stmt(this);
+}
+
 
 std::any Python3Parser::While_stmtContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -1701,6 +1919,18 @@ Python3Parser::StmtContext* Python3Parser::SuiteContext::stmt(size_t i) {
 
 size_t Python3Parser::SuiteContext::getRuleIndex() const {
   return Python3Parser::RuleSuite;
+}
+
+void Python3Parser::SuiteContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterSuite(this);
+}
+
+void Python3Parser::SuiteContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitSuite(this);
 }
 
 
@@ -1800,6 +2030,18 @@ size_t Python3Parser::TestContext::getRuleIndex() const {
   return Python3Parser::RuleTest;
 }
 
+void Python3Parser::TestContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterTest(this);
+}
+
+void Python3Parser::TestContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitTest(this);
+}
+
 
 std::any Python3Parser::TestContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -1859,6 +2101,18 @@ tree::TerminalNode* Python3Parser::Or_testContext::OR(size_t i) {
 
 size_t Python3Parser::Or_testContext::getRuleIndex() const {
   return Python3Parser::RuleOr_test;
+}
+
+void Python3Parser::Or_testContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterOr_test(this);
+}
+
+void Python3Parser::Or_testContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitOr_test(this);
 }
 
 
@@ -1935,6 +2189,18 @@ size_t Python3Parser::And_testContext::getRuleIndex() const {
   return Python3Parser::RuleAnd_test;
 }
 
+void Python3Parser::And_testContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterAnd_test(this);
+}
+
+void Python3Parser::And_testContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitAnd_test(this);
+}
+
 
 std::any Python3Parser::And_testContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -2003,6 +2269,18 @@ Python3Parser::ComparisonContext* Python3Parser::Not_testContext::comparison() {
 
 size_t Python3Parser::Not_testContext::getRuleIndex() const {
   return Python3Parser::RuleNot_test;
+}
+
+void Python3Parser::Not_testContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterNot_test(this);
+}
+
+void Python3Parser::Not_testContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitNot_test(this);
 }
 
 
@@ -2095,6 +2373,18 @@ size_t Python3Parser::ComparisonContext::getRuleIndex() const {
   return Python3Parser::RuleComparison;
 }
 
+void Python3Parser::ComparisonContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterComparison(this);
+}
+
+void Python3Parser::ComparisonContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitComparison(this);
+}
+
 
 std::any Python3Parser::ComparisonContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -2178,6 +2468,18 @@ size_t Python3Parser::Comp_opContext::getRuleIndex() const {
   return Python3Parser::RuleComp_op;
 }
 
+void Python3Parser::Comp_opContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterComp_op(this);
+}
+
+void Python3Parser::Comp_opContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitComp_op(this);
+}
+
 
 std::any Python3Parser::Comp_opContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -2248,6 +2550,18 @@ size_t Python3Parser::Arith_exprContext::getRuleIndex() const {
   return Python3Parser::RuleArith_expr;
 }
 
+void Python3Parser::Arith_exprContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterArith_expr(this);
+}
+
+void Python3Parser::Arith_exprContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitArith_expr(this);
+}
+
 
 std::any Python3Parser::Arith_exprContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -2314,6 +2628,18 @@ tree::TerminalNode* Python3Parser::Addorsub_opContext::MINUS() {
 
 size_t Python3Parser::Addorsub_opContext::getRuleIndex() const {
   return Python3Parser::RuleAddorsub_op;
+}
+
+void Python3Parser::Addorsub_opContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterAddorsub_op(this);
+}
+
+void Python3Parser::Addorsub_opContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitAddorsub_op(this);
 }
 
 
@@ -2385,6 +2711,18 @@ Python3Parser::Muldivmod_opContext* Python3Parser::TermContext::muldivmod_op(siz
 
 size_t Python3Parser::TermContext::getRuleIndex() const {
   return Python3Parser::RuleTerm;
+}
+
+void Python3Parser::TermContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterTerm(this);
+}
+
+void Python3Parser::TermContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitTerm(this);
 }
 
 
@@ -2462,6 +2800,18 @@ size_t Python3Parser::Muldivmod_opContext::getRuleIndex() const {
   return Python3Parser::RuleMuldivmod_op;
 }
 
+void Python3Parser::Muldivmod_opContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterMuldivmod_op(this);
+}
+
+void Python3Parser::Muldivmod_opContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitMuldivmod_op(this);
+}
+
 
 std::any Python3Parser::Muldivmod_opContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -2530,6 +2880,18 @@ Python3Parser::Atom_exprContext* Python3Parser::FactorContext::atom_expr() {
 
 size_t Python3Parser::FactorContext::getRuleIndex() const {
   return Python3Parser::RuleFactor;
+}
+
+void Python3Parser::FactorContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterFactor(this);
+}
+
+void Python3Parser::FactorContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitFactor(this);
 }
 
 
@@ -2627,6 +2989,18 @@ size_t Python3Parser::Atom_exprContext::getRuleIndex() const {
   return Python3Parser::RuleAtom_expr;
 }
 
+void Python3Parser::Atom_exprContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterAtom_expr(this);
+}
+
+void Python3Parser::Atom_exprContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitAtom_expr(this);
+}
+
 
 std::any Python3Parser::Atom_exprContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -2707,6 +3081,18 @@ tree::TerminalNode* Python3Parser::TrailerContext::CLOSE_BRACK() {
 
 size_t Python3Parser::TrailerContext::getRuleIndex() const {
   return Python3Parser::RuleTrailer;
+}
+
+void Python3Parser::TrailerContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterTrailer(this);
+}
+
+void Python3Parser::TrailerContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitTrailer(this);
 }
 
 
@@ -2810,10 +3196,6 @@ tree::TerminalNode* Python3Parser::AtomContext::OPEN_PAREN() {
   return getToken(Python3Parser::OPEN_PAREN, 0);
 }
 
-Python3Parser::TestContext* Python3Parser::AtomContext::test() {
-  return getRuleContext<Python3Parser::TestContext>(0);
-}
-
 tree::TerminalNode* Python3Parser::AtomContext::CLOSE_PAREN() {
   return getToken(Python3Parser::CLOSE_PAREN, 0);
 }
@@ -2843,6 +3225,18 @@ size_t Python3Parser::AtomContext::getRuleIndex() const {
   return Python3Parser::RuleAtom;
 }
 
+void Python3Parser::AtomContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterAtom(this);
+}
+
+void Python3Parser::AtomContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitAtom(this);
+}
+
 
 std::any Python3Parser::AtomContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -2865,7 +3259,7 @@ Python3Parser::AtomContext* Python3Parser::atom() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(302);
+    setState(303);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case Python3Parser::NAME: {
@@ -2915,32 +3309,39 @@ Python3Parser::AtomContext* Python3Parser::atom() {
       case Python3Parser::OPEN_PAREN: {
         setState(292);
         match(Python3Parser::OPEN_PAREN);
-        setState(293);
-        test();
         setState(294);
-        match(Python3Parser::CLOSE_PAREN);
-        break;
-      }
-
-      case Python3Parser::OPEN_BRACK: {
-        setState(296);
-        match(Python3Parser::OPEN_BRACK);
-        setState(298);
         _errHandler->sync(this);
 
         _la = _input->LA(1);
         if ((((_la & ~ 0x3fULL) == 0) &&
           ((1ULL << _la) & 6773129083813912) != 0) || _la == Python3Parser::FORMAT_QUOTATION) {
-          setState(297);
+          setState(293);
           testlist();
         }
-        setState(300);
+        setState(296);
+        match(Python3Parser::CLOSE_PAREN);
+        break;
+      }
+
+      case Python3Parser::OPEN_BRACK: {
+        setState(297);
+        match(Python3Parser::OPEN_BRACK);
+        setState(299);
+        _errHandler->sync(this);
+
+        _la = _input->LA(1);
+        if ((((_la & ~ 0x3fULL) == 0) &&
+          ((1ULL << _la) & 6773129083813912) != 0) || _la == Python3Parser::FORMAT_QUOTATION) {
+          setState(298);
+          testlist();
+        }
+        setState(301);
         match(Python3Parser::CLOSE_BRACK);
         break;
       }
 
       case Python3Parser::FORMAT_QUOTATION: {
-        setState(301);
+        setState(302);
         format_string();
         break;
       }
@@ -3010,6 +3411,18 @@ size_t Python3Parser::Format_stringContext::getRuleIndex() const {
   return Python3Parser::RuleFormat_string;
 }
 
+void Python3Parser::Format_stringContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterFormat_string(this);
+}
+
+void Python3Parser::Format_stringContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitFormat_string(this);
+}
+
 
 std::any Python3Parser::Format_stringContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -3032,29 +3445,29 @@ Python3Parser::Format_stringContext* Python3Parser::format_string() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(304);
+    setState(305);
     match(Python3Parser::FORMAT_QUOTATION);
-    setState(312);
+    setState(313);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while (_la == Python3Parser::FORMAT_STRING_LITERAL
 
     || _la == Python3Parser::OPEN_BRACE) {
-      setState(310);
+      setState(311);
       _errHandler->sync(this);
       switch (_input->LA(1)) {
         case Python3Parser::FORMAT_STRING_LITERAL: {
-          setState(305);
+          setState(306);
           match(Python3Parser::FORMAT_STRING_LITERAL);
           break;
         }
 
         case Python3Parser::OPEN_BRACE: {
-          setState(306);
-          match(Python3Parser::OPEN_BRACE);
           setState(307);
-          testlist();
+          match(Python3Parser::OPEN_BRACE);
           setState(308);
+          testlist();
+          setState(309);
           match(Python3Parser::CLOSE_BRACE);
           break;
         }
@@ -3062,11 +3475,11 @@ Python3Parser::Format_stringContext* Python3Parser::format_string() {
       default:
         throw NoViableAltException(this);
       }
-      setState(314);
+      setState(315);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
-    setState(315);
+    setState(316);
     match(Python3Parser::QUOTATION);
    
   }
@@ -3106,6 +3519,18 @@ size_t Python3Parser::TestlistContext::getRuleIndex() const {
   return Python3Parser::RuleTestlist;
 }
 
+void Python3Parser::TestlistContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterTestlist(this);
+}
+
+void Python3Parser::TestlistContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitTestlist(this);
+}
+
 
 std::any Python3Parser::TestlistContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -3129,28 +3554,28 @@ Python3Parser::TestlistContext* Python3Parser::testlist() {
   try {
     size_t alt;
     enterOuterAlt(_localctx, 1);
-    setState(317);
+    setState(318);
     test();
-    setState(322);
+    setState(323);
     _errHandler->sync(this);
-    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 33, _ctx);
+    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 34, _ctx);
     while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
       if (alt == 1) {
-        setState(318);
-        match(Python3Parser::COMMA);
         setState(319);
+        match(Python3Parser::COMMA);
+        setState(320);
         test(); 
       }
-      setState(324);
+      setState(325);
       _errHandler->sync(this);
-      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 33, _ctx);
+      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 34, _ctx);
     }
-    setState(326);
+    setState(327);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == Python3Parser::COMMA) {
-      setState(325);
+      setState(326);
       match(Python3Parser::COMMA);
     }
    
@@ -3191,6 +3616,18 @@ size_t Python3Parser::ArglistContext::getRuleIndex() const {
   return Python3Parser::RuleArglist;
 }
 
+void Python3Parser::ArglistContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterArglist(this);
+}
+
+void Python3Parser::ArglistContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitArglist(this);
+}
+
 
 std::any Python3Parser::ArglistContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -3214,28 +3651,28 @@ Python3Parser::ArglistContext* Python3Parser::arglist() {
   try {
     size_t alt;
     enterOuterAlt(_localctx, 1);
-    setState(328);
+    setState(329);
     argument();
-    setState(333);
+    setState(334);
     _errHandler->sync(this);
-    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 35, _ctx);
+    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 36, _ctx);
     while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
       if (alt == 1) {
-        setState(329);
-        match(Python3Parser::COMMA);
         setState(330);
+        match(Python3Parser::COMMA);
+        setState(331);
         argument(); 
       }
-      setState(335);
+      setState(336);
       _errHandler->sync(this);
-      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 35, _ctx);
+      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 36, _ctx);
     }
-    setState(337);
+    setState(338);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == Python3Parser::COMMA) {
-      setState(336);
+      setState(337);
       match(Python3Parser::COMMA);
     }
    
@@ -3272,6 +3709,18 @@ size_t Python3Parser::ArgumentContext::getRuleIndex() const {
   return Python3Parser::RuleArgument;
 }
 
+void Python3Parser::ArgumentContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterArgument(this);
+}
+
+void Python3Parser::ArgumentContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitArgument(this);
+}
+
 
 std::any Python3Parser::ArgumentContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -3293,21 +3742,21 @@ Python3Parser::ArgumentContext* Python3Parser::argument() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(344);
+    setState(345);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 37, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 38, _ctx)) {
     case 1: {
-      setState(339);
+      setState(340);
       test();
       break;
     }
 
     case 2: {
-      setState(340);
-      test();
       setState(341);
-      match(Python3Parser::ASSIGN);
+      test();
       setState(342);
+      match(Python3Parser::ASSIGN);
+      setState(343);
       test();
       break;
     }

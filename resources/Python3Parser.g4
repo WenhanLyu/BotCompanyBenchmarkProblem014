@@ -38,7 +38,7 @@ muldivmod_op: '*'|'/'|'//'|'%';
 factor: ('+'|'-') factor | atom_expr;
 atom_expr: atom trailer*;
 trailer: '(' (arglist)? ')' | '[' test ']' ;
-atom: (NAME | NUMBER | STRING+| 'None' | 'True' | 'False' | ('(' test ')') | ('[' testlist? ']') | format_string);
+atom: (NAME | NUMBER | STRING+| 'None' | 'True' | 'False' | ('(' testlist? ')') | ('[' testlist? ']') | format_string);
 format_string: FORMAT_QUOTATION (FORMAT_STRING_LITERAL | '{' testlist '}')* QUOTATION;
 testlist: test (',' test)* (',')?;// arithmetic expressions  eg: a,b   a   a+b
 arglist: argument (',' argument)*  (',')?;

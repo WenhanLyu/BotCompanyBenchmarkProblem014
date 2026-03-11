@@ -1129,10 +1129,38 @@ std::any EvalVisitor::visitAtom(Python3Parser::AtomContext *ctx) {
         return Value(ListValue(elements));
     }
     
-    // Check if this is a parenthesized test expression: '(' test ')'
-    auto test = ctx->test();
-    if (test) {
-        return visit(test);
+    // Check if this is a parenthesized expression or tuple: '(' testlist? ')'
+    if (ctx->OPEN_PAREN()) {
+        auto testlist = ctx->testlist();
+        if (!testlist) {
+            // Empty parens: () = empty tuple
+            return Value(TupleValue(std::vector<Value>{}));
+        }
+        auto tests = testlist->test();
+        // Check for trailing comma (distinguishes (x,) single-element tuple from (x) grouping)
+        std::string testlistText = testlist->getText();
+        bool hasTrailingComma = !testlistText.empty() && testlistText.back() == ',';
+        
+        if (tests.size() == 1 && !hasTrailingComma) {
+            // Single element with no trailing comma: (x) is just grouping, return x
+            return visit(tests[0]);
+        } else {
+            // Multiple elements OR trailing comma: create a tuple
+            std::vector<Value> elements;
+            for (auto t : tests) {
+                auto result = visit(t);
+                if (result.has_value()) {
+                    try {
+                        elements.push_back(std::any_cast<Value>(result));
+                    } catch (...) {
+                        elements.push_back(Value(std::monostate{}));
+                    }
+                } else {
+                    elements.push_back(Value(std::monostate{}));
+                }
+            }
+            return Value(TupleValue(elements));
+        }
     }
     
     // For other atoms, return empty
