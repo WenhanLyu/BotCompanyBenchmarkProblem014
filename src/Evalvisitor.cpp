@@ -94,6 +94,14 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
             // Get the operator
             std::string op = augassign->getText();
             
+            // Promote bool to int for augmented arithmetic (Python: bool IS-A int)
+            if (std::holds_alternative<bool>(currentValue)) {
+                currentValue = Value(std::get<bool>(currentValue) ? 1 : 0);
+            }
+            if (std::holds_alternative<bool>(rightValue)) {
+                rightValue = Value(std::get<bool>(rightValue) ? 1 : 0);
+            }
+            
             // Apply the operation
             Value result;
             
@@ -922,11 +930,11 @@ std::any EvalVisitor::visitAtom(Python3Parser::AtomContext *ctx) {
     // Check if this is a string literal
     auto strings = ctx->STRING();
     if (!strings.empty()) {
-        // Get the string literal (may have quotes)
-        std::string strValue = strings[0]->getText();
-        // Remove quotes
-        strValue = unquoteString(strValue);
-        // Return as Value
+        // Concatenate all adjacent string literals (Python allows "foo" "bar" == "foobar")
+        std::string strValue;
+        for (auto s : strings) {
+            strValue += unquoteString(s->getText());
+        }
         return Value(strValue);
     }
     
@@ -1159,6 +1167,14 @@ std::any EvalVisitor::visitArith_expr(Python3Parser::Arith_exprContext *ctx) {
         
         std::string op = ops[i]->getText();
         
+        // Promote bool to int for arithmetic (Python: bool IS-A int, True=1, False=0)
+        if (std::holds_alternative<bool>(result)) {
+            result = Value(std::get<bool>(result) ? 1 : 0);
+        }
+        if (std::holds_alternative<bool>(term)) {
+            term = Value(std::get<bool>(term) ? 1 : 0);
+        }
+        
         // Type coercion and operation
         // BigInteger has highest priority, then double, then int
         if (std::holds_alternative<BigInteger>(result) || std::holds_alternative<BigInteger>(term)) {
@@ -1252,6 +1268,14 @@ std::any EvalVisitor::visitTerm(Python3Parser::TermContext *ctx) {
         }
         
         std::string op = ops[i]->getText();
+        
+        // Promote bool to int for arithmetic (Python: bool IS-A int, True=1, False=0)
+        if (std::holds_alternative<bool>(result)) {
+            result = Value(std::get<bool>(result) ? 1 : 0);
+        }
+        if (std::holds_alternative<bool>(factor)) {
+            factor = Value(std::get<bool>(factor) ? 1 : 0);
+        }
         
         // Type coercion and operation
         // Handle string multiplication: string * int or int * string
@@ -1378,7 +1402,11 @@ std::any EvalVisitor::visitFactor(Python3Parser::FactorContext *ctx) {
             
             if (text[0] == '-') {
                 // Unary negation
-                if (std::holds_alternative<int>(factorVal)) {
+                if (std::holds_alternative<bool>(factorVal)) {
+                    // bool IS-A int: -True = -1, -False = 0
+                    bool b = std::get<bool>(factorVal);
+                    return Value(b ? -1 : 0);
+                } else if (std::holds_alternative<int>(factorVal)) {
                     int value = std::get<int>(factorVal);
                     // Check for INT_MIN overflow - promote to BigInteger
                     if (value == INT_MIN) {
@@ -1392,7 +1420,11 @@ std::any EvalVisitor::visitFactor(Python3Parser::FactorContext *ctx) {
                     return Value(-std::get<BigInteger>(factorVal));
                 }
             } else {
-                // Unary plus (no-op)
+                // Unary plus: +True = 1 (int), +False = 0 (int)
+                if (std::holds_alternative<bool>(factorVal)) {
+                    bool b = std::get<bool>(factorVal);
+                    return Value(b ? 1 : 0);
+                }
                 return factorVal;
             }
         }
