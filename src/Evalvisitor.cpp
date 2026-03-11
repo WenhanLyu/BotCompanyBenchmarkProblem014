@@ -388,6 +388,12 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
             // isLocal was already defined above (may have been set to false by global fallback)
             if (isLocal && localVariables != nullptr) {
                 (*localVariables)[varName] = result;
+                // Also update global if this variable originated from global scope
+                // so that multiple augmented assignments (e.g., count += 1; count += 1)
+                // all persist to global
+                if (variables.find(varName) != variables.end()) {
+                    variables[varName] = result;
+                }
             } else if (!isLocal && localVariables != nullptr) {
                 // It's a parameter or global being modified
                 auto localIt = localVariables->find(varName);
