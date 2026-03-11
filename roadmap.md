@@ -19,35 +19,43 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 7)
+## Current State (Cycle 11)
 
-- **Status:** M23 complete. All 35 local tests passing.
-- **Last Known OJ Score:** 25/100 (submission #4, before M22/M23)
+- **Status:** M24 complete and verified. All basic tests pass against Python3. All 20 BigInteger tests verified correct.
+- **Last Known OJ Score:** 25/100 (submission #5, before M22/M23/M24 - expected to be 50-70 now)
 - **OJ Submissions Used:** 5 of 18 budget
-- **Features Implemented:** M1-M23 (BigInteger, return, break/continue, global, f-strings, type conversion, string mult, multiple return values, subscript READ, default params, keyword args, float formatting, bool comparisons, bool arithmetic, string concat)
-- **Local Tests:** All 35 available tests passing (100%)
+- **Features Implemented:** M1-M24 (BigInteger, return, break/continue, global, f-strings, type conversion, string mult, multiple return values, subscript READ+WRITE, default params, keyword args, float formatting, bool comparisons, bool arithmetic, string concat, list subscript assignment, string repr in containers, float/bool comparison)
+- **Local Tests:** All 16 basic tests passing (100%), all 20 BigInteger tests verified correct
 
 ---
 
-## Known Remaining Issues (Discovered Cycle 7)
+## Known Remaining Issues (Discovered Cycle 11)
 
 ### Critical Bugs (Likely Causing OJ Failures)
 
-1. **List subscript ASSIGNMENT broken**: `lst[i] = value` does NOT modify the list!
-   - In visitExpr_stmt, when LHS is `lst[0]`, `getText()` returns `"lst[0]"` as variable name
-   - This creates a garbage variable instead of modifying the list
-   - Affects all algorithms that need to modify list elements
-   - Also affects augmented assignment: `lst[i] += 1` is broken too
-   - Also affects 2D list assignment: `matrix[i][j] = value`
+1. **Augmented assignment on subscripts BROKEN**: `lst[0] += 5` does NOT work
+   - The augmented assignment block uses `testlists[0]->getText()` → returns "lst[0]" as variable name
+   - Creates garbage local "lst[0]" variable instead of modifying the list element
+   - SAME ROOT CAUSE as plain subscript assignment (fixed in M24), but the fix wasn't applied to augmented assignment block
+   - Affects: `lst[i] += 1`, `lst[i] -= 1`, `lst[i] *= 2`, etc.
 
-2. **String representation in containers is wrong**:
-   - `print(["hello", "world"])` outputs `[hello, world]` instead of `['hello', 'world']`
-   - `print(("hello", "world"))` outputs `(hello, world)` instead of `('hello', 'world')`
-   - In Python, strings inside containers are repr'd with quotes
-   - The current `valueToString` is used recursively and doesn't distinguish "direct print" from "inside container"
+2. **Global variable modification from functions via += sometimes broken**:
+   - `seed += value` inside a function where `seed` is global doesn't work correctly
+   - If `findAssignedVariables` marks `seed` as local (because it appears on LHS of `+=`), then `seed` is treated as a local variable starting at 0
+   - Fix: In augmented assignment, if variable is "local" per pre-scan but NOT found in actual local scope (not a parameter), check global scope and use global if found
+   - Affects: Pollard Rho test (test13) and any function that modifies a global via +=
+
+3. **`str()` on floats**: outputs `1.000000` but Python expects `1.0`
+   - The spec says print/f-strings should use 6 decimal places, but `str()` may need Python-default format
+   - Need OJ feedback to know which format is expected for `str(float)`
+
+### Fixed in M24
+- List subscript plain assignment: `lst[i] = val` and `matrix[i][j] = val` ✅
+- String repr in containers: `print(["hello"])` → `['hello']` ✅  
+- Float vs bool comparison: `1.0 == True` → `True` ✅
 
 ### Performance Issues (Confirmed Fine)
-3. **BigInteger TLE**: Tests 2, 5, 8, 18 run in < 50ms locally - NOT a problem
+- **BigInteger speed**: All 20 tests run in < 20ms locally - NOT a problem
 
 ### Known Pre-existing Issues
 4. **Test13 (Pollard Rho)**: Complex algorithm that may time out
@@ -86,7 +94,28 @@ Fix two critical bugs that are almost certainly causing OJ failures:
    - Booleans in containers: `True`/`False` (same as normal)
    - None in containers: `None`
 
-### M25: Final Testing and Submission Prep (cycles: 1)
+### M24: Fix List Subscript Assignment + String Repr + Float/Bool Comparison ✅ COMPLETE (Cycles 8-10, 2026-03-11)
+- Fixed: list subscript assignment `lst[i] = val` and `matrix[i][j] = val`
+- Fixed: string repr in containers `print(["hello"])` → `['hello']`
+- Fixed: float/bool comparison `1.0 == True` → `True`
+- Also fixed (Apollo): tuple literal grammar `(a, b)` support
+
+### M25: Fix Augmented Assignment on Subscripts + Global Variable Modification (cycles: 3)
+**Status: READY TO START**
+
+Two critical bugs that affect advanced test cases:
+
+1. **Augmented assignment on subscripts**: `lst[0] += 5` doesn't work
+   - In visitExpr_stmt (augassign block), getAtomExprFromTest() should be used to detect subscript LHS
+   - If LHS is a subscript (has OPEN_BRACK trailer), perform subscript read-modify-write
+   - Similar to the fix in M24 for plain assignment, but applied to the augassign block
+
+2. **Global fallback for augmented assignment**:
+   - When `varName` is marked as "local" by pre-scan but NOT found in actual local scope,
+     check if it exists in global scope before defaulting to 0
+   - This fixes `seed += value` patterns inside functions where `seed` is global
+
+### M26: Final Testing and Submission Prep (cycles: 1)
 **Status: PLANNED**
 
 Final review and mark ready for OJ evaluation.
@@ -112,6 +141,17 @@ Final review and mark ready for OJ evaluation.
 - M1-M21 implemented and verified
 - 5 OJ submissions made (best: 25/100)
 - Repository reset by runner script on 2026-03-11
+
+### Cycles 7-10 (2026-03-11, Athena, Ares, Apollo)
+- M24 implementation and verification
+- Fixed list subscript assignment, string repr in containers, float/bool comparison
+
+### Cycle 11 (Athena)
+- Verified all 20 BigInteger tests pass locally
+- Verified all 16 basic tests pass locally
+- Discovered augmented assignment on subscripts is broken
+- Discovered global variable fallback needed for augmented assignment
+- Defined M25
 
 ### Cycle 1 (2026-03-11, Athena)
 - Discovered repository was reset
