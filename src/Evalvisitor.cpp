@@ -23,6 +23,122 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
     // Check for augmented assignment
     auto augassign = ctx->augassign();
     if (augassign) {
+        // Check if LHS is a subscript expression for augmented assignment
+        // e.g., lst[0] += 5 or matrix[i][j] += 1
+        if (testlists.size() >= 2) {
+            auto lhsTests = testlists[0]->test();
+            if (!lhsTests.empty()) {
+                auto lhsAtomExpr = getAtomExprFromTest(lhsTests[0]);
+                if (lhsAtomExpr && !lhsAtomExpr->trailer().empty() &&
+                    lhsAtomExpr->trailer(0)->OPEN_BRACK()) {
+                    // This is a subscript augmented assignment: lst[i] op= val
+                    std::string listVarName = lhsAtomExpr->atom()->getText();
+                    Value* listPtr = nullptr;
+                    if (localVariables != nullptr) {
+                        auto it = localVariables->find(listVarName);
+                        if (it != localVariables->end()) listPtr = &it->second;
+                    }
+                    if (!listPtr) {
+                        auto it = variables.find(listVarName);
+                        if (it != variables.end()) listPtr = &it->second;
+                    }
+                    if (listPtr && std::holds_alternative<ListValue>(*listPtr)) {
+                        ListValue& lst = std::get<ListValue>(*listPtr);
+                        auto idxAny = visit(lhsAtomExpr->trailer(0)->test());
+                        int idx = 0;
+                        if (idxAny.has_value()) {
+                            try {
+                                Value idxVal = std::any_cast<Value>(idxAny);
+                                if (std::holds_alternative<int>(idxVal)) idx = std::get<int>(idxVal);
+                                else if (std::holds_alternative<bool>(idxVal)) idx = std::get<bool>(idxVal) ? 1 : 0;
+                                else if (std::holds_alternative<BigInteger>(idxVal)) {
+                                    idx = static_cast<int>(std::get<BigInteger>(idxVal).toLongLong());
+                                }
+                            } catch (...) {}
+                        }
+                        if (idx < 0) idx += static_cast<int>(lst.elements.size());
+                        if (idx >= 0 && idx < static_cast<int>(lst.elements.size())) {
+                            Value currentVal = lst.elements[idx];
+                            auto rightAny = visit(testlists[1]);
+                            Value rightVal;
+                            if (rightAny.has_value()) {
+                                try { rightVal = std::any_cast<Value>(rightAny); } catch (...) { rightVal = Value(0); }
+                            } else { rightVal = Value(0); }
+                            std::string op = augassign->getText();
+                            if (std::holds_alternative<bool>(currentVal)) currentVal = Value(std::get<bool>(currentVal) ? 1 : 0);
+                            if (std::holds_alternative<bool>(rightVal)) rightVal = Value(std::get<bool>(rightVal) ? 1 : 0);
+                            Value newVal;
+                            if (op == "+=") {
+                                if (std::holds_alternative<BigInteger>(currentVal) || std::holds_alternative<BigInteger>(rightVal)) {
+                                    BigInteger l = std::holds_alternative<BigInteger>(currentVal) ? std::get<BigInteger>(currentVal) : BigInteger(std::get<int>(currentVal));
+                                    BigInteger r = std::holds_alternative<BigInteger>(rightVal) ? std::get<BigInteger>(rightVal) : BigInteger(std::get<int>(rightVal));
+                                    newVal = l + r;
+                                } else if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
+                                    int l = std::get<int>(currentVal), r = std::get<int>(rightVal);
+                                    if (willOverflowAdd(l, r)) newVal = BigInteger(l) + BigInteger(r);
+                                    else newVal = l + r;
+                                } else if (std::holds_alternative<double>(currentVal) || std::holds_alternative<double>(rightVal)) {
+                                    double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) : static_cast<double>(std::get<int>(currentVal));
+                                    double r = std::holds_alternative<double>(rightVal) ? std::get<double>(rightVal) : static_cast<double>(std::get<int>(rightVal));
+                                    newVal = l + r;
+                                } else if (std::holds_alternative<std::string>(currentVal) && std::holds_alternative<std::string>(rightVal)) {
+                                    newVal = std::get<std::string>(currentVal) + std::get<std::string>(rightVal);
+                                } else { newVal = currentVal; }
+                            } else if (op == "-=") {
+                                if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
+                                    int l = std::get<int>(currentVal), r = std::get<int>(rightVal);
+                                    if (willOverflowSubtract(l, r)) newVal = BigInteger(l) - BigInteger(r);
+                                    else newVal = l - r;
+                                } else if (std::holds_alternative<BigInteger>(currentVal) || std::holds_alternative<BigInteger>(rightVal)) {
+                                    BigInteger l = std::holds_alternative<BigInteger>(currentVal) ? std::get<BigInteger>(currentVal) : BigInteger(std::get<int>(currentVal));
+                                    BigInteger r = std::holds_alternative<BigInteger>(rightVal) ? std::get<BigInteger>(rightVal) : BigInteger(std::get<int>(rightVal));
+                                    newVal = l - r;
+                                } else if (std::holds_alternative<double>(currentVal) || std::holds_alternative<double>(rightVal)) {
+                                    double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) : static_cast<double>(std::get<int>(currentVal));
+                                    double r = std::holds_alternative<double>(rightVal) ? std::get<double>(rightVal) : static_cast<double>(std::get<int>(rightVal));
+                                    newVal = l - r;
+                                } else { newVal = currentVal; }
+                            } else if (op == "*=") {
+                                if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
+                                    int l = std::get<int>(currentVal), r = std::get<int>(rightVal);
+                                    if (willOverflowMultiply(l, r)) newVal = BigInteger(l) * BigInteger(r);
+                                    else newVal = l * r;
+                                } else if (std::holds_alternative<BigInteger>(currentVal) || std::holds_alternative<BigInteger>(rightVal)) {
+                                    BigInteger l = std::holds_alternative<BigInteger>(currentVal) ? std::get<BigInteger>(currentVal) : BigInteger(std::get<int>(currentVal));
+                                    BigInteger r = std::holds_alternative<BigInteger>(rightVal) ? std::get<BigInteger>(rightVal) : BigInteger(std::get<int>(rightVal));
+                                    newVal = l * r;
+                                } else if (std::holds_alternative<double>(currentVal) || std::holds_alternative<double>(rightVal)) {
+                                    double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) : static_cast<double>(std::get<int>(currentVal));
+                                    double r = std::holds_alternative<double>(rightVal) ? std::get<double>(rightVal) : static_cast<double>(std::get<int>(rightVal));
+                                    newVal = l * r;
+                                } else { newVal = currentVal; }
+                            } else if (op == "//=") {
+                                if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
+                                    int l = std::get<int>(currentVal), r = std::get<int>(rightVal);
+                                    newVal = pythonFloorDiv(l, r);
+                                } else if (std::holds_alternative<BigInteger>(currentVal) || std::holds_alternative<BigInteger>(rightVal)) {
+                                    BigInteger l = std::holds_alternative<BigInteger>(currentVal) ? std::get<BigInteger>(currentVal) : BigInteger(std::get<int>(currentVal));
+                                    BigInteger r = std::holds_alternative<BigInteger>(rightVal) ? std::get<BigInteger>(rightVal) : BigInteger(std::get<int>(rightVal));
+                                    newVal = l.floorDiv(r);
+                                } else { newVal = currentVal; }
+                            } else if (op == "%=") {
+                                if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
+                                    int l = std::get<int>(currentVal), r = std::get<int>(rightVal);
+                                    newVal = pythonModulo(l, r);
+                                } else if (std::holds_alternative<BigInteger>(currentVal) || std::holds_alternative<BigInteger>(rightVal)) {
+                                    BigInteger l = std::holds_alternative<BigInteger>(currentVal) ? std::get<BigInteger>(currentVal) : BigInteger(std::get<int>(currentVal));
+                                    BigInteger r = std::holds_alternative<BigInteger>(rightVal) ? std::get<BigInteger>(rightVal) : BigInteger(std::get<int>(rightVal));
+                                    newVal = l % r;
+                                } else { newVal = currentVal; }
+                            } else { newVal = currentVal; }
+                            lst.elements[idx] = newVal;
+                        }
+                    }
+                    return std::any();
+                }
+            }
+        }
+
         // Augmented assignment: a += b, a -= b, etc.
         // testlists[0] is the variable, testlists[1] is the value
         if (testlists.size() >= 2) {
@@ -40,12 +156,22 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
             bool found = false;
             
             if (isLocal) {
-                // This is a local variable - look in local scope only
+                // This is a local variable - look in local scope first
                 if (localVariables != nullptr) {
                     auto localIt = localVariables->find(varName);
                     if (localIt != localVariables->end()) {
                         currentValue = localIt->second;
                         found = true;
+                    }
+                }
+                // If not found locally, fall back to global scope
+                // (Non-standard Python: global accessible without 'global' keyword)
+                if (!found) {
+                    auto it = variables.find(varName);
+                    if (it != variables.end()) {
+                        currentValue = it->second;
+                        found = true;
+                        isLocal = false;  // write-back to global scope
                     }
                 }
             } else {
@@ -250,7 +376,7 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
             }
             
             // Store the result (in local scope if local variable, otherwise global)
-            // isLocal was already defined above
+            // isLocal was already defined above (may have been set to false by global fallback)
             if (isLocal && localVariables != nullptr) {
                 (*localVariables)[varName] = result;
             } else if (!isLocal && localVariables != nullptr) {
@@ -262,6 +388,12 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                 } else {
                     // Modify global
                     variables[varName] = result;
+                    // Also write to local scope if the pre-scan says this is a local variable
+                    // so that subsequent reads (e.g., return x) can find the value
+                    if (currentFunctionLocals != nullptr &&
+                        currentFunctionLocals->find(varName) != currentFunctionLocals->end()) {
+                        (*localVariables)[varName] = result;
+                    }
                 }
             } else {
                 variables[varName] = result;
