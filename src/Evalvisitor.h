@@ -24,12 +24,16 @@ struct TupleValue {
     std::vector<Value> elements;
     TupleValue() = default;
     TupleValue(const std::vector<Value>& elems) : elements(elems) {}
+    bool operator==(const TupleValue& other) const;
+    bool operator!=(const TupleValue& other) const { return !(*this == other); }
 };
 
 struct ListValue {
     std::vector<Value> elements;
     ListValue() = default;
     ListValue(const std::vector<Value>& elems) : elements(elems) {}
+    bool operator==(const ListValue& other) const;
+    bool operator!=(const ListValue& other) const { return !(*this == other); }
 };
 
 struct Value : std::variant<std::monostate, int, bool, std::string, double, BigInteger, TupleValue, ListValue> {

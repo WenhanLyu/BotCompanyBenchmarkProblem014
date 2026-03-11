@@ -1,5 +1,12 @@
 #include "Evalvisitor.h"
 
+bool TupleValue::operator==(const TupleValue& other) const {
+    return elements == other.elements;
+}
+bool ListValue::operator==(const ListValue& other) const {
+    return elements == other.elements;
+}
+
 std::any EvalVisitor::visitFile_input(Python3Parser::File_inputContext *ctx) {
     // Visit all statements in the file
     return visitChildren(ctx);
@@ -29,7 +36,103 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
             auto lhsTests = testlists[0]->test();
             if (!lhsTests.empty()) {
                 auto lhsAtomExpr = getAtomExprFromTest(lhsTests[0]);
-                if (lhsAtomExpr && !lhsAtomExpr->trailer().empty() &&
+                if (lhsAtomExpr && lhsAtomExpr->trailer().size() >= 2 &&
+                    lhsAtomExpr->trailer(0)->OPEN_BRACK() &&
+                    lhsAtomExpr->trailer(1)->OPEN_BRACK()) {
+                    // 2-trailer case: m[i][j] op= val
+                    std::string outerVarName = lhsAtomExpr->atom()->getText();
+                    Value* outerPtr = nullptr;
+                    if (localVariables != nullptr) {
+                        auto it = localVariables->find(outerVarName);
+                        if (it != localVariables->end()) outerPtr = &it->second;
+                    }
+                    if (!outerPtr) {
+                        auto it = variables.find(outerVarName);
+                        if (it != variables.end()) outerPtr = &it->second;
+                    }
+                    if (outerPtr && std::holds_alternative<ListValue>(*outerPtr)) {
+                        ListValue& outerList = std::get<ListValue>(*outerPtr);
+                        // Evaluate outer index
+                        auto idx1Any = visit(lhsAtomExpr->trailer(0)->test());
+                        int idx1 = 0;
+                        if (idx1Any.has_value()) {
+                            try {
+                                Value idxVal = std::any_cast<Value>(idx1Any);
+                                if (std::holds_alternative<int>(idxVal)) idx1 = std::get<int>(idxVal);
+                                else if (std::holds_alternative<bool>(idxVal)) idx1 = std::get<bool>(idxVal) ? 1 : 0;
+                                else if (std::holds_alternative<BigInteger>(idxVal)) idx1 = static_cast<int>(std::get<BigInteger>(idxVal).toLongLong());
+                            } catch (...) {}
+                        }
+                        if (idx1 < 0) idx1 += static_cast<int>(outerList.elements.size());
+                        if (idx1 >= 0 && idx1 < static_cast<int>(outerList.elements.size()) &&
+                            std::holds_alternative<ListValue>(outerList.elements[idx1])) {
+                            ListValue& innerList = std::get<ListValue>(outerList.elements[idx1]);
+                            // Evaluate inner index
+                            auto idx2Any = visit(lhsAtomExpr->trailer(1)->test());
+                            int idx2 = 0;
+                            if (idx2Any.has_value()) {
+                                try {
+                                    Value idxVal = std::any_cast<Value>(idx2Any);
+                                    if (std::holds_alternative<int>(idxVal)) idx2 = std::get<int>(idxVal);
+                                    else if (std::holds_alternative<bool>(idxVal)) idx2 = std::get<bool>(idxVal) ? 1 : 0;
+                                    else if (std::holds_alternative<BigInteger>(idxVal)) idx2 = static_cast<int>(std::get<BigInteger>(idxVal).toLongLong());
+                                } catch (...) {}
+                            }
+                            if (idx2 < 0) idx2 += static_cast<int>(innerList.elements.size());
+                            if (idx2 >= 0 && idx2 < static_cast<int>(innerList.elements.size())) {
+                                Value currentVal = innerList.elements[idx2];
+                                auto rightAny = visit(testlists[1]);
+                                Value rightVal;
+                                if (rightAny.has_value()) {
+                                    try { rightVal = std::any_cast<Value>(rightAny); } catch (...) { rightVal = Value(0); }
+                                } else { rightVal = Value(0); }
+                                std::string op = augassign->getText();
+                                if (std::holds_alternative<bool>(currentVal)) currentVal = Value(std::get<bool>(currentVal) ? 1 : 0);
+                                if (std::holds_alternative<bool>(rightVal)) rightVal = Value(std::get<bool>(rightVal) ? 1 : 0);
+                                Value newVal;
+                                if (op == "+=") {
+                                    if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
+                                        int l = std::get<int>(currentVal), r = std::get<int>(rightVal);
+                                        if (willOverflowAdd(l, r)) newVal = BigInteger(l) + BigInteger(r);
+                                        else newVal = l + r;
+                                    } else if (std::holds_alternative<BigInteger>(currentVal) || std::holds_alternative<BigInteger>(rightVal)) {
+                                        BigInteger l = std::holds_alternative<BigInteger>(currentVal) ? std::get<BigInteger>(currentVal) : BigInteger(std::get<int>(currentVal));
+                                        BigInteger r = std::holds_alternative<BigInteger>(rightVal) ? std::get<BigInteger>(rightVal) : BigInteger(std::get<int>(rightVal));
+                                        newVal = l + r;
+                                    } else if (std::holds_alternative<double>(currentVal) || std::holds_alternative<double>(rightVal)) {
+                                        double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) : static_cast<double>(std::get<int>(currentVal));
+                                        double r = std::holds_alternative<double>(rightVal) ? std::get<double>(rightVal) : static_cast<double>(std::get<int>(rightVal));
+                                        newVal = l + r;
+                                    } else { newVal = currentVal; }
+                                } else if (op == "-=") {
+                                    if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
+                                        int l = std::get<int>(currentVal), r = std::get<int>(rightVal);
+                                        newVal = willOverflowSubtract(l,r) ? Value(BigInteger(l)-BigInteger(r)) : Value(l-r);
+                                    } else { newVal = currentVal; }
+                                } else if (op == "*=") {
+                                    if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
+                                        int l = std::get<int>(currentVal), r = std::get<int>(rightVal);
+                                        newVal = willOverflowMultiply(l,r) ? Value(BigInteger(l)*BigInteger(r)) : Value(l*r);
+                                    } else { newVal = currentVal; }
+                                } else if (op == "/=") {
+                                    double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) : static_cast<double>(std::get<int>(currentVal));
+                                    double r = std::holds_alternative<double>(rightVal) ? std::get<double>(rightVal) : static_cast<double>(std::get<int>(rightVal));
+                                    if (r != 0.0) newVal = l / r; else newVal = currentVal;
+                                } else if (op == "//=") {
+                                    if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
+                                        newVal = pythonFloorDiv(std::get<int>(currentVal), std::get<int>(rightVal));
+                                    } else { newVal = currentVal; }
+                                } else if (op == "%=") {
+                                    if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
+                                        newVal = pythonModulo(std::get<int>(currentVal), std::get<int>(rightVal));
+                                    } else { newVal = currentVal; }
+                                } else { newVal = currentVal; }
+                                innerList.elements[idx2] = newVal;
+                            }
+                        }
+                    }
+                    return std::any();
+                } else if (lhsAtomExpr && !lhsAtomExpr->trailer().empty() &&
                     lhsAtomExpr->trailer(0)->OPEN_BRACK()) {
                     // This is a subscript augmented assignment: lst[i] op= val
                     std::string listVarName = lhsAtomExpr->atom()->getText();
@@ -1482,6 +1585,15 @@ std::any EvalVisitor::visitArith_expr(Python3Parser::Arith_exprContext *ctx) {
                 // String concatenation
                 result = std::get<std::string>(result) + std::get<std::string>(term);
             }
+        } else if (std::holds_alternative<ListValue>(result) && std::holds_alternative<ListValue>(term)) {
+            // List concatenation: [1,2] + [3,4] = [1,2,3,4]
+            if (op == "+") {
+                ListValue newList;
+                newList.elements = std::get<ListValue>(result).elements;
+                const auto& rhs = std::get<ListValue>(term).elements;
+                newList.elements.insert(newList.elements.end(), rhs.begin(), rhs.end());
+                result = newList;
+            }
         }
     }
     
@@ -1562,6 +1674,27 @@ std::any EvalVisitor::visitTerm(Python3Parser::TermContext *ctx) {
                 }
                 result = repeated;
             }
+        } else if (op == "*" && ((std::holds_alternative<ListValue>(result) && std::holds_alternative<int>(factor)) ||
+                                  (std::holds_alternative<int>(result) && std::holds_alternative<ListValue>(factor)))) {
+            // List repetition: [0]*3 = [0, 0, 0]
+            ListValue baseList;
+            int count;
+            if (std::holds_alternative<ListValue>(result)) {
+                baseList = std::get<ListValue>(result);
+                count = std::get<int>(factor);
+            } else {
+                count = std::get<int>(result);
+                baseList = std::get<ListValue>(factor);
+            }
+            ListValue newList;
+            if (count > 0) {
+                newList.elements.reserve(baseList.elements.size() * count);
+                for (int i = 0; i < count; i++) {
+                    newList.elements.insert(newList.elements.end(), 
+                                            baseList.elements.begin(), baseList.elements.end());
+                }
+            }
+            result = newList;
         } else if (std::holds_alternative<BigInteger>(result) || std::holds_alternative<BigInteger>(factor)) {
             // Handle BigInteger operations
             // Promote to BigInteger if needed
@@ -1819,6 +1952,16 @@ std::any EvalVisitor::visitComparison(Python3Parser::ComparisonContext *ctx) {
             else if (op == ">=") compResult = l >= r;
             else if (op == "==") compResult = l == r;
             else if (op == "!=") compResult = l != r;
+        } else if (std::holds_alternative<TupleValue>(left) && std::holds_alternative<TupleValue>(right)) {
+            // Tuple equality comparison
+            if (op == "==") compResult = (std::get<TupleValue>(left) == std::get<TupleValue>(right));
+            else if (op == "!=") compResult = (std::get<TupleValue>(left) != std::get<TupleValue>(right));
+            else compResult = false;
+        } else if (std::holds_alternative<ListValue>(left) && std::holds_alternative<ListValue>(right)) {
+            // List equality comparison
+            if (op == "==") compResult = (std::get<ListValue>(left) == std::get<ListValue>(right));
+            else if (op == "!=") compResult = (std::get<ListValue>(left) != std::get<ListValue>(right));
+            else compResult = false;
         } else if (std::holds_alternative<std::monostate>(left) && std::holds_alternative<std::monostate>(right)) {
             // None vs None: None == None is True, None != None is False
             if (op == "==") compResult = true;
