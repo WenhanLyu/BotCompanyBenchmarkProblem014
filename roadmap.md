@@ -2,7 +2,7 @@
 
 **Project:** BotCompanyBenchmarkProblem014 - Python Interpreter  
 **Created:** 2026-03-02  
-**Last Updated:** 2026-03-11 (Cycle 15 - Athena)
+**Last Updated:** 2026-03-11 (Cycle 18 - Athena)
 
 ---
 
@@ -19,13 +19,47 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 15)
+## Current State (Cycle 18)
 
-- **Status:** M25 complete (Leo, commit b699975). All basic tests and BigInt tests pass.
-- **Last Known OJ Score:** 25/100 (submission #5, before M22-M25 - expected 50-70+ now)
+- **Status:** M26 complete (Ares, commit 18f2849). All basic tests and BigInt tests pass.
+- **Last Known OJ Score:** 25/100 (submission #5, before M22-M26 - expected 60-80+ now)
 - **OJ Submissions Used:** 5 of 18 budget
-- **Features Implemented:** M1-M25 (BigInteger, return, break/continue, global, f-strings, type conversion, string mult, multiple return values, subscript READ+WRITE, default params, keyword args, float formatting, bool comparisons, bool arithmetic, string concat, list subscript assignment, string repr in containers, float/bool comparison, augmented assignment on subscripts, global variable fallback for augmented assignment)
-- **Local Tests:** All 16 basic tests passing (100%), all 20 BigInteger tests verified correct
+- **Features Implemented:** M1-M26 (scope fallback in visitAtom, function call chaining foo()[0], /= on subscripts)
+- **Local Tests:** All 16 basic tests running, all 20 BigInteger tests running
+
+## Critical Bug Discovered (Cycle 18)
+
+### Bug: Multiple Augmented Assignments Lose Global Write-back
+
+**Location:** `src/Evalvisitor.cpp`, `visitExpr_stmt`, augmented assignment store-result section (~lines 387-409)
+
+**Problem:** When a function does multiple augmented assignments on a global variable, only the FIRST one persists to global scope. Subsequent writes go to `localVariables` only.
+
+**Example that fails:**
+```python
+count = 0
+def increment():
+    count += 1  # writes to global (AND local)
+    count += 1  # only writes local (BUG: global stays at 1)
+    count += 1  # only writes local (BUG: global stays at 1)
+increment()
+print(count)  # Expected: 3, Gets: 1
+```
+
+**Root cause:** The first augmented assignment falls back to global (var not in localVars), writes to BOTH `variables` and `localVariables`. The second one finds var in `localVariables`, `isLocal=true`, and only writes to `localVariables`.
+
+**Fix:** In the `if (isLocal && localVariables != nullptr)` branch of store-result, also write to `variables` if the var exists there:
+```cpp
+if (isLocal && localVariables != nullptr) {
+    (*localVariables)[varName] = result;
+    // Also write to global if var exists there (global always writeable without keyword per spec)
+    if (variables.find(varName) != variables.end()) {
+        variables[varName] = result;
+    }
+}
+```
+
+**Impact:** Affects test13 (Pollard Rho) and any program that modifies a global var multiple times with augmented assignment in a function.
 
 ---
 
@@ -86,24 +120,54 @@ All core features implemented and restored.
 - Fixed: augmented assignment falls back to global when local variable not in local scope
 - Leo's commit: b699975
 
-### M26: Fix Scope Fallback + Function Call Chaining (cycles: 4)
+### M26: Fix Scope Fallback + Function Call Chaining ✅ COMPLETE (Cycle 16-18, 2026-03-11)
+- Fixed: scope fallback in visitAtom (global accessible without keyword)
+- Fixed: function call chaining foo()[0] now works
+- Fixed: /= in subscript augmented assignment
+- Ares commit: 18f2849, Apollo verified
+
+### M27: Fix Multiple Augmented Assignment Global Write-back Bug (cycles: 3)
 **Status: READY TO START**
 
-Fix three bugs:
+**The Bug:**
+When a function does multiple augmented assignments on a global variable, only the FIRST write persists to global scope.
 
-1. **Critical: Scope fallback in visitAtom**
-   - When variable is "local" (in `currentFunctionLocals`) but not found in `localVariables`, fall back to global scope
-   - Currently: returns `None` (monostate) → silently breaks many programs
-   - Fix: in the `if (!isGlobal && currentFunctionLocals->find(varName) != currentFunctionLocals->end())` block, after checking `localVariables` and not finding, fall back to `variables` (global)
+```python
+count = 0
+def increment():
+    count += 1  # writes to global AND local
+    count += 1  # BUG: only writes local (global stays 1)
+increment()
+print(count)  # Expected: 2, Gets: 1
+```
 
-2. **Important: Function call chaining**
-   - `foo()[0]` throws "Invalid syntax: function call must be alone"
-   - Fix: when the first trailer is a function call, store result in `currentValue` and continue the loop for subsequent subscript trailers
+**The Fix:**
+In `src/Evalvisitor.cpp`, `visitExpr_stmt`, augmented assignment store-result section (~lines 387-409):
 
-3. **Minor: /= missing from subscript augmented assignment**
-   - Add `/=` case to the subscript augmented assignment block (around line 62-145 in Evalvisitor.cpp)
+Change the `if (isLocal && localVariables != nullptr)` branch:
+```cpp
+// BEFORE:
+if (isLocal && localVariables != nullptr) {
+    (*localVariables)[varName] = result;
+}
 
-### M27: Final Verification and Submission Prep (cycles: 1)
+// AFTER:
+if (isLocal && localVariables != nullptr) {
+    (*localVariables)[varName] = result;
+    // Also write to global if var exists there (per spec: global always accessible)
+    if (variables.find(varName) != variables.end()) {
+        variables[varName] = result;
+    }
+}
+```
+
+**Acceptance Criteria:**
+1. `count = 0; def inc(): count += 1; count += 1; inc(); print(count)` → `2`
+2. `seed = 5; def f(): seed += 10; seed += 20; seed += 30; f(); print(seed)` → `65`
+3. Test13 (Pollard Rho) completes without crash and produces valid prime factorizations
+4. No regression on tests 0-15 and BigIntegerTests 0-19
+
+### M28: Final Verification and Submission Prep (cycles: 1)
 **Status: PLANNED**
 
 Review code, ensure all tests pass, mark ready for OJ evaluation.
