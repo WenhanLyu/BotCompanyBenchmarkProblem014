@@ -684,23 +684,11 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                                     // int → str: convert to string
                                     return Value(std::to_string(std::get<int>(val)));
                                 } else if (std::holds_alternative<double>(val)) {
-                                    // float → str: format with 6 decimal places, remove trailing zeros
+                                    // float → str: format with exactly 6 decimal places (per spec)
                                     double d = std::get<double>(val);
                                     std::ostringstream oss;
                                     oss << std::fixed << std::setprecision(6) << d;
-                                    std::string result = oss.str();
-                                    // Remove trailing zeros after decimal point
-                                    size_t dotPos = result.find('.');
-                                    if (dotPos != std::string::npos) {
-                                        size_t lastNonZero = result.find_last_not_of('0');
-                                        if (lastNonZero > dotPos) {
-                                            result = result.substr(0, lastNonZero + 1);
-                                        } else {
-                                            // Keep at least one decimal place
-                                            result = result.substr(0, dotPos + 2);
-                                        }
-                                    }
-                                    return Value(result);
+                                    return Value(oss.str());
                                 } else if (std::holds_alternative<bool>(val)) {
                                     // bool → str: "True" or "False"
                                     return Value(std::get<bool>(val) ? "True" : "False");
@@ -1521,13 +1509,31 @@ std::any EvalVisitor::visitComparison(Python3Parser::ComparisonContext *ctx) {
             else if (op == ">=") compResult = l >= r;
             else if (op == "==") compResult = l == r;
             else if (op == "!=") compResult = l != r;
+        } else if ((std::holds_alternative<bool>(left) || std::holds_alternative<int>(left)) &&
+                   (std::holds_alternative<bool>(right) || std::holds_alternative<int>(right))) {
+            // bool vs int or int vs bool: In Python, bool is a subclass of int (True=1, False=0)
+            int l = std::holds_alternative<bool>(left) ? (std::get<bool>(left) ? 1 : 0) : std::get<int>(left);
+            int r = std::holds_alternative<bool>(right) ? (std::get<bool>(right) ? 1 : 0) : std::get<int>(right);
+            if (op == "<") compResult = l < r;
+            else if (op == ">") compResult = l > r;
+            else if (op == "<=") compResult = l <= r;
+            else if (op == ">=") compResult = l >= r;
+            else if (op == "==") compResult = l == r;
+            else if (op == "!=") compResult = l != r;
+        } else if (std::holds_alternative<std::monostate>(left) && std::holds_alternative<std::monostate>(right)) {
+            // None vs None: None == None is True, None != None is False
+            if (op == "==") compResult = true;
+            else if (op == "!=") compResult = false;
+            else compResult = false;  // None is not < > <= >= anything
         } else {
-            // Different types or None - for now, just return false
-            // In Python, different types have specific comparison rules
-            compResult = false;
+            // Different types - use equality/inequality for == and !=, false for ordering
+            if (op == "==") compResult = false;
+            else if (op == "!=") compResult = true;
+            else compResult = false;
         }
         
         finalResult = finalResult && compResult;
+        if (!finalResult) break;  // Short-circuit: once false, chained result stays false
         
         // For chained comparisons, the right becomes the new left
         left = right;
@@ -1559,19 +1565,7 @@ std::string EvalVisitor::valueToString(const Value& val) {
         double d = std::get<double>(val);
         std::ostringstream oss;
         oss << std::fixed << std::setprecision(6) << d;
-        std::string result = oss.str();
-        // Remove trailing zeros after decimal point
-        size_t dotPos = result.find('.');
-        if (dotPos != std::string::npos) {
-            size_t lastNonZero = result.find_last_not_of('0');
-            if (lastNonZero > dotPos) {
-                result = result.substr(0, lastNonZero + 1);
-            } else {
-                // Keep at least one decimal place
-                result = result.substr(0, dotPos + 2);
-            }
-        }
-        return result;
+        return oss.str();
     } else if (std::holds_alternative<bool>(val)) {
         // Python prints True/False, not 1/0
         return std::get<bool>(val) ? "True" : "False";
