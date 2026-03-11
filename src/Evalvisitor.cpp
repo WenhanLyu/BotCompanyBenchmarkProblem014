@@ -130,6 +130,15 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                     BigInteger r = std::holds_alternative<BigInteger>(rightVal) ? std::get<BigInteger>(rightVal) : BigInteger(std::get<int>(rightVal));
                                     newVal = l % r;
                                 } else { newVal = currentVal; }
+                            } else if (op == "/=") {
+                                double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) :
+                                           (std::holds_alternative<int>(currentVal) ? static_cast<double>(std::get<int>(currentVal)) :
+                                           (std::holds_alternative<BigInteger>(currentVal) ? std::stod(std::get<BigInteger>(currentVal).toString()) : 0.0));
+                                double r = std::holds_alternative<double>(rightVal) ? std::get<double>(rightVal) :
+                                           (std::holds_alternative<int>(rightVal) ? static_cast<double>(std::get<int>(rightVal)) :
+                                           (std::holds_alternative<BigInteger>(rightVal) ? std::stod(std::get<BigInteger>(rightVal).toString()) : 1.0));
+                                if (r != 0.0) newVal = l / r;
+                                else newVal = currentVal;  // Division by zero protection
                             } else { newVal = currentVal; }
                             lst.elements[idx] = newVal;
                         }
@@ -734,9 +743,10 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                 throw std::runtime_error("Object is not subscriptable");
             }
         } else {
-            // This is a function call - must be the first (and only) trailer
-            if (i != 0 || trailers.size() != 1) {
-                throw std::runtime_error("Invalid syntax: function call must be alone");
+            // This is a function call trailer (OPEN_PAREN)
+            // Can only call from the atom directly (position 0)
+            if (i != 0) {
+                throw std::runtime_error("Invalid syntax: cannot call result of subscript as function");
             }
             
             // Get the function name from the atom
@@ -777,12 +787,15 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
             }
             // Always print newline, even if no arguments
             std::cout << std::endl;
-            return std::any();
+            currentValue = std::any();
+            isFirstTrailer = false;
+            continue;  // Allow subsequent trailers (subscripts on return value)
         }
         
         // Handle int() type conversion function
         if (funcName == "int") {
             // Get the argument
+            Value intResult(0);
             auto arglist = trailer->arglist();
             if (arglist) {
                 auto args = arglist->argument();
@@ -797,15 +810,13 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                                 
                                 // Convert to int based on the type
                                 if (std::holds_alternative<int>(val)) {
-                                    // Already an int
-                                    return val;
+                                    intResult = val;
                                 } else if (std::holds_alternative<double>(val)) {
                                     // float → int: truncate decimal part
-                                    int intVal = static_cast<int>(std::get<double>(val));
-                                    return Value(intVal);
+                                    intResult = Value(static_cast<int>(std::get<double>(val)));
                                 } else if (std::holds_alternative<bool>(val)) {
                                     // bool → int: True → 1, False → 0
-                                    return Value(std::get<bool>(val) ? 1 : 0);
+                                    intResult = Value(std::get<bool>(val) ? 1 : 0);
                                 } else if (std::holds_alternative<std::string>(val)) {
                                     // str → int: parse string as integer
                                     std::string str = std::get<std::string>(val);
@@ -814,15 +825,12 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                                     std::string absStr = negative ? str.substr(1) : str;
                                     if (absStr.length() > 10 || 
                                         (absStr.length() == 10 && absStr > "2147483647")) {
-                                        // Use BigInteger for large integers
-                                        return Value(BigInteger(str));
+                                        intResult = Value(BigInteger(str));
                                     } else {
-                                        // Use regular int
-                                        return Value(std::stoi(str));
+                                        intResult = Value(std::stoi(str));
                                     }
                                 } else if (std::holds_alternative<BigInteger>(val)) {
-                                    // BigInteger → keep as BigInteger
-                                    return val;
+                                    intResult = val;
                                 }
                             } catch (...) {
                                 // Error in conversion
@@ -831,13 +839,15 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                     }
                 }
             }
-            // Return 0 if conversion failed
-            return Value(0);
+            currentValue = intResult;
+            isFirstTrailer = false;
+            continue;
         }
         
         // Handle float() type conversion function
         if (funcName == "float") {
             // Get the argument
+            Value floatResult(0.0);
             auto arglist = trailer->arglist();
             if (arglist) {
                 auto args = arglist->argument();
@@ -852,28 +862,21 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                                 
                                 // Convert to float based on the type
                                 if (std::holds_alternative<double>(val)) {
-                                    // Already a float
-                                    return val;
+                                    floatResult = val;
                                 } else if (std::holds_alternative<int>(val)) {
-                                    // int → float: direct conversion
-                                    return Value(static_cast<double>(std::get<int>(val)));
+                                    floatResult = Value(static_cast<double>(std::get<int>(val)));
                                 } else if (std::holds_alternative<bool>(val)) {
-                                    // bool → float: True → 1.0, False → 0.0
-                                    return Value(std::get<bool>(val) ? 1.0 : 0.0);
+                                    floatResult = Value(std::get<bool>(val) ? 1.0 : 0.0);
                                 } else if (std::holds_alternative<std::string>(val)) {
-                                    // str → float: parse string as float
                                     std::string str = std::get<std::string>(val);
-                                    return Value(std::stod(str));
+                                    floatResult = Value(std::stod(str));
                                 } else if (std::holds_alternative<BigInteger>(val)) {
-                                    // BigInteger → float: convert to double
                                     BigInteger bi = std::get<BigInteger>(val);
-                                    // Try to convert to long long first, then to double
                                     try {
                                         long long ll = bi.toLongLong();
-                                        return Value(static_cast<double>(ll));
+                                        floatResult = Value(static_cast<double>(ll));
                                     } catch (...) {
-                                        // If too large for long long, parse the string representation
-                                        return Value(std::stod(bi.toString()));
+                                        floatResult = Value(std::stod(bi.toString()));
                                     }
                                 }
                             } catch (...) {
@@ -883,13 +886,15 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                     }
                 }
             }
-            // Return 0.0 if conversion failed
-            return Value(0.0);
+            currentValue = floatResult;
+            isFirstTrailer = false;
+            continue;
         }
         
         // Handle str() type conversion function
         if (funcName == "str") {
             // Get the argument
+            Value strResult(std::string(""));
             auto arglist = trailer->arglist();
             if (arglist) {
                 auto args = arglist->argument();
@@ -904,26 +909,20 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                                 
                                 // Convert to str based on the type
                                 if (std::holds_alternative<std::string>(val)) {
-                                    // Already a string
-                                    return val;
+                                    strResult = val;
                                 } else if (std::holds_alternative<int>(val)) {
-                                    // int → str: convert to string
-                                    return Value(std::to_string(std::get<int>(val)));
+                                    strResult = Value(std::to_string(std::get<int>(val)));
                                 } else if (std::holds_alternative<double>(val)) {
-                                    // float → str: format with exactly 6 decimal places (per spec)
                                     double d = std::get<double>(val);
                                     std::ostringstream oss;
                                     oss << std::fixed << std::setprecision(6) << d;
-                                    return Value(oss.str());
+                                    strResult = Value(oss.str());
                                 } else if (std::holds_alternative<bool>(val)) {
-                                    // bool → str: "True" or "False"
-                                    return Value(std::get<bool>(val) ? "True" : "False");
+                                    strResult = Value(std::get<bool>(val) ? std::string("True") : std::string("False"));
                                 } else if (std::holds_alternative<BigInteger>(val)) {
-                                    // BigInteger → str: toString()
-                                    return Value(std::get<BigInteger>(val).toString());
+                                    strResult = Value(std::get<BigInteger>(val).toString());
                                 } else if (std::holds_alternative<std::monostate>(val)) {
-                                    // None → str: "None"
-                                    return Value("None");
+                                    strResult = Value(std::string("None"));
                                 }
                             } catch (...) {
                                 // Error in conversion
@@ -932,13 +931,15 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                     }
                 }
             }
-            // Return empty string if conversion failed
-            return Value("");
+            currentValue = strResult;
+            isFirstTrailer = false;
+            continue;
         }
         
         // Handle bool() type conversion function
         if (funcName == "bool") {
             // Get the argument
+            Value boolResult(false);
             auto arglist = trailer->arglist();
             if (arglist) {
                 auto args = arglist->argument();
@@ -953,23 +954,17 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                                 
                                 // Convert to bool based on the type
                                 if (std::holds_alternative<bool>(val)) {
-                                    // Already a bool
-                                    return val;
+                                    boolResult = val;
                                 } else if (std::holds_alternative<int>(val)) {
-                                    // int → bool: 0 → False, non-zero → True
-                                    return Value(std::get<int>(val) != 0);
+                                    boolResult = Value(std::get<int>(val) != 0);
                                 } else if (std::holds_alternative<double>(val)) {
-                                    // float → bool: 0.0 → False, non-zero → True
-                                    return Value(std::get<double>(val) != 0.0);
+                                    boolResult = Value(std::get<double>(val) != 0.0);
                                 } else if (std::holds_alternative<std::string>(val)) {
-                                    // str → bool: "" → False, non-empty → True
-                                    return Value(!std::get<std::string>(val).empty());
+                                    boolResult = Value(!std::get<std::string>(val).empty());
                                 } else if (std::holds_alternative<BigInteger>(val)) {
-                                    // BigInteger → bool: 0 → False, non-zero → True
-                                    return Value(!std::get<BigInteger>(val).isZero());
+                                    boolResult = Value(!std::get<BigInteger>(val).isZero());
                                 } else if (std::holds_alternative<std::monostate>(val)) {
-                                    // None → bool: False
-                                    return Value(false);
+                                    boolResult = Value(false);
                                 }
                             } catch (...) {
                                 // Error in conversion
@@ -978,8 +973,9 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                     }
                 }
             }
-            // Return False if conversion failed
-            return Value(false);
+            currentValue = boolResult;
+            isFirstTrailer = false;
+            continue;
         }
         
         // Check if this is a user-defined function
@@ -1122,11 +1118,14 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
             currentFunctionLocals = savedFunctionLocals;
             currentFunctionGlobals = savedFunctionGlobals;
             
-            // Return the value
-            return returnValue;
+            // Store the return value and continue (allow subscript trailers after function call)
+            currentValue = returnValue;
+            isFirstTrailer = false;
+            continue;
         }
         
-        return std::any();
+        currentValue = std::any();
+        isFirstTrailer = false;
         }
     }
     
@@ -1218,8 +1217,13 @@ std::any EvalVisitor::visitAtom(Python3Parser::AtomContext *ctx) {
                     return localIt->second;
                 }
             }
-            // Local variable not initialized - return None (or should error)
-            return Value(std::monostate{});
+            // Local variable not initialized - fall back to global scope per spec:
+            // "global variables are effective in all scopes (can be accessed without the global keyword)"
+            auto globalIt = variables.find(varName);
+            if (globalIt != variables.end()) {
+                return globalIt->second;
+            }
+            return Value(std::monostate{});  // Variable not found anywhere
         }
         // Otherwise, check global variables (includes parameters which are in local scope but not in assignedVars, and globals)
         if (!isGlobal && localVariables != nullptr) {
