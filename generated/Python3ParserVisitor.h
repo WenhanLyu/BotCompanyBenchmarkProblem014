@@ -1,5 +1,5 @@
 
-// Generated from Python3Parser.g4 by ANTLR 4.13.2
+// Generated from resources/Python3Parser.g4 by ANTLR 4.13.2
 
 #pragma once
 
@@ -46,6 +46,8 @@ public:
     virtual std::any visitContinue_stmt(Python3Parser::Continue_stmtContext *context) = 0;
 
     virtual std::any visitReturn_stmt(Python3Parser::Return_stmtContext *context) = 0;
+
+    virtual std::any visitGlobal_stmt(Python3Parser::Global_stmtContext *context) = 0;
 
     virtual std::any visitCompound_stmt(Python3Parser::Compound_stmtContext *context) = 0;
 

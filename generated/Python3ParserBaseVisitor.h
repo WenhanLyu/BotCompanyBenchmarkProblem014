@@ -1,5 +1,5 @@
 
-// Generated from Python3Parser.g4 by ANTLR 4.13.2
+// Generated from resources/Python3Parser.g4 by ANTLR 4.13.2
 
 #pragma once
 
@@ -68,6 +68,10 @@ public:
   }
 
   virtual std::any visitReturn_stmt(Python3Parser::Return_stmtContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitGlobal_stmt(Python3Parser::Global_stmtContext *ctx) override {
     return visitChildren(ctx);
   }
 

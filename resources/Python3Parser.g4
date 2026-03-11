@@ -12,7 +12,7 @@ tfpdef: NAME ;
 
 stmt: simple_stmt | compound_stmt;
 simple_stmt: small_stmt  NEWLINE;
-small_stmt: expr_stmt | flow_stmt;
+small_stmt: expr_stmt | flow_stmt | global_stmt;
 expr_stmt: testlist ( (augassign testlist) |
                      ('=' testlist)*);// chained assignment, plus equals, minus equals, etc.
 augassign: ('+=' | '-=' | '*=' | '/=' | '//=' | '%=' );
@@ -20,6 +20,7 @@ flow_stmt: break_stmt | continue_stmt | return_stmt;
 break_stmt: 'break';
 continue_stmt: 'continue';
 return_stmt: 'return' (testlist)?;
+global_stmt: GLOBAL NAME (',' NAME)*;
 compound_stmt: if_stmt | while_stmt | funcdef ;
 if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ('else' ':' suite)?;
 while_stmt: 'while' test ':' suite;
@@ -35,9 +36,9 @@ addorsub_op: '+'|'-';
 term: factor (muldivmod_op factor)*;
 muldivmod_op: '*'|'/'|'//'|'%';
 factor: ('+'|'-') factor | atom_expr;
-atom_expr: atom trailer?;
-trailer: '(' (arglist)? ')' ;
-atom: (NAME | NUMBER | STRING+| 'None' | 'True' | 'False' | ('(' test ')') | format_string);
+atom_expr: atom trailer*;
+trailer: '(' (arglist)? ')' | '[' test ']' ;
+atom: (NAME | NUMBER | STRING+| 'None' | 'True' | 'False' | ('(' test ')') | ('[' testlist? ']') | format_string);
 format_string: FORMAT_QUOTATION (FORMAT_STRING_LITERAL | '{' testlist '}')* QUOTATION;
 testlist: test (',' test)* (',')?;// arithmetic expressions  eg: a,b   a   a+b
 arglist: argument (',' argument)*  (',')?;

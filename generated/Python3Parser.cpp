@@ -1,5 +1,5 @@
 
-// Generated from Python3Parser.g4 by ANTLR 4.13.2
+// Generated from resources/Python3Parser.g4 by ANTLR 4.13.2
 
 
 #include "Python3ParserVisitor.h"
@@ -54,8 +54,8 @@ void python3parserParserInitialize() {
     std::vector<std::string>{
       "file_input", "funcdef", "parameters", "typedargslist", "tfpdef", 
       "stmt", "simple_stmt", "small_stmt", "expr_stmt", "augassign", "flow_stmt", 
-      "break_stmt", "continue_stmt", "return_stmt", "compound_stmt", "if_stmt", 
-      "while_stmt", "suite", "test", "or_test", "and_test", "not_test", 
+      "break_stmt", "continue_stmt", "return_stmt", "global_stmt", "compound_stmt", 
+      "if_stmt", "while_stmt", "suite", "test", "or_test", "and_test", "not_test", 
       "comparison", "comp_op", "arith_expr", "addorsub_op", "term", "muldivmod_op", 
       "factor", "atom_expr", "trailer", "atom", "format_string", "testlist", 
       "arglist", "argument"
@@ -63,21 +63,21 @@ void python3parserParserInitialize() {
     std::vector<std::string>{
       "", "", "", "", "", "", "'def'", "'return'", "'if'", "'elif'", "'else'", 
       "'while'", "'for'", "'in'", "'or'", "'and'", "'not'", "'None'", "'True'", 
-      "'False'", "'continue'", "'break'", "", "", "", "", "", "", "", "", 
-      "", "", "", "'.'", "'...'", "'*'", "'('", "')'", "','", "':'", "';'", 
-      "'**'", "'='", "'['", "']'", "'|'", "'^'", "'&'", "'<<'", "'>>'", 
-      "'+'", "'-'", "'/'", "'%'", "'//'", "'~'", "'{'", "'}'", "'<'", "'>'", 
-      "'=='", "'>='", "'<='", "'<>'", "'!='", "'@'", "'->'", "'+='", "'-='", 
-      "'*='", "'@='", "'/='", "'%='", "'&='", "'|='", "'^='", "'<<='", "'>>='", 
-      "'**='", "'//='", "'f\"'"
+      "'False'", "'continue'", "'break'", "'global'", "", "", "", "", "", 
+      "", "", "", "", "", "", "'.'", "'...'", "'*'", "'('", "')'", "','", 
+      "':'", "';'", "'**'", "'='", "'['", "']'", "'|'", "'^'", "'&'", "'<<'", 
+      "'>>'", "'+'", "'-'", "'/'", "'%'", "'//'", "'~'", "'{'", "'}'", "'<'", 
+      "'>'", "'=='", "'>='", "'<='", "'<>'", "'!='", "'@'", "'->'", "'+='", 
+      "'-='", "'*='", "'@='", "'/='", "'%='", "'&='", "'|='", "'^='", "'<<='", 
+      "'>>='", "'**='", "'//='", "'f\"'"
     },
     std::vector<std::string>{
       "", "INDENT", "DEDENT", "STRING", "NUMBER", "INTEGER", "DEF", "RETURN", 
       "IF", "ELIF", "ELSE", "WHILE", "FOR", "IN", "OR", "AND", "NOT", "NONE", 
-      "TRUE", "FALSE", "CONTINUE", "BREAK", "NEWLINE", "NAME", "STRING_LITERAL", 
-      "FORMAT_STRING_LITERAL", "BYTES_LITERAL", "DECIMAL_INTEGER", "OCT_INTEGER", 
-      "HEX_INTEGER", "BIN_INTEGER", "FLOAT_NUMBER", "IMAG_NUMBER", "DOT", 
-      "ELLIPSIS", "STAR", "OPEN_PAREN", "CLOSE_PAREN", "COMMA", "COLON", 
+      "TRUE", "FALSE", "CONTINUE", "BREAK", "GLOBAL", "NEWLINE", "NAME", 
+      "STRING_LITERAL", "FORMAT_STRING_LITERAL", "BYTES_LITERAL", "DECIMAL_INTEGER", 
+      "OCT_INTEGER", "HEX_INTEGER", "BIN_INTEGER", "FLOAT_NUMBER", "IMAG_NUMBER", 
+      "DOT", "ELLIPSIS", "STAR", "OPEN_PAREN", "CLOSE_PAREN", "COMMA", "COLON", 
       "SEMI_COLON", "POWER", "ASSIGN", "OPEN_BRACK", "CLOSE_BRACK", "OR_OP", 
       "XOR", "AND_OP", "LEFT_SHIFT", "RIGHT_SHIFT", "ADD", "MINUS", "DIV", 
       "MOD", "IDIV", "NOT_OP", "OPEN_BRACE", "CLOSE_BRACE", "LESS_THAN", 
@@ -89,111 +89,120 @@ void python3parserParserInitialize() {
     }
   );
   static const int32_t serializedATNSegment[] = {
-  	4,1,83,322,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,6,2,
+  	4,1,84,347,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,6,2,
   	7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,2,12,7,12,2,13,7,13,2,14,7,
   	14,2,15,7,15,2,16,7,16,2,17,7,17,2,18,7,18,2,19,7,19,2,20,7,20,2,21,7,
   	21,2,22,7,22,2,23,7,23,2,24,7,24,2,25,7,25,2,26,7,26,2,27,7,27,2,28,7,
   	28,2,29,7,29,2,30,7,30,2,31,7,31,2,32,7,32,2,33,7,33,2,34,7,34,2,35,7,
-  	35,1,0,1,0,5,0,75,8,0,10,0,12,0,78,9,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,
-  	1,1,2,1,2,3,2,90,8,2,1,2,1,2,1,3,1,3,1,3,3,3,97,8,3,1,3,1,3,1,3,1,3,3,
-  	3,103,8,3,5,3,105,8,3,10,3,12,3,108,9,3,1,4,1,4,1,5,1,5,3,5,114,8,5,1,
-  	6,1,6,1,6,1,7,1,7,3,7,121,8,7,1,8,1,8,1,8,1,8,1,8,1,8,5,8,129,8,8,10,
-  	8,12,8,132,9,8,3,8,134,8,8,1,9,1,9,1,10,1,10,1,10,3,10,141,8,10,1,11,
-  	1,11,1,12,1,12,1,13,1,13,3,13,149,8,13,1,14,1,14,1,14,3,14,154,8,14,1,
-  	15,1,15,1,15,1,15,1,15,1,15,1,15,1,15,1,15,5,15,165,8,15,10,15,12,15,
-  	168,9,15,1,15,1,15,1,15,3,15,173,8,15,1,16,1,16,1,16,1,16,1,16,1,17,1,
-  	17,1,17,1,17,4,17,184,8,17,11,17,12,17,185,1,17,1,17,3,17,190,8,17,1,
-  	18,1,18,1,19,1,19,1,19,5,19,197,8,19,10,19,12,19,200,9,19,1,20,1,20,1,
-  	20,5,20,205,8,20,10,20,12,20,208,9,20,1,21,1,21,1,21,3,21,213,8,21,1,
-  	22,1,22,1,22,1,22,5,22,219,8,22,10,22,12,22,222,9,22,1,23,1,23,1,24,1,
-  	24,1,24,1,24,5,24,230,8,24,10,24,12,24,233,9,24,1,25,1,25,1,26,1,26,1,
-  	26,1,26,5,26,241,8,26,10,26,12,26,244,9,26,1,27,1,27,1,28,1,28,1,28,3,
-  	28,251,8,28,1,29,1,29,3,29,255,8,29,1,30,1,30,3,30,259,8,30,1,30,1,30,
-  	1,31,1,31,1,31,4,31,266,8,31,11,31,12,31,267,1,31,1,31,1,31,1,31,1,31,
-  	1,31,1,31,1,31,3,31,278,8,31,1,32,1,32,1,32,1,32,1,32,1,32,5,32,286,8,
-  	32,10,32,12,32,289,9,32,1,32,1,32,1,33,1,33,1,33,5,33,296,8,33,10,33,
-  	12,33,299,9,33,1,33,3,33,302,8,33,1,34,1,34,1,34,5,34,307,8,34,10,34,
-  	12,34,310,9,34,1,34,3,34,313,8,34,1,35,1,35,1,35,1,35,1,35,3,35,320,8,
-  	35,1,35,0,0,36,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,
-  	40,42,44,46,48,50,52,54,56,58,60,62,64,66,68,70,0,4,3,0,67,69,71,72,79,
-  	79,2,0,58,62,64,64,1,0,50,51,2,0,35,35,52,54,328,0,76,1,0,0,0,2,81,1,
-  	0,0,0,4,87,1,0,0,0,6,93,1,0,0,0,8,109,1,0,0,0,10,113,1,0,0,0,12,115,1,
-  	0,0,0,14,120,1,0,0,0,16,122,1,0,0,0,18,135,1,0,0,0,20,140,1,0,0,0,22,
-  	142,1,0,0,0,24,144,1,0,0,0,26,146,1,0,0,0,28,153,1,0,0,0,30,155,1,0,0,
-  	0,32,174,1,0,0,0,34,189,1,0,0,0,36,191,1,0,0,0,38,193,1,0,0,0,40,201,
-  	1,0,0,0,42,212,1,0,0,0,44,214,1,0,0,0,46,223,1,0,0,0,48,225,1,0,0,0,50,
-  	234,1,0,0,0,52,236,1,0,0,0,54,245,1,0,0,0,56,250,1,0,0,0,58,252,1,0,0,
-  	0,60,256,1,0,0,0,62,277,1,0,0,0,64,279,1,0,0,0,66,292,1,0,0,0,68,303,
-  	1,0,0,0,70,319,1,0,0,0,72,75,5,22,0,0,73,75,3,10,5,0,74,72,1,0,0,0,74,
-  	73,1,0,0,0,75,78,1,0,0,0,76,74,1,0,0,0,76,77,1,0,0,0,77,79,1,0,0,0,78,
-  	76,1,0,0,0,79,80,5,0,0,1,80,1,1,0,0,0,81,82,5,6,0,0,82,83,5,23,0,0,83,
-  	84,3,4,2,0,84,85,5,39,0,0,85,86,3,34,17,0,86,3,1,0,0,0,87,89,5,36,0,0,
-  	88,90,3,6,3,0,89,88,1,0,0,0,89,90,1,0,0,0,90,91,1,0,0,0,91,92,5,37,0,
-  	0,92,5,1,0,0,0,93,96,3,8,4,0,94,95,5,42,0,0,95,97,3,36,18,0,96,94,1,0,
-  	0,0,96,97,1,0,0,0,97,106,1,0,0,0,98,99,5,38,0,0,99,102,3,8,4,0,100,101,
-  	5,42,0,0,101,103,3,36,18,0,102,100,1,0,0,0,102,103,1,0,0,0,103,105,1,
-  	0,0,0,104,98,1,0,0,0,105,108,1,0,0,0,106,104,1,0,0,0,106,107,1,0,0,0,
-  	107,7,1,0,0,0,108,106,1,0,0,0,109,110,5,23,0,0,110,9,1,0,0,0,111,114,
-  	3,12,6,0,112,114,3,28,14,0,113,111,1,0,0,0,113,112,1,0,0,0,114,11,1,0,
-  	0,0,115,116,3,14,7,0,116,117,5,22,0,0,117,13,1,0,0,0,118,121,3,16,8,0,
-  	119,121,3,20,10,0,120,118,1,0,0,0,120,119,1,0,0,0,121,15,1,0,0,0,122,
-  	133,3,66,33,0,123,124,3,18,9,0,124,125,3,66,33,0,125,134,1,0,0,0,126,
-  	127,5,42,0,0,127,129,3,66,33,0,128,126,1,0,0,0,129,132,1,0,0,0,130,128,
-  	1,0,0,0,130,131,1,0,0,0,131,134,1,0,0,0,132,130,1,0,0,0,133,123,1,0,0,
-  	0,133,130,1,0,0,0,134,17,1,0,0,0,135,136,7,0,0,0,136,19,1,0,0,0,137,141,
-  	3,22,11,0,138,141,3,24,12,0,139,141,3,26,13,0,140,137,1,0,0,0,140,138,
-  	1,0,0,0,140,139,1,0,0,0,141,21,1,0,0,0,142,143,5,21,0,0,143,23,1,0,0,
-  	0,144,145,5,20,0,0,145,25,1,0,0,0,146,148,5,7,0,0,147,149,3,66,33,0,148,
-  	147,1,0,0,0,148,149,1,0,0,0,149,27,1,0,0,0,150,154,3,30,15,0,151,154,
-  	3,32,16,0,152,154,3,2,1,0,153,150,1,0,0,0,153,151,1,0,0,0,153,152,1,0,
-  	0,0,154,29,1,0,0,0,155,156,5,8,0,0,156,157,3,36,18,0,157,158,5,39,0,0,
-  	158,166,3,34,17,0,159,160,5,9,0,0,160,161,3,36,18,0,161,162,5,39,0,0,
-  	162,163,3,34,17,0,163,165,1,0,0,0,164,159,1,0,0,0,165,168,1,0,0,0,166,
-  	164,1,0,0,0,166,167,1,0,0,0,167,172,1,0,0,0,168,166,1,0,0,0,169,170,5,
-  	10,0,0,170,171,5,39,0,0,171,173,3,34,17,0,172,169,1,0,0,0,172,173,1,0,
-  	0,0,173,31,1,0,0,0,174,175,5,11,0,0,175,176,3,36,18,0,176,177,5,39,0,
-  	0,177,178,3,34,17,0,178,33,1,0,0,0,179,190,3,12,6,0,180,181,5,22,0,0,
-  	181,183,5,1,0,0,182,184,3,10,5,0,183,182,1,0,0,0,184,185,1,0,0,0,185,
-  	183,1,0,0,0,185,186,1,0,0,0,186,187,1,0,0,0,187,188,5,2,0,0,188,190,1,
-  	0,0,0,189,179,1,0,0,0,189,180,1,0,0,0,190,35,1,0,0,0,191,192,3,38,19,
-  	0,192,37,1,0,0,0,193,198,3,40,20,0,194,195,5,14,0,0,195,197,3,40,20,0,
-  	196,194,1,0,0,0,197,200,1,0,0,0,198,196,1,0,0,0,198,199,1,0,0,0,199,39,
-  	1,0,0,0,200,198,1,0,0,0,201,206,3,42,21,0,202,203,5,15,0,0,203,205,3,
-  	42,21,0,204,202,1,0,0,0,205,208,1,0,0,0,206,204,1,0,0,0,206,207,1,0,0,
-  	0,207,41,1,0,0,0,208,206,1,0,0,0,209,210,5,16,0,0,210,213,3,42,21,0,211,
-  	213,3,44,22,0,212,209,1,0,0,0,212,211,1,0,0,0,213,43,1,0,0,0,214,220,
-  	3,48,24,0,215,216,3,46,23,0,216,217,3,48,24,0,217,219,1,0,0,0,218,215,
-  	1,0,0,0,219,222,1,0,0,0,220,218,1,0,0,0,220,221,1,0,0,0,221,45,1,0,0,
-  	0,222,220,1,0,0,0,223,224,7,1,0,0,224,47,1,0,0,0,225,231,3,52,26,0,226,
-  	227,3,50,25,0,227,228,3,52,26,0,228,230,1,0,0,0,229,226,1,0,0,0,230,233,
-  	1,0,0,0,231,229,1,0,0,0,231,232,1,0,0,0,232,49,1,0,0,0,233,231,1,0,0,
-  	0,234,235,7,2,0,0,235,51,1,0,0,0,236,242,3,56,28,0,237,238,3,54,27,0,
-  	238,239,3,56,28,0,239,241,1,0,0,0,240,237,1,0,0,0,241,244,1,0,0,0,242,
-  	240,1,0,0,0,242,243,1,0,0,0,243,53,1,0,0,0,244,242,1,0,0,0,245,246,7,
-  	3,0,0,246,55,1,0,0,0,247,248,7,2,0,0,248,251,3,56,28,0,249,251,3,58,29,
-  	0,250,247,1,0,0,0,250,249,1,0,0,0,251,57,1,0,0,0,252,254,3,62,31,0,253,
-  	255,3,60,30,0,254,253,1,0,0,0,254,255,1,0,0,0,255,59,1,0,0,0,256,258,
-  	5,36,0,0,257,259,3,68,34,0,258,257,1,0,0,0,258,259,1,0,0,0,259,260,1,
-  	0,0,0,260,261,5,37,0,0,261,61,1,0,0,0,262,278,5,23,0,0,263,278,5,4,0,
-  	0,264,266,5,3,0,0,265,264,1,0,0,0,266,267,1,0,0,0,267,265,1,0,0,0,267,
-  	268,1,0,0,0,268,278,1,0,0,0,269,278,5,17,0,0,270,278,5,18,0,0,271,278,
-  	5,19,0,0,272,273,5,36,0,0,273,274,3,36,18,0,274,275,5,37,0,0,275,278,
-  	1,0,0,0,276,278,3,64,32,0,277,262,1,0,0,0,277,263,1,0,0,0,277,265,1,0,
-  	0,0,277,269,1,0,0,0,277,270,1,0,0,0,277,271,1,0,0,0,277,272,1,0,0,0,277,
-  	276,1,0,0,0,278,63,1,0,0,0,279,287,5,80,0,0,280,286,5,25,0,0,281,282,
-  	5,56,0,0,282,283,3,66,33,0,283,284,5,57,0,0,284,286,1,0,0,0,285,280,1,
-  	0,0,0,285,281,1,0,0,0,286,289,1,0,0,0,287,285,1,0,0,0,287,288,1,0,0,0,
-  	288,290,1,0,0,0,289,287,1,0,0,0,290,291,5,81,0,0,291,65,1,0,0,0,292,297,
-  	3,36,18,0,293,294,5,38,0,0,294,296,3,36,18,0,295,293,1,0,0,0,296,299,
-  	1,0,0,0,297,295,1,0,0,0,297,298,1,0,0,0,298,301,1,0,0,0,299,297,1,0,0,
-  	0,300,302,5,38,0,0,301,300,1,0,0,0,301,302,1,0,0,0,302,67,1,0,0,0,303,
-  	308,3,70,35,0,304,305,5,38,0,0,305,307,3,70,35,0,306,304,1,0,0,0,307,
-  	310,1,0,0,0,308,306,1,0,0,0,308,309,1,0,0,0,309,312,1,0,0,0,310,308,1,
-  	0,0,0,311,313,5,38,0,0,312,311,1,0,0,0,312,313,1,0,0,0,313,69,1,0,0,0,
-  	314,320,3,36,18,0,315,316,3,36,18,0,316,317,5,42,0,0,317,318,3,36,18,
-  	0,318,320,1,0,0,0,319,314,1,0,0,0,319,315,1,0,0,0,320,71,1,0,0,0,35,74,
-  	76,89,96,102,106,113,120,130,133,140,148,153,166,172,185,189,198,206,
-  	212,220,231,242,250,254,258,267,277,285,287,297,301,308,312,319
+  	35,2,36,7,36,1,0,1,0,5,0,77,8,0,10,0,12,0,80,9,0,1,0,1,0,1,1,1,1,1,1,
+  	1,1,1,1,1,1,1,2,1,2,3,2,92,8,2,1,2,1,2,1,3,1,3,1,3,3,3,99,8,3,1,3,1,3,
+  	1,3,1,3,3,3,105,8,3,5,3,107,8,3,10,3,12,3,110,9,3,1,4,1,4,1,5,1,5,3,5,
+  	116,8,5,1,6,1,6,1,6,1,7,1,7,1,7,3,7,124,8,7,1,8,1,8,1,8,1,8,1,8,1,8,5,
+  	8,132,8,8,10,8,12,8,135,9,8,3,8,137,8,8,1,9,1,9,1,10,1,10,1,10,3,10,144,
+  	8,10,1,11,1,11,1,12,1,12,1,13,1,13,3,13,152,8,13,1,14,1,14,1,14,1,14,
+  	5,14,158,8,14,10,14,12,14,161,9,14,1,15,1,15,1,15,3,15,166,8,15,1,16,
+  	1,16,1,16,1,16,1,16,1,16,1,16,1,16,1,16,5,16,177,8,16,10,16,12,16,180,
+  	9,16,1,16,1,16,1,16,3,16,185,8,16,1,17,1,17,1,17,1,17,1,17,1,18,1,18,
+  	1,18,1,18,4,18,196,8,18,11,18,12,18,197,1,18,1,18,3,18,202,8,18,1,19,
+  	1,19,1,20,1,20,1,20,5,20,209,8,20,10,20,12,20,212,9,20,1,21,1,21,1,21,
+  	5,21,217,8,21,10,21,12,21,220,9,21,1,22,1,22,1,22,3,22,225,8,22,1,23,
+  	1,23,1,23,1,23,5,23,231,8,23,10,23,12,23,234,9,23,1,24,1,24,1,25,1,25,
+  	1,25,1,25,5,25,242,8,25,10,25,12,25,245,9,25,1,26,1,26,1,27,1,27,1,27,
+  	1,27,5,27,253,8,27,10,27,12,27,256,9,27,1,28,1,28,1,29,1,29,1,29,3,29,
+  	263,8,29,1,30,1,30,5,30,267,8,30,10,30,12,30,270,9,30,1,31,1,31,3,31,
+  	274,8,31,1,31,1,31,1,31,1,31,1,31,3,31,281,8,31,1,32,1,32,1,32,4,32,286,
+  	8,32,11,32,12,32,287,1,32,1,32,1,32,1,32,1,32,1,32,1,32,1,32,1,32,3,32,
+  	299,8,32,1,32,1,32,3,32,303,8,32,1,33,1,33,1,33,1,33,1,33,1,33,5,33,311,
+  	8,33,10,33,12,33,314,9,33,1,33,1,33,1,34,1,34,1,34,5,34,321,8,34,10,34,
+  	12,34,324,9,34,1,34,3,34,327,8,34,1,35,1,35,1,35,5,35,332,8,35,10,35,
+  	12,35,335,9,35,1,35,3,35,338,8,35,1,36,1,36,1,36,1,36,1,36,3,36,345,8,
+  	36,1,36,0,0,37,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,
+  	40,42,44,46,48,50,52,54,56,58,60,62,64,66,68,70,72,0,4,3,0,68,70,72,73,
+  	80,80,2,0,59,63,65,65,1,0,51,52,2,0,36,36,53,55,357,0,78,1,0,0,0,2,83,
+  	1,0,0,0,4,89,1,0,0,0,6,95,1,0,0,0,8,111,1,0,0,0,10,115,1,0,0,0,12,117,
+  	1,0,0,0,14,123,1,0,0,0,16,125,1,0,0,0,18,138,1,0,0,0,20,143,1,0,0,0,22,
+  	145,1,0,0,0,24,147,1,0,0,0,26,149,1,0,0,0,28,153,1,0,0,0,30,165,1,0,0,
+  	0,32,167,1,0,0,0,34,186,1,0,0,0,36,201,1,0,0,0,38,203,1,0,0,0,40,205,
+  	1,0,0,0,42,213,1,0,0,0,44,224,1,0,0,0,46,226,1,0,0,0,48,235,1,0,0,0,50,
+  	237,1,0,0,0,52,246,1,0,0,0,54,248,1,0,0,0,56,257,1,0,0,0,58,262,1,0,0,
+  	0,60,264,1,0,0,0,62,280,1,0,0,0,64,302,1,0,0,0,66,304,1,0,0,0,68,317,
+  	1,0,0,0,70,328,1,0,0,0,72,344,1,0,0,0,74,77,5,23,0,0,75,77,3,10,5,0,76,
+  	74,1,0,0,0,76,75,1,0,0,0,77,80,1,0,0,0,78,76,1,0,0,0,78,79,1,0,0,0,79,
+  	81,1,0,0,0,80,78,1,0,0,0,81,82,5,0,0,1,82,1,1,0,0,0,83,84,5,6,0,0,84,
+  	85,5,24,0,0,85,86,3,4,2,0,86,87,5,40,0,0,87,88,3,36,18,0,88,3,1,0,0,0,
+  	89,91,5,37,0,0,90,92,3,6,3,0,91,90,1,0,0,0,91,92,1,0,0,0,92,93,1,0,0,
+  	0,93,94,5,38,0,0,94,5,1,0,0,0,95,98,3,8,4,0,96,97,5,43,0,0,97,99,3,38,
+  	19,0,98,96,1,0,0,0,98,99,1,0,0,0,99,108,1,0,0,0,100,101,5,39,0,0,101,
+  	104,3,8,4,0,102,103,5,43,0,0,103,105,3,38,19,0,104,102,1,0,0,0,104,105,
+  	1,0,0,0,105,107,1,0,0,0,106,100,1,0,0,0,107,110,1,0,0,0,108,106,1,0,0,
+  	0,108,109,1,0,0,0,109,7,1,0,0,0,110,108,1,0,0,0,111,112,5,24,0,0,112,
+  	9,1,0,0,0,113,116,3,12,6,0,114,116,3,30,15,0,115,113,1,0,0,0,115,114,
+  	1,0,0,0,116,11,1,0,0,0,117,118,3,14,7,0,118,119,5,23,0,0,119,13,1,0,0,
+  	0,120,124,3,16,8,0,121,124,3,20,10,0,122,124,3,28,14,0,123,120,1,0,0,
+  	0,123,121,1,0,0,0,123,122,1,0,0,0,124,15,1,0,0,0,125,136,3,68,34,0,126,
+  	127,3,18,9,0,127,128,3,68,34,0,128,137,1,0,0,0,129,130,5,43,0,0,130,132,
+  	3,68,34,0,131,129,1,0,0,0,132,135,1,0,0,0,133,131,1,0,0,0,133,134,1,0,
+  	0,0,134,137,1,0,0,0,135,133,1,0,0,0,136,126,1,0,0,0,136,133,1,0,0,0,137,
+  	17,1,0,0,0,138,139,7,0,0,0,139,19,1,0,0,0,140,144,3,22,11,0,141,144,3,
+  	24,12,0,142,144,3,26,13,0,143,140,1,0,0,0,143,141,1,0,0,0,143,142,1,0,
+  	0,0,144,21,1,0,0,0,145,146,5,21,0,0,146,23,1,0,0,0,147,148,5,20,0,0,148,
+  	25,1,0,0,0,149,151,5,7,0,0,150,152,3,68,34,0,151,150,1,0,0,0,151,152,
+  	1,0,0,0,152,27,1,0,0,0,153,154,5,22,0,0,154,159,5,24,0,0,155,156,5,39,
+  	0,0,156,158,5,24,0,0,157,155,1,0,0,0,158,161,1,0,0,0,159,157,1,0,0,0,
+  	159,160,1,0,0,0,160,29,1,0,0,0,161,159,1,0,0,0,162,166,3,32,16,0,163,
+  	166,3,34,17,0,164,166,3,2,1,0,165,162,1,0,0,0,165,163,1,0,0,0,165,164,
+  	1,0,0,0,166,31,1,0,0,0,167,168,5,8,0,0,168,169,3,38,19,0,169,170,5,40,
+  	0,0,170,178,3,36,18,0,171,172,5,9,0,0,172,173,3,38,19,0,173,174,5,40,
+  	0,0,174,175,3,36,18,0,175,177,1,0,0,0,176,171,1,0,0,0,177,180,1,0,0,0,
+  	178,176,1,0,0,0,178,179,1,0,0,0,179,184,1,0,0,0,180,178,1,0,0,0,181,182,
+  	5,10,0,0,182,183,5,40,0,0,183,185,3,36,18,0,184,181,1,0,0,0,184,185,1,
+  	0,0,0,185,33,1,0,0,0,186,187,5,11,0,0,187,188,3,38,19,0,188,189,5,40,
+  	0,0,189,190,3,36,18,0,190,35,1,0,0,0,191,202,3,12,6,0,192,193,5,23,0,
+  	0,193,195,5,1,0,0,194,196,3,10,5,0,195,194,1,0,0,0,196,197,1,0,0,0,197,
+  	195,1,0,0,0,197,198,1,0,0,0,198,199,1,0,0,0,199,200,5,2,0,0,200,202,1,
+  	0,0,0,201,191,1,0,0,0,201,192,1,0,0,0,202,37,1,0,0,0,203,204,3,40,20,
+  	0,204,39,1,0,0,0,205,210,3,42,21,0,206,207,5,14,0,0,207,209,3,42,21,0,
+  	208,206,1,0,0,0,209,212,1,0,0,0,210,208,1,0,0,0,210,211,1,0,0,0,211,41,
+  	1,0,0,0,212,210,1,0,0,0,213,218,3,44,22,0,214,215,5,15,0,0,215,217,3,
+  	44,22,0,216,214,1,0,0,0,217,220,1,0,0,0,218,216,1,0,0,0,218,219,1,0,0,
+  	0,219,43,1,0,0,0,220,218,1,0,0,0,221,222,5,16,0,0,222,225,3,44,22,0,223,
+  	225,3,46,23,0,224,221,1,0,0,0,224,223,1,0,0,0,225,45,1,0,0,0,226,232,
+  	3,50,25,0,227,228,3,48,24,0,228,229,3,50,25,0,229,231,1,0,0,0,230,227,
+  	1,0,0,0,231,234,1,0,0,0,232,230,1,0,0,0,232,233,1,0,0,0,233,47,1,0,0,
+  	0,234,232,1,0,0,0,235,236,7,1,0,0,236,49,1,0,0,0,237,243,3,54,27,0,238,
+  	239,3,52,26,0,239,240,3,54,27,0,240,242,1,0,0,0,241,238,1,0,0,0,242,245,
+  	1,0,0,0,243,241,1,0,0,0,243,244,1,0,0,0,244,51,1,0,0,0,245,243,1,0,0,
+  	0,246,247,7,2,0,0,247,53,1,0,0,0,248,254,3,58,29,0,249,250,3,56,28,0,
+  	250,251,3,58,29,0,251,253,1,0,0,0,252,249,1,0,0,0,253,256,1,0,0,0,254,
+  	252,1,0,0,0,254,255,1,0,0,0,255,55,1,0,0,0,256,254,1,0,0,0,257,258,7,
+  	3,0,0,258,57,1,0,0,0,259,260,7,2,0,0,260,263,3,58,29,0,261,263,3,60,30,
+  	0,262,259,1,0,0,0,262,261,1,0,0,0,263,59,1,0,0,0,264,268,3,64,32,0,265,
+  	267,3,62,31,0,266,265,1,0,0,0,267,270,1,0,0,0,268,266,1,0,0,0,268,269,
+  	1,0,0,0,269,61,1,0,0,0,270,268,1,0,0,0,271,273,5,37,0,0,272,274,3,70,
+  	35,0,273,272,1,0,0,0,273,274,1,0,0,0,274,275,1,0,0,0,275,281,5,38,0,0,
+  	276,277,5,44,0,0,277,278,3,38,19,0,278,279,5,45,0,0,279,281,1,0,0,0,280,
+  	271,1,0,0,0,280,276,1,0,0,0,281,63,1,0,0,0,282,303,5,24,0,0,283,303,5,
+  	4,0,0,284,286,5,3,0,0,285,284,1,0,0,0,286,287,1,0,0,0,287,285,1,0,0,0,
+  	287,288,1,0,0,0,288,303,1,0,0,0,289,303,5,17,0,0,290,303,5,18,0,0,291,
+  	303,5,19,0,0,292,293,5,37,0,0,293,294,3,38,19,0,294,295,5,38,0,0,295,
+  	303,1,0,0,0,296,298,5,44,0,0,297,299,3,68,34,0,298,297,1,0,0,0,298,299,
+  	1,0,0,0,299,300,1,0,0,0,300,303,5,45,0,0,301,303,3,66,33,0,302,282,1,
+  	0,0,0,302,283,1,0,0,0,302,285,1,0,0,0,302,289,1,0,0,0,302,290,1,0,0,0,
+  	302,291,1,0,0,0,302,292,1,0,0,0,302,296,1,0,0,0,302,301,1,0,0,0,303,65,
+  	1,0,0,0,304,312,5,81,0,0,305,311,5,26,0,0,306,307,5,57,0,0,307,308,3,
+  	68,34,0,308,309,5,58,0,0,309,311,1,0,0,0,310,305,1,0,0,0,310,306,1,0,
+  	0,0,311,314,1,0,0,0,312,310,1,0,0,0,312,313,1,0,0,0,313,315,1,0,0,0,314,
+  	312,1,0,0,0,315,316,5,82,0,0,316,67,1,0,0,0,317,322,3,38,19,0,318,319,
+  	5,39,0,0,319,321,3,38,19,0,320,318,1,0,0,0,321,324,1,0,0,0,322,320,1,
+  	0,0,0,322,323,1,0,0,0,323,326,1,0,0,0,324,322,1,0,0,0,325,327,5,39,0,
+  	0,326,325,1,0,0,0,326,327,1,0,0,0,327,69,1,0,0,0,328,333,3,72,36,0,329,
+  	330,5,39,0,0,330,332,3,72,36,0,331,329,1,0,0,0,332,335,1,0,0,0,333,331,
+  	1,0,0,0,333,334,1,0,0,0,334,337,1,0,0,0,335,333,1,0,0,0,336,338,5,39,
+  	0,0,337,336,1,0,0,0,337,338,1,0,0,0,338,71,1,0,0,0,339,345,3,38,19,0,
+  	340,341,3,38,19,0,341,342,5,43,0,0,342,343,3,38,19,0,343,345,1,0,0,0,
+  	344,339,1,0,0,0,344,340,1,0,0,0,345,73,1,0,0,0,38,76,78,91,98,104,108,
+  	115,123,133,136,143,151,159,165,178,184,197,201,210,218,224,232,243,254,
+  	262,268,273,280,287,298,302,310,312,322,326,333,337,344
   };
   staticData->serializedATN = antlr4::atn::SerializedATNView(serializedATNSegment, sizeof(serializedATNSegment) / sizeof(serializedATNSegment[0]));
 
@@ -295,16 +304,16 @@ Python3Parser::File_inputContext* Python3Parser::file_input() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(76);
+    setState(78);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while ((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & 3377768456718808) != 0) || _la == Python3Parser::FORMAT_QUOTATION) {
-      setState(74);
+      ((1ULL << _la) & 6773129099545048) != 0) || _la == Python3Parser::FORMAT_QUOTATION) {
+      setState(76);
       _errHandler->sync(this);
       switch (_input->LA(1)) {
         case Python3Parser::NEWLINE: {
-          setState(72);
+          setState(74);
           match(Python3Parser::NEWLINE);
           break;
         }
@@ -321,12 +330,14 @@ Python3Parser::File_inputContext* Python3Parser::file_input() {
         case Python3Parser::FALSE:
         case Python3Parser::CONTINUE:
         case Python3Parser::BREAK:
+        case Python3Parser::GLOBAL:
         case Python3Parser::NAME:
         case Python3Parser::OPEN_PAREN:
+        case Python3Parser::OPEN_BRACK:
         case Python3Parser::ADD:
         case Python3Parser::MINUS:
         case Python3Parser::FORMAT_QUOTATION: {
-          setState(73);
+          setState(75);
           stmt();
           break;
         }
@@ -334,11 +345,11 @@ Python3Parser::File_inputContext* Python3Parser::file_input() {
       default:
         throw NoViableAltException(this);
       }
-      setState(78);
+      setState(80);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
-    setState(79);
+    setState(81);
     match(Python3Parser::EOF);
    
   }
@@ -403,15 +414,15 @@ Python3Parser::FuncdefContext* Python3Parser::funcdef() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(81);
-    match(Python3Parser::DEF);
-    setState(82);
-    match(Python3Parser::NAME);
     setState(83);
-    parameters();
+    match(Python3Parser::DEF);
     setState(84);
-    match(Python3Parser::COLON);
+    match(Python3Parser::NAME);
     setState(85);
+    parameters();
+    setState(86);
+    match(Python3Parser::COLON);
+    setState(87);
     suite();
    
   }
@@ -469,17 +480,17 @@ Python3Parser::ParametersContext* Python3Parser::parameters() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(87);
-    match(Python3Parser::OPEN_PAREN);
     setState(89);
+    match(Python3Parser::OPEN_PAREN);
+    setState(91);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == Python3Parser::NAME) {
-      setState(88);
+      setState(90);
       typedargslist();
     }
-    setState(91);
+    setState(93);
     match(Python3Parser::CLOSE_PAREN);
    
   }
@@ -557,37 +568,37 @@ Python3Parser::TypedargslistContext* Python3Parser::typedargslist() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(93);
+    setState(95);
     tfpdef();
-    setState(96);
+    setState(98);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == Python3Parser::ASSIGN) {
-      setState(94);
+      setState(96);
       match(Python3Parser::ASSIGN);
-      setState(95);
+      setState(97);
       test();
     }
-    setState(106);
+    setState(108);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while (_la == Python3Parser::COMMA) {
-      setState(98);
+      setState(100);
       match(Python3Parser::COMMA);
-      setState(99);
+      setState(101);
       tfpdef();
-      setState(102);
+      setState(104);
       _errHandler->sync(this);
 
       _la = _input->LA(1);
       if (_la == Python3Parser::ASSIGN) {
-        setState(100);
+        setState(102);
         match(Python3Parser::ASSIGN);
-        setState(101);
+        setState(103);
         test();
       }
-      setState(108);
+      setState(110);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
@@ -638,7 +649,7 @@ Python3Parser::TfpdefContext* Python3Parser::tfpdef() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(109);
+    setState(111);
     match(Python3Parser::NAME);
    
   }
@@ -690,7 +701,7 @@ Python3Parser::StmtContext* Python3Parser::stmt() {
     exitRule();
   });
   try {
-    setState(113);
+    setState(115);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case Python3Parser::STRING:
@@ -702,13 +713,15 @@ Python3Parser::StmtContext* Python3Parser::stmt() {
       case Python3Parser::FALSE:
       case Python3Parser::CONTINUE:
       case Python3Parser::BREAK:
+      case Python3Parser::GLOBAL:
       case Python3Parser::NAME:
       case Python3Parser::OPEN_PAREN:
+      case Python3Parser::OPEN_BRACK:
       case Python3Parser::ADD:
       case Python3Parser::MINUS:
       case Python3Parser::FORMAT_QUOTATION: {
         enterOuterAlt(_localctx, 1);
-        setState(111);
+        setState(113);
         simple_stmt();
         break;
       }
@@ -717,7 +730,7 @@ Python3Parser::StmtContext* Python3Parser::stmt() {
       case Python3Parser::IF:
       case Python3Parser::WHILE: {
         enterOuterAlt(_localctx, 2);
-        setState(112);
+        setState(114);
         compound_stmt();
         break;
       }
@@ -776,9 +789,9 @@ Python3Parser::Simple_stmtContext* Python3Parser::simple_stmt() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(115);
+    setState(117);
     small_stmt();
-    setState(116);
+    setState(118);
     match(Python3Parser::NEWLINE);
    
   }
@@ -803,6 +816,10 @@ Python3Parser::Expr_stmtContext* Python3Parser::Small_stmtContext::expr_stmt() {
 
 Python3Parser::Flow_stmtContext* Python3Parser::Small_stmtContext::flow_stmt() {
   return getRuleContext<Python3Parser::Flow_stmtContext>(0);
+}
+
+Python3Parser::Global_stmtContext* Python3Parser::Small_stmtContext::global_stmt() {
+  return getRuleContext<Python3Parser::Global_stmtContext>(0);
 }
 
 
@@ -830,7 +847,7 @@ Python3Parser::Small_stmtContext* Python3Parser::small_stmt() {
     exitRule();
   });
   try {
-    setState(120);
+    setState(123);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case Python3Parser::STRING:
@@ -841,11 +858,12 @@ Python3Parser::Small_stmtContext* Python3Parser::small_stmt() {
       case Python3Parser::FALSE:
       case Python3Parser::NAME:
       case Python3Parser::OPEN_PAREN:
+      case Python3Parser::OPEN_BRACK:
       case Python3Parser::ADD:
       case Python3Parser::MINUS:
       case Python3Parser::FORMAT_QUOTATION: {
         enterOuterAlt(_localctx, 1);
-        setState(118);
+        setState(120);
         expr_stmt();
         break;
       }
@@ -854,8 +872,15 @@ Python3Parser::Small_stmtContext* Python3Parser::small_stmt() {
       case Python3Parser::CONTINUE:
       case Python3Parser::BREAK: {
         enterOuterAlt(_localctx, 2);
-        setState(119);
+        setState(121);
         flow_stmt();
+        break;
+      }
+
+      case Python3Parser::GLOBAL: {
+        enterOuterAlt(_localctx, 3);
+        setState(122);
+        global_stmt();
         break;
       }
 
@@ -926,9 +951,9 @@ Python3Parser::Expr_stmtContext* Python3Parser::expr_stmt() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(122);
+    setState(125);
     testlist();
-    setState(133);
+    setState(136);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case Python3Parser::ADD_ASSIGN:
@@ -937,24 +962,24 @@ Python3Parser::Expr_stmtContext* Python3Parser::expr_stmt() {
       case Python3Parser::DIV_ASSIGN:
       case Python3Parser::MOD_ASSIGN:
       case Python3Parser::IDIV_ASSIGN: {
-        setState(123);
+        setState(126);
         augassign();
-        setState(124);
+        setState(127);
         testlist();
         break;
       }
 
       case Python3Parser::NEWLINE:
       case Python3Parser::ASSIGN: {
-        setState(130);
+        setState(133);
         _errHandler->sync(this);
         _la = _input->LA(1);
         while (_la == Python3Parser::ASSIGN) {
-          setState(126);
+          setState(129);
           match(Python3Parser::ASSIGN);
-          setState(127);
+          setState(130);
           testlist();
-          setState(132);
+          setState(135);
           _errHandler->sync(this);
           _la = _input->LA(1);
         }
@@ -1032,10 +1057,10 @@ Python3Parser::AugassignContext* Python3Parser::augassign() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(135);
+    setState(138);
     _la = _input->LA(1);
-    if (!(((((_la - 67) & ~ 0x3fULL) == 0) &&
-      ((1ULL << (_la - 67)) & 4151) != 0))) {
+    if (!(((((_la - 68) & ~ 0x3fULL) == 0) &&
+      ((1ULL << (_la - 68)) & 4151) != 0))) {
     _errHandler->recoverInline(this);
     }
     else {
@@ -1096,26 +1121,26 @@ Python3Parser::Flow_stmtContext* Python3Parser::flow_stmt() {
     exitRule();
   });
   try {
-    setState(140);
+    setState(143);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case Python3Parser::BREAK: {
         enterOuterAlt(_localctx, 1);
-        setState(137);
+        setState(140);
         break_stmt();
         break;
       }
 
       case Python3Parser::CONTINUE: {
         enterOuterAlt(_localctx, 2);
-        setState(138);
+        setState(141);
         continue_stmt();
         break;
       }
 
       case Python3Parser::RETURN: {
         enterOuterAlt(_localctx, 3);
-        setState(139);
+        setState(142);
         return_stmt();
         break;
       }
@@ -1170,7 +1195,7 @@ Python3Parser::Break_stmtContext* Python3Parser::break_stmt() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(142);
+    setState(145);
     match(Python3Parser::BREAK);
    
   }
@@ -1219,7 +1244,7 @@ Python3Parser::Continue_stmtContext* Python3Parser::continue_stmt() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(144);
+    setState(147);
     match(Python3Parser::CONTINUE);
    
   }
@@ -1273,16 +1298,96 @@ Python3Parser::Return_stmtContext* Python3Parser::return_stmt() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(146);
+    setState(149);
     match(Python3Parser::RETURN);
-    setState(148);
+    setState(151);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if ((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & 3377768449376280) != 0) || _la == Python3Parser::FORMAT_QUOTATION) {
-      setState(147);
+      ((1ULL << _la) & 6773129083813912) != 0) || _la == Python3Parser::FORMAT_QUOTATION) {
+      setState(150);
       testlist();
+    }
+   
+  }
+  catch (RecognitionException &e) {
+    _errHandler->reportError(this, e);
+    _localctx->exception = std::current_exception();
+    _errHandler->recover(this, _localctx->exception);
+  }
+
+  return _localctx;
+}
+
+//----------------- Global_stmtContext ------------------------------------------------------------------
+
+Python3Parser::Global_stmtContext::Global_stmtContext(ParserRuleContext *parent, size_t invokingState)
+  : ParserRuleContext(parent, invokingState) {
+}
+
+tree::TerminalNode* Python3Parser::Global_stmtContext::GLOBAL() {
+  return getToken(Python3Parser::GLOBAL, 0);
+}
+
+std::vector<tree::TerminalNode *> Python3Parser::Global_stmtContext::NAME() {
+  return getTokens(Python3Parser::NAME);
+}
+
+tree::TerminalNode* Python3Parser::Global_stmtContext::NAME(size_t i) {
+  return getToken(Python3Parser::NAME, i);
+}
+
+std::vector<tree::TerminalNode *> Python3Parser::Global_stmtContext::COMMA() {
+  return getTokens(Python3Parser::COMMA);
+}
+
+tree::TerminalNode* Python3Parser::Global_stmtContext::COMMA(size_t i) {
+  return getToken(Python3Parser::COMMA, i);
+}
+
+
+size_t Python3Parser::Global_stmtContext::getRuleIndex() const {
+  return Python3Parser::RuleGlobal_stmt;
+}
+
+
+std::any Python3Parser::Global_stmtContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
+    return parserVisitor->visitGlobal_stmt(this);
+  else
+    return visitor->visitChildren(this);
+}
+
+Python3Parser::Global_stmtContext* Python3Parser::global_stmt() {
+  Global_stmtContext *_localctx = _tracker.createInstance<Global_stmtContext>(_ctx, getState());
+  enterRule(_localctx, 28, Python3Parser::RuleGlobal_stmt);
+  size_t _la = 0;
+
+#if __cplusplus > 201703L
+  auto onExit = finally([=, this] {
+#else
+  auto onExit = finally([=] {
+#endif
+    exitRule();
+  });
+  try {
+    enterOuterAlt(_localctx, 1);
+    setState(153);
+    match(Python3Parser::GLOBAL);
+    setState(154);
+    match(Python3Parser::NAME);
+    setState(159);
+    _errHandler->sync(this);
+    _la = _input->LA(1);
+    while (_la == Python3Parser::COMMA) {
+      setState(155);
+      match(Python3Parser::COMMA);
+      setState(156);
+      match(Python3Parser::NAME);
+      setState(161);
+      _errHandler->sync(this);
+      _la = _input->LA(1);
     }
    
   }
@@ -1328,7 +1433,7 @@ std::any Python3Parser::Compound_stmtContext::accept(tree::ParseTreeVisitor *vis
 
 Python3Parser::Compound_stmtContext* Python3Parser::compound_stmt() {
   Compound_stmtContext *_localctx = _tracker.createInstance<Compound_stmtContext>(_ctx, getState());
-  enterRule(_localctx, 28, Python3Parser::RuleCompound_stmt);
+  enterRule(_localctx, 30, Python3Parser::RuleCompound_stmt);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1338,26 +1443,26 @@ Python3Parser::Compound_stmtContext* Python3Parser::compound_stmt() {
     exitRule();
   });
   try {
-    setState(153);
+    setState(165);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case Python3Parser::IF: {
         enterOuterAlt(_localctx, 1);
-        setState(150);
+        setState(162);
         if_stmt();
         break;
       }
 
       case Python3Parser::WHILE: {
         enterOuterAlt(_localctx, 2);
-        setState(151);
+        setState(163);
         while_stmt();
         break;
       }
 
       case Python3Parser::DEF: {
         enterOuterAlt(_localctx, 3);
-        setState(152);
+        setState(164);
         funcdef();
         break;
       }
@@ -1437,7 +1542,7 @@ std::any Python3Parser::If_stmtContext::accept(tree::ParseTreeVisitor *visitor) 
 
 Python3Parser::If_stmtContext* Python3Parser::if_stmt() {
   If_stmtContext *_localctx = _tracker.createInstance<If_stmtContext>(_ctx, getState());
-  enterRule(_localctx, 30, Python3Parser::RuleIf_stmt);
+  enterRule(_localctx, 32, Python3Parser::RuleIf_stmt);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1449,40 +1554,40 @@ Python3Parser::If_stmtContext* Python3Parser::if_stmt() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(155);
+    setState(167);
     match(Python3Parser::IF);
-    setState(156);
+    setState(168);
     test();
-    setState(157);
+    setState(169);
     match(Python3Parser::COLON);
-    setState(158);
+    setState(170);
     suite();
-    setState(166);
+    setState(178);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while (_la == Python3Parser::ELIF) {
-      setState(159);
+      setState(171);
       match(Python3Parser::ELIF);
-      setState(160);
+      setState(172);
       test();
-      setState(161);
+      setState(173);
       match(Python3Parser::COLON);
-      setState(162);
+      setState(174);
       suite();
-      setState(168);
+      setState(180);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
-    setState(172);
+    setState(184);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == Python3Parser::ELSE) {
-      setState(169);
+      setState(181);
       match(Python3Parser::ELSE);
-      setState(170);
+      setState(182);
       match(Python3Parser::COLON);
-      setState(171);
+      setState(183);
       suite();
     }
    
@@ -1533,7 +1638,7 @@ std::any Python3Parser::While_stmtContext::accept(tree::ParseTreeVisitor *visito
 
 Python3Parser::While_stmtContext* Python3Parser::while_stmt() {
   While_stmtContext *_localctx = _tracker.createInstance<While_stmtContext>(_ctx, getState());
-  enterRule(_localctx, 32, Python3Parser::RuleWhile_stmt);
+  enterRule(_localctx, 34, Python3Parser::RuleWhile_stmt);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1544,13 +1649,13 @@ Python3Parser::While_stmtContext* Python3Parser::while_stmt() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(174);
+    setState(186);
     match(Python3Parser::WHILE);
-    setState(175);
+    setState(187);
     test();
-    setState(176);
+    setState(188);
     match(Python3Parser::COLON);
-    setState(177);
+    setState(189);
     suite();
    
   }
@@ -1608,7 +1713,7 @@ std::any Python3Parser::SuiteContext::accept(tree::ParseTreeVisitor *visitor) {
 
 Python3Parser::SuiteContext* Python3Parser::suite() {
   SuiteContext *_localctx = _tracker.createInstance<SuiteContext>(_ctx, getState());
-  enterRule(_localctx, 34, Python3Parser::RuleSuite);
+  enterRule(_localctx, 36, Python3Parser::RuleSuite);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1619,7 +1724,7 @@ Python3Parser::SuiteContext* Python3Parser::suite() {
     exitRule();
   });
   try {
-    setState(189);
+    setState(201);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case Python3Parser::STRING:
@@ -1631,35 +1736,37 @@ Python3Parser::SuiteContext* Python3Parser::suite() {
       case Python3Parser::FALSE:
       case Python3Parser::CONTINUE:
       case Python3Parser::BREAK:
+      case Python3Parser::GLOBAL:
       case Python3Parser::NAME:
       case Python3Parser::OPEN_PAREN:
+      case Python3Parser::OPEN_BRACK:
       case Python3Parser::ADD:
       case Python3Parser::MINUS:
       case Python3Parser::FORMAT_QUOTATION: {
         enterOuterAlt(_localctx, 1);
-        setState(179);
+        setState(191);
         simple_stmt();
         break;
       }
 
       case Python3Parser::NEWLINE: {
         enterOuterAlt(_localctx, 2);
-        setState(180);
+        setState(192);
         match(Python3Parser::NEWLINE);
-        setState(181);
+        setState(193);
         match(Python3Parser::INDENT);
-        setState(183); 
+        setState(195); 
         _errHandler->sync(this);
         _la = _input->LA(1);
         do {
-          setState(182);
+          setState(194);
           stmt();
-          setState(185); 
+          setState(197); 
           _errHandler->sync(this);
           _la = _input->LA(1);
         } while ((((_la & ~ 0x3fULL) == 0) &&
-          ((1ULL << _la) & 3377768452524504) != 0) || _la == Python3Parser::FORMAT_QUOTATION);
-        setState(187);
+          ((1ULL << _la) & 6773129091156440) != 0) || _la == Python3Parser::FORMAT_QUOTATION);
+        setState(199);
         match(Python3Parser::DEDENT);
         break;
       }
@@ -1703,7 +1810,7 @@ std::any Python3Parser::TestContext::accept(tree::ParseTreeVisitor *visitor) {
 
 Python3Parser::TestContext* Python3Parser::test() {
   TestContext *_localctx = _tracker.createInstance<TestContext>(_ctx, getState());
-  enterRule(_localctx, 36, Python3Parser::RuleTest);
+  enterRule(_localctx, 38, Python3Parser::RuleTest);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1714,7 +1821,7 @@ Python3Parser::TestContext* Python3Parser::test() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(191);
+    setState(203);
     or_test();
    
   }
@@ -1764,7 +1871,7 @@ std::any Python3Parser::Or_testContext::accept(tree::ParseTreeVisitor *visitor) 
 
 Python3Parser::Or_testContext* Python3Parser::or_test() {
   Or_testContext *_localctx = _tracker.createInstance<Or_testContext>(_ctx, getState());
-  enterRule(_localctx, 38, Python3Parser::RuleOr_test);
+  enterRule(_localctx, 40, Python3Parser::RuleOr_test);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1776,17 +1883,17 @@ Python3Parser::Or_testContext* Python3Parser::or_test() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(193);
+    setState(205);
     and_test();
-    setState(198);
+    setState(210);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while (_la == Python3Parser::OR) {
-      setState(194);
+      setState(206);
       match(Python3Parser::OR);
-      setState(195);
+      setState(207);
       and_test();
-      setState(200);
+      setState(212);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
@@ -1838,7 +1945,7 @@ std::any Python3Parser::And_testContext::accept(tree::ParseTreeVisitor *visitor)
 
 Python3Parser::And_testContext* Python3Parser::and_test() {
   And_testContext *_localctx = _tracker.createInstance<And_testContext>(_ctx, getState());
-  enterRule(_localctx, 40, Python3Parser::RuleAnd_test);
+  enterRule(_localctx, 42, Python3Parser::RuleAnd_test);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1850,17 +1957,17 @@ Python3Parser::And_testContext* Python3Parser::and_test() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(201);
+    setState(213);
     not_test();
-    setState(206);
+    setState(218);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while (_la == Python3Parser::AND) {
-      setState(202);
+      setState(214);
       match(Python3Parser::AND);
-      setState(203);
+      setState(215);
       not_test();
-      setState(208);
+      setState(220);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
@@ -1908,7 +2015,7 @@ std::any Python3Parser::Not_testContext::accept(tree::ParseTreeVisitor *visitor)
 
 Python3Parser::Not_testContext* Python3Parser::not_test() {
   Not_testContext *_localctx = _tracker.createInstance<Not_testContext>(_ctx, getState());
-  enterRule(_localctx, 42, Python3Parser::RuleNot_test);
+  enterRule(_localctx, 44, Python3Parser::RuleNot_test);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1918,14 +2025,14 @@ Python3Parser::Not_testContext* Python3Parser::not_test() {
     exitRule();
   });
   try {
-    setState(212);
+    setState(224);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case Python3Parser::NOT: {
         enterOuterAlt(_localctx, 1);
-        setState(209);
+        setState(221);
         match(Python3Parser::NOT);
-        setState(210);
+        setState(222);
         not_test();
         break;
       }
@@ -1937,11 +2044,12 @@ Python3Parser::Not_testContext* Python3Parser::not_test() {
       case Python3Parser::FALSE:
       case Python3Parser::NAME:
       case Python3Parser::OPEN_PAREN:
+      case Python3Parser::OPEN_BRACK:
       case Python3Parser::ADD:
       case Python3Parser::MINUS:
       case Python3Parser::FORMAT_QUOTATION: {
         enterOuterAlt(_localctx, 2);
-        setState(211);
+        setState(223);
         comparison();
         break;
       }
@@ -1997,7 +2105,7 @@ std::any Python3Parser::ComparisonContext::accept(tree::ParseTreeVisitor *visito
 
 Python3Parser::ComparisonContext* Python3Parser::comparison() {
   ComparisonContext *_localctx = _tracker.createInstance<ComparisonContext>(_ctx, getState());
-  enterRule(_localctx, 44, Python3Parser::RuleComparison);
+  enterRule(_localctx, 46, Python3Parser::RuleComparison);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2009,18 +2117,18 @@ Python3Parser::ComparisonContext* Python3Parser::comparison() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(214);
+    setState(226);
     arith_expr();
-    setState(220);
+    setState(232);
     _errHandler->sync(this);
     _la = _input->LA(1);
-    while (((((_la - 58) & ~ 0x3fULL) == 0) &&
-      ((1ULL << (_la - 58)) & 95) != 0)) {
-      setState(215);
+    while (((((_la - 59) & ~ 0x3fULL) == 0) &&
+      ((1ULL << (_la - 59)) & 95) != 0)) {
+      setState(227);
       comp_op();
-      setState(216);
+      setState(228);
       arith_expr();
-      setState(222);
+      setState(234);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
@@ -2080,7 +2188,7 @@ std::any Python3Parser::Comp_opContext::accept(tree::ParseTreeVisitor *visitor) 
 
 Python3Parser::Comp_opContext* Python3Parser::comp_op() {
   Comp_opContext *_localctx = _tracker.createInstance<Comp_opContext>(_ctx, getState());
-  enterRule(_localctx, 46, Python3Parser::RuleComp_op);
+  enterRule(_localctx, 48, Python3Parser::RuleComp_op);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2092,10 +2200,10 @@ Python3Parser::Comp_opContext* Python3Parser::comp_op() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(223);
+    setState(235);
     _la = _input->LA(1);
-    if (!(((((_la - 58) & ~ 0x3fULL) == 0) &&
-      ((1ULL << (_la - 58)) & 95) != 0))) {
+    if (!(((((_la - 59) & ~ 0x3fULL) == 0) &&
+      ((1ULL << (_la - 59)) & 95) != 0))) {
     _errHandler->recoverInline(this);
     }
     else {
@@ -2150,7 +2258,7 @@ std::any Python3Parser::Arith_exprContext::accept(tree::ParseTreeVisitor *visito
 
 Python3Parser::Arith_exprContext* Python3Parser::arith_expr() {
   Arith_exprContext *_localctx = _tracker.createInstance<Arith_exprContext>(_ctx, getState());
-  enterRule(_localctx, 48, Python3Parser::RuleArith_expr);
+  enterRule(_localctx, 50, Python3Parser::RuleArith_expr);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2162,19 +2270,19 @@ Python3Parser::Arith_exprContext* Python3Parser::arith_expr() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(225);
+    setState(237);
     term();
-    setState(231);
+    setState(243);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while (_la == Python3Parser::ADD
 
     || _la == Python3Parser::MINUS) {
-      setState(226);
+      setState(238);
       addorsub_op();
-      setState(227);
+      setState(239);
       term();
-      setState(233);
+      setState(245);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
@@ -2218,7 +2326,7 @@ std::any Python3Parser::Addorsub_opContext::accept(tree::ParseTreeVisitor *visit
 
 Python3Parser::Addorsub_opContext* Python3Parser::addorsub_op() {
   Addorsub_opContext *_localctx = _tracker.createInstance<Addorsub_opContext>(_ctx, getState());
-  enterRule(_localctx, 50, Python3Parser::RuleAddorsub_op);
+  enterRule(_localctx, 52, Python3Parser::RuleAddorsub_op);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2230,7 +2338,7 @@ Python3Parser::Addorsub_opContext* Python3Parser::addorsub_op() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(234);
+    setState(246);
     _la = _input->LA(1);
     if (!(_la == Python3Parser::ADD
 
@@ -2289,7 +2397,7 @@ std::any Python3Parser::TermContext::accept(tree::ParseTreeVisitor *visitor) {
 
 Python3Parser::TermContext* Python3Parser::term() {
   TermContext *_localctx = _tracker.createInstance<TermContext>(_ctx, getState());
-  enterRule(_localctx, 52, Python3Parser::RuleTerm);
+  enterRule(_localctx, 54, Python3Parser::RuleTerm);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2301,18 +2409,18 @@ Python3Parser::TermContext* Python3Parser::term() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(236);
+    setState(248);
     factor();
-    setState(242);
+    setState(254);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while ((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & 31525231751331840) != 0)) {
-      setState(237);
+      ((1ULL << _la) & 63050463502663680) != 0)) {
+      setState(249);
       muldivmod_op();
-      setState(238);
+      setState(250);
       factor();
-      setState(244);
+      setState(256);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
@@ -2364,7 +2472,7 @@ std::any Python3Parser::Muldivmod_opContext::accept(tree::ParseTreeVisitor *visi
 
 Python3Parser::Muldivmod_opContext* Python3Parser::muldivmod_op() {
   Muldivmod_opContext *_localctx = _tracker.createInstance<Muldivmod_opContext>(_ctx, getState());
-  enterRule(_localctx, 54, Python3Parser::RuleMuldivmod_op);
+  enterRule(_localctx, 56, Python3Parser::RuleMuldivmod_op);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2376,10 +2484,10 @@ Python3Parser::Muldivmod_opContext* Python3Parser::muldivmod_op() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(245);
+    setState(257);
     _la = _input->LA(1);
     if (!((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & 31525231751331840) != 0))) {
+      ((1ULL << _la) & 63050463502663680) != 0))) {
     _errHandler->recoverInline(this);
     }
     else {
@@ -2434,7 +2542,7 @@ std::any Python3Parser::FactorContext::accept(tree::ParseTreeVisitor *visitor) {
 
 Python3Parser::FactorContext* Python3Parser::factor() {
   FactorContext *_localctx = _tracker.createInstance<FactorContext>(_ctx, getState());
-  enterRule(_localctx, 56, Python3Parser::RuleFactor);
+  enterRule(_localctx, 58, Python3Parser::RuleFactor);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2445,13 +2553,13 @@ Python3Parser::FactorContext* Python3Parser::factor() {
     exitRule();
   });
   try {
-    setState(250);
+    setState(262);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case Python3Parser::ADD:
       case Python3Parser::MINUS: {
         enterOuterAlt(_localctx, 1);
-        setState(247);
+        setState(259);
         _la = _input->LA(1);
         if (!(_la == Python3Parser::ADD
 
@@ -2462,7 +2570,7 @@ Python3Parser::FactorContext* Python3Parser::factor() {
           _errHandler->reportMatch(this);
           consume();
         }
-        setState(248);
+        setState(260);
         factor();
         break;
       }
@@ -2474,9 +2582,10 @@ Python3Parser::FactorContext* Python3Parser::factor() {
       case Python3Parser::FALSE:
       case Python3Parser::NAME:
       case Python3Parser::OPEN_PAREN:
+      case Python3Parser::OPEN_BRACK:
       case Python3Parser::FORMAT_QUOTATION: {
         enterOuterAlt(_localctx, 2);
-        setState(249);
+        setState(261);
         atom_expr();
         break;
       }
@@ -2505,8 +2614,12 @@ Python3Parser::AtomContext* Python3Parser::Atom_exprContext::atom() {
   return getRuleContext<Python3Parser::AtomContext>(0);
 }
 
-Python3Parser::TrailerContext* Python3Parser::Atom_exprContext::trailer() {
-  return getRuleContext<Python3Parser::TrailerContext>(0);
+std::vector<Python3Parser::TrailerContext *> Python3Parser::Atom_exprContext::trailer() {
+  return getRuleContexts<Python3Parser::TrailerContext>();
+}
+
+Python3Parser::TrailerContext* Python3Parser::Atom_exprContext::trailer(size_t i) {
+  return getRuleContext<Python3Parser::TrailerContext>(i);
 }
 
 
@@ -2524,7 +2637,7 @@ std::any Python3Parser::Atom_exprContext::accept(tree::ParseTreeVisitor *visitor
 
 Python3Parser::Atom_exprContext* Python3Parser::atom_expr() {
   Atom_exprContext *_localctx = _tracker.createInstance<Atom_exprContext>(_ctx, getState());
-  enterRule(_localctx, 58, Python3Parser::RuleAtom_expr);
+  enterRule(_localctx, 60, Python3Parser::RuleAtom_expr);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2536,15 +2649,19 @@ Python3Parser::Atom_exprContext* Python3Parser::atom_expr() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(252);
+    setState(264);
     atom();
-    setState(254);
+    setState(268);
     _errHandler->sync(this);
-
     _la = _input->LA(1);
-    if (_la == Python3Parser::OPEN_PAREN) {
-      setState(253);
+    while (_la == Python3Parser::OPEN_PAREN
+
+    || _la == Python3Parser::OPEN_BRACK) {
+      setState(265);
       trailer();
+      setState(270);
+      _errHandler->sync(this);
+      _la = _input->LA(1);
     }
    
   }
@@ -2575,6 +2692,18 @@ Python3Parser::ArglistContext* Python3Parser::TrailerContext::arglist() {
   return getRuleContext<Python3Parser::ArglistContext>(0);
 }
 
+tree::TerminalNode* Python3Parser::TrailerContext::OPEN_BRACK() {
+  return getToken(Python3Parser::OPEN_BRACK, 0);
+}
+
+Python3Parser::TestContext* Python3Parser::TrailerContext::test() {
+  return getRuleContext<Python3Parser::TestContext>(0);
+}
+
+tree::TerminalNode* Python3Parser::TrailerContext::CLOSE_BRACK() {
+  return getToken(Python3Parser::CLOSE_BRACK, 0);
+}
+
 
 size_t Python3Parser::TrailerContext::getRuleIndex() const {
   return Python3Parser::RuleTrailer;
@@ -2590,7 +2719,7 @@ std::any Python3Parser::TrailerContext::accept(tree::ParseTreeVisitor *visitor) 
 
 Python3Parser::TrailerContext* Python3Parser::trailer() {
   TrailerContext *_localctx = _tracker.createInstance<TrailerContext>(_ctx, getState());
-  enterRule(_localctx, 60, Python3Parser::RuleTrailer);
+  enterRule(_localctx, 62, Python3Parser::RuleTrailer);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2601,20 +2730,41 @@ Python3Parser::TrailerContext* Python3Parser::trailer() {
     exitRule();
   });
   try {
-    enterOuterAlt(_localctx, 1);
-    setState(256);
-    match(Python3Parser::OPEN_PAREN);
-    setState(258);
+    setState(280);
     _errHandler->sync(this);
+    switch (_input->LA(1)) {
+      case Python3Parser::OPEN_PAREN: {
+        enterOuterAlt(_localctx, 1);
+        setState(271);
+        match(Python3Parser::OPEN_PAREN);
+        setState(273);
+        _errHandler->sync(this);
 
-    _la = _input->LA(1);
-    if ((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & 3377768449376280) != 0) || _la == Python3Parser::FORMAT_QUOTATION) {
-      setState(257);
-      arglist();
+        _la = _input->LA(1);
+        if ((((_la & ~ 0x3fULL) == 0) &&
+          ((1ULL << _la) & 6773129083813912) != 0) || _la == Python3Parser::FORMAT_QUOTATION) {
+          setState(272);
+          arglist();
+        }
+        setState(275);
+        match(Python3Parser::CLOSE_PAREN);
+        break;
+      }
+
+      case Python3Parser::OPEN_BRACK: {
+        enterOuterAlt(_localctx, 2);
+        setState(276);
+        match(Python3Parser::OPEN_BRACK);
+        setState(277);
+        test();
+        setState(278);
+        match(Python3Parser::CLOSE_BRACK);
+        break;
+      }
+
+    default:
+      throw NoViableAltException(this);
     }
-    setState(260);
-    match(Python3Parser::CLOSE_PAREN);
    
   }
   catch (RecognitionException &e) {
@@ -2668,12 +2818,24 @@ tree::TerminalNode* Python3Parser::AtomContext::CLOSE_PAREN() {
   return getToken(Python3Parser::CLOSE_PAREN, 0);
 }
 
+tree::TerminalNode* Python3Parser::AtomContext::OPEN_BRACK() {
+  return getToken(Python3Parser::OPEN_BRACK, 0);
+}
+
+tree::TerminalNode* Python3Parser::AtomContext::CLOSE_BRACK() {
+  return getToken(Python3Parser::CLOSE_BRACK, 0);
+}
+
 std::vector<tree::TerminalNode *> Python3Parser::AtomContext::STRING() {
   return getTokens(Python3Parser::STRING);
 }
 
 tree::TerminalNode* Python3Parser::AtomContext::STRING(size_t i) {
   return getToken(Python3Parser::STRING, i);
+}
+
+Python3Parser::TestlistContext* Python3Parser::AtomContext::testlist() {
+  return getRuleContext<Python3Parser::TestlistContext>(0);
 }
 
 
@@ -2691,7 +2853,7 @@ std::any Python3Parser::AtomContext::accept(tree::ParseTreeVisitor *visitor) {
 
 Python3Parser::AtomContext* Python3Parser::atom() {
   AtomContext *_localctx = _tracker.createInstance<AtomContext>(_ctx, getState());
-  enterRule(_localctx, 62, Python3Parser::RuleAtom);
+  enterRule(_localctx, 64, Python3Parser::RuleAtom);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2703,29 +2865,29 @@ Python3Parser::AtomContext* Python3Parser::atom() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(277);
+    setState(302);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case Python3Parser::NAME: {
-        setState(262);
+        setState(282);
         match(Python3Parser::NAME);
         break;
       }
 
       case Python3Parser::NUMBER: {
-        setState(263);
+        setState(283);
         match(Python3Parser::NUMBER);
         break;
       }
 
       case Python3Parser::STRING: {
-        setState(265); 
+        setState(285); 
         _errHandler->sync(this);
         _la = _input->LA(1);
         do {
-          setState(264);
+          setState(284);
           match(Python3Parser::STRING);
-          setState(267); 
+          setState(287); 
           _errHandler->sync(this);
           _la = _input->LA(1);
         } while (_la == Python3Parser::STRING);
@@ -2733,35 +2895,52 @@ Python3Parser::AtomContext* Python3Parser::atom() {
       }
 
       case Python3Parser::NONE: {
-        setState(269);
+        setState(289);
         match(Python3Parser::NONE);
         break;
       }
 
       case Python3Parser::TRUE: {
-        setState(270);
+        setState(290);
         match(Python3Parser::TRUE);
         break;
       }
 
       case Python3Parser::FALSE: {
-        setState(271);
+        setState(291);
         match(Python3Parser::FALSE);
         break;
       }
 
       case Python3Parser::OPEN_PAREN: {
-        setState(272);
+        setState(292);
         match(Python3Parser::OPEN_PAREN);
-        setState(273);
+        setState(293);
         test();
-        setState(274);
+        setState(294);
         match(Python3Parser::CLOSE_PAREN);
         break;
       }
 
+      case Python3Parser::OPEN_BRACK: {
+        setState(296);
+        match(Python3Parser::OPEN_BRACK);
+        setState(298);
+        _errHandler->sync(this);
+
+        _la = _input->LA(1);
+        if ((((_la & ~ 0x3fULL) == 0) &&
+          ((1ULL << _la) & 6773129083813912) != 0) || _la == Python3Parser::FORMAT_QUOTATION) {
+          setState(297);
+          testlist();
+        }
+        setState(300);
+        match(Python3Parser::CLOSE_BRACK);
+        break;
+      }
+
       case Python3Parser::FORMAT_QUOTATION: {
-        setState(276);
+        setState(301);
         format_string();
         break;
       }
@@ -2841,7 +3020,7 @@ std::any Python3Parser::Format_stringContext::accept(tree::ParseTreeVisitor *vis
 
 Python3Parser::Format_stringContext* Python3Parser::format_string() {
   Format_stringContext *_localctx = _tracker.createInstance<Format_stringContext>(_ctx, getState());
-  enterRule(_localctx, 64, Python3Parser::RuleFormat_string);
+  enterRule(_localctx, 66, Python3Parser::RuleFormat_string);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2853,29 +3032,29 @@ Python3Parser::Format_stringContext* Python3Parser::format_string() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(279);
+    setState(304);
     match(Python3Parser::FORMAT_QUOTATION);
-    setState(287);
+    setState(312);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while (_la == Python3Parser::FORMAT_STRING_LITERAL
 
     || _la == Python3Parser::OPEN_BRACE) {
-      setState(285);
+      setState(310);
       _errHandler->sync(this);
       switch (_input->LA(1)) {
         case Python3Parser::FORMAT_STRING_LITERAL: {
-          setState(280);
+          setState(305);
           match(Python3Parser::FORMAT_STRING_LITERAL);
           break;
         }
 
         case Python3Parser::OPEN_BRACE: {
-          setState(281);
+          setState(306);
           match(Python3Parser::OPEN_BRACE);
-          setState(282);
+          setState(307);
           testlist();
-          setState(283);
+          setState(308);
           match(Python3Parser::CLOSE_BRACE);
           break;
         }
@@ -2883,11 +3062,11 @@ Python3Parser::Format_stringContext* Python3Parser::format_string() {
       default:
         throw NoViableAltException(this);
       }
-      setState(289);
+      setState(314);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
-    setState(290);
+    setState(315);
     match(Python3Parser::QUOTATION);
    
   }
@@ -2937,7 +3116,7 @@ std::any Python3Parser::TestlistContext::accept(tree::ParseTreeVisitor *visitor)
 
 Python3Parser::TestlistContext* Python3Parser::testlist() {
   TestlistContext *_localctx = _tracker.createInstance<TestlistContext>(_ctx, getState());
-  enterRule(_localctx, 66, Python3Parser::RuleTestlist);
+  enterRule(_localctx, 68, Python3Parser::RuleTestlist);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2950,28 +3129,28 @@ Python3Parser::TestlistContext* Python3Parser::testlist() {
   try {
     size_t alt;
     enterOuterAlt(_localctx, 1);
-    setState(292);
+    setState(317);
     test();
-    setState(297);
+    setState(322);
     _errHandler->sync(this);
-    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 30, _ctx);
+    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 33, _ctx);
     while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
       if (alt == 1) {
-        setState(293);
+        setState(318);
         match(Python3Parser::COMMA);
-        setState(294);
+        setState(319);
         test(); 
       }
-      setState(299);
+      setState(324);
       _errHandler->sync(this);
-      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 30, _ctx);
+      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 33, _ctx);
     }
-    setState(301);
+    setState(326);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == Python3Parser::COMMA) {
-      setState(300);
+      setState(325);
       match(Python3Parser::COMMA);
     }
    
@@ -3022,7 +3201,7 @@ std::any Python3Parser::ArglistContext::accept(tree::ParseTreeVisitor *visitor) 
 
 Python3Parser::ArglistContext* Python3Parser::arglist() {
   ArglistContext *_localctx = _tracker.createInstance<ArglistContext>(_ctx, getState());
-  enterRule(_localctx, 68, Python3Parser::RuleArglist);
+  enterRule(_localctx, 70, Python3Parser::RuleArglist);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -3035,28 +3214,28 @@ Python3Parser::ArglistContext* Python3Parser::arglist() {
   try {
     size_t alt;
     enterOuterAlt(_localctx, 1);
-    setState(303);
+    setState(328);
     argument();
-    setState(308);
+    setState(333);
     _errHandler->sync(this);
-    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 32, _ctx);
+    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 35, _ctx);
     while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
       if (alt == 1) {
-        setState(304);
+        setState(329);
         match(Python3Parser::COMMA);
-        setState(305);
+        setState(330);
         argument(); 
       }
-      setState(310);
+      setState(335);
       _errHandler->sync(this);
-      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 32, _ctx);
+      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 35, _ctx);
     }
-    setState(312);
+    setState(337);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == Python3Parser::COMMA) {
-      setState(311);
+      setState(336);
       match(Python3Parser::COMMA);
     }
    
@@ -3103,7 +3282,7 @@ std::any Python3Parser::ArgumentContext::accept(tree::ParseTreeVisitor *visitor)
 
 Python3Parser::ArgumentContext* Python3Parser::argument() {
   ArgumentContext *_localctx = _tracker.createInstance<ArgumentContext>(_ctx, getState());
-  enterRule(_localctx, 70, Python3Parser::RuleArgument);
+  enterRule(_localctx, 72, Python3Parser::RuleArgument);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -3114,21 +3293,21 @@ Python3Parser::ArgumentContext* Python3Parser::argument() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(319);
+    setState(344);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 34, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 37, _ctx)) {
     case 1: {
-      setState(314);
+      setState(339);
       test();
       break;
     }
 
     case 2: {
-      setState(315);
+      setState(340);
       test();
-      setState(316);
+      setState(341);
       match(Python3Parser::ASSIGN);
-      setState(317);
+      setState(342);
       test();
       break;
     }
