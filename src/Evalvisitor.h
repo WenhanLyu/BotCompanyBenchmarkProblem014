@@ -146,6 +146,12 @@ private:
     // Helper to convert Value to string for printing and f-strings
     std::string valueToString(const Value& val);
     
+    // Helper to convert Value to its repr (quoted strings, recursive for containers)
+    std::string valueToRepr(const Value& val);
+    
+    // Helper to extract atom_expr from a test node (for subscript assignment)
+    Python3Parser::Atom_exprContext* getAtomExprFromTest(Python3Parser::TestContext* test);
+    
     // Helper to convert Value to bool for condition evaluation
     bool valueToBool(const Value& val);
     

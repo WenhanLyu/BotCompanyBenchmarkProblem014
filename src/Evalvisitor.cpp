@@ -363,6 +363,91 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                     }
                 }
             } else if (!tests.empty()) {
+                // Check if LHS is a subscript expression (e.g. lst[0] = val or matrix[i][j] = val)
+                auto lhsAtomExpr = getAtomExprFromTest(tests[0]);
+                if (lhsAtomExpr && !lhsAtomExpr->trailer().empty() && 
+                    lhsAtomExpr->trailer(0)->OPEN_BRACK()) {
+                    // This is a subscript assignment: lst[i] = val or matrix[i][j] = val
+                    Value value;
+                    if (values.size() == 1) {
+                        value = values[0];
+                    } else {
+                        value = TupleValue(values);
+                    }
+                    
+                    // Get the variable name from the atom
+                    std::string varName = lhsAtomExpr->atom()->getText();
+                    
+                    // Look up the variable
+                    bool isGlobal = (currentFunctionGlobals.find(varName) != currentFunctionGlobals.end());
+                    bool isLocal = !isGlobal && (currentFunctionLocals != nullptr && 
+                                   currentFunctionLocals->find(varName) != currentFunctionLocals->end());
+                    
+                    Value* varPtr = nullptr;
+                    if (isLocal && localVariables != nullptr) {
+                        auto it = localVariables->find(varName);
+                        if (it != localVariables->end()) varPtr = &it->second;
+                    } else if (!isLocal && localVariables != nullptr) {
+                        auto it = localVariables->find(varName);
+                        if (it != localVariables->end()) varPtr = &it->second;
+                        if (!varPtr) {
+                            auto git = variables.find(varName);
+                            if (git != variables.end()) varPtr = &git->second;
+                        }
+                    } else {
+                        auto it = variables.find(varName);
+                        if (it != variables.end()) varPtr = &it->second;
+                    }
+                    
+                    if (varPtr) {
+                        auto trailers = lhsAtomExpr->trailer();
+                        if (trailers.size() == 1) {
+                            // Single subscript: lst[i] = val
+                            auto indexTest = trailers[0]->test();
+                            auto indexAny = visit(indexTest);
+                            Value indexVal = std::any_cast<Value>(indexAny);
+                            int index = std::holds_alternative<int>(indexVal) ? std::get<int>(indexVal) :
+                                        static_cast<int>(std::get<BigInteger>(indexVal).toLongLong());
+                            
+                            if (std::holds_alternative<ListValue>(*varPtr)) {
+                                ListValue& lst = std::get<ListValue>(*varPtr);
+                                int size = static_cast<int>(lst.elements.size());
+                                if (index < 0) index = size + index;
+                                if (index >= 0 && index < size) {
+                                    lst.elements[index] = value;
+                                }
+                            }
+                        } else if (trailers.size() == 2) {
+                            // Double subscript: matrix[i][j] = val
+                            auto idx1Test = trailers[0]->test();
+                            auto idx1Any = visit(idx1Test);
+                            Value idx1Val = std::any_cast<Value>(idx1Any);
+                            int idx1 = std::holds_alternative<int>(idx1Val) ? std::get<int>(idx1Val) :
+                                       static_cast<int>(std::get<BigInteger>(idx1Val).toLongLong());
+                            
+                            auto idx2Test = trailers[1]->test();
+                            auto idx2Any = visit(idx2Test);
+                            Value idx2Val = std::any_cast<Value>(idx2Any);
+                            int idx2 = std::holds_alternative<int>(idx2Val) ? std::get<int>(idx2Val) :
+                                       static_cast<int>(std::get<BigInteger>(idx2Val).toLongLong());
+                            
+                            if (std::holds_alternative<ListValue>(*varPtr)) {
+                                ListValue& lst = std::get<ListValue>(*varPtr);
+                                int size1 = static_cast<int>(lst.elements.size());
+                                if (idx1 < 0) idx1 = size1 + idx1;
+                                if (idx1 >= 0 && idx1 < size1 && 
+                                    std::holds_alternative<ListValue>(lst.elements[idx1])) {
+                                    ListValue& innerLst = std::get<ListValue>(lst.elements[idx1]);
+                                    int size2 = static_cast<int>(innerLst.elements.size());
+                                    if (idx2 < 0) idx2 = size2 + idx2;
+                                    if (idx2 >= 0 && idx2 < size2) {
+                                        innerLst.elements[idx2] = value;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
                 // Simple assignment: a = value (or a = b = c = value)
                 std::string varName = tests[0]->getText();
                 Value value;
@@ -385,6 +470,7 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                     (*localVariables)[varName] = value;
                 } else {
                     variables[varName] = value;
+                }
                 }
             }
         }
@@ -1552,6 +1638,17 @@ std::any EvalVisitor::visitComparison(Python3Parser::ComparisonContext *ctx) {
             else if (op == ">=") compResult = l >= r;
             else if (op == "==") compResult = l == r;
             else if (op == "!=") compResult = l != r;
+        } else if ((std::holds_alternative<double>(left) || std::holds_alternative<bool>(left)) &&
+                   (std::holds_alternative<double>(right) || std::holds_alternative<bool>(right))) {
+            // double vs bool, bool vs double: convert bool to double (True=1.0, False=0.0)
+            double l = std::holds_alternative<double>(left) ? std::get<double>(left) : (std::get<bool>(left) ? 1.0 : 0.0);
+            double r = std::holds_alternative<double>(right) ? std::get<double>(right) : (std::get<bool>(right) ? 1.0 : 0.0);
+            if (op == "<") compResult = l < r;
+            else if (op == ">") compResult = l > r;
+            else if (op == "<=") compResult = l <= r;
+            else if (op == ">=") compResult = l >= r;
+            else if (op == "==") compResult = l == r;
+            else if (op == "!=") compResult = l != r;
         } else if (std::holds_alternative<std::monostate>(left) && std::holds_alternative<std::monostate>(right)) {
             // None vs None: None == None is True, None != None is False
             if (op == "==") compResult = true;
@@ -1608,11 +1705,11 @@ std::string EvalVisitor::valueToString(const Value& val) {
         // Print BigInteger
         return std::get<BigInteger>(val).toString();
     } else if (std::holds_alternative<TupleValue>(val)) {
-        // Print tuple as (elem1, elem2, ...)
+        // Print tuple as (elem1, elem2, ...) with repr for elements
         const TupleValue& tuple = std::get<TupleValue>(val);
         std::string result = "(";
         for (size_t i = 0; i < tuple.elements.size(); i++) {
-            result += valueToString(tuple.elements[i]);
+            result += valueToRepr(tuple.elements[i]);
             if (i < tuple.elements.size() - 1) {
                 result += ", ";
             }
@@ -1624,11 +1721,11 @@ std::string EvalVisitor::valueToString(const Value& val) {
         result += ")";
         return result;
     } else if (std::holds_alternative<ListValue>(val)) {
-        // Print list as [elem1, elem2, ...]
+        // Print list as [elem1, elem2, ...] with repr for elements
         const ListValue& list = std::get<ListValue>(val);
         std::string result = "[";
         for (size_t i = 0; i < list.elements.size(); i++) {
-            result += valueToString(list.elements[i]);
+            result += valueToRepr(list.elements[i]);
             if (i < list.elements.size() - 1) {
                 result += ", ";
             }
@@ -1637,6 +1734,47 @@ std::string EvalVisitor::valueToString(const Value& val) {
         return result;
     }
     return "";
+}
+
+std::string EvalVisitor::valueToRepr(const Value& val) {
+    // Returns the repr of a value (strings are quoted, containers recurse)
+    if (std::holds_alternative<std::string>(val)) {
+        // Strings get quoted with single quotes in repr
+        return "'" + std::get<std::string>(val) + "'";
+    } else if (std::holds_alternative<TupleValue>(val)) {
+        // Recurse for tuple elements
+        return valueToString(val);
+    } else if (std::holds_alternative<ListValue>(val)) {
+        // Recurse for list elements
+        return valueToString(val);
+    } else {
+        // For all other types, repr == str
+        return valueToString(val);
+    }
+}
+
+Python3Parser::Atom_exprContext* EvalVisitor::getAtomExprFromTest(Python3Parser::TestContext* test) {
+    // Navigate the grammar tree: test -> or_test -> and_test -> not_test -> comparison -> arith_expr -> term -> factor -> atom_expr
+    if (!test) return nullptr;
+    auto orTest = test->or_test();
+    if (!orTest) return nullptr;
+    auto andTests = orTest->and_test();
+    if (andTests.size() != 1) return nullptr;
+    auto notTests = andTests[0]->not_test();
+    if (notTests.size() != 1) return nullptr;
+    auto notTest = notTests[0];
+    if (notTest->not_test()) return nullptr; // has 'not' prefix
+    auto comparison = notTest->comparison();
+    if (!comparison) return nullptr;
+    auto arithExprs = comparison->arith_expr();
+    if (arithExprs.size() != 1) return nullptr;
+    auto terms = arithExprs[0]->term();
+    if (terms.size() != 1) return nullptr;
+    auto factors = terms[0]->factor();
+    if (factors.size() != 1) return nullptr;
+    auto factor = factors[0];
+    if (factor->factor()) return nullptr; // has unary prefix
+    return factor->atom_expr();
 }
 
 bool EvalVisitor::valueToBool(const Value& val) {
