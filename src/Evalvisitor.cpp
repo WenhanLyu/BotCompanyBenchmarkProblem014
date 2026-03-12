@@ -121,6 +121,11 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                         auto it = localVariables->find(outerVarName);
                         if (it != localVariables->end()) outerPtr = &it->second;
                     }
+                    if (!outerPtr && enclosingLocalVariables != nullptr) {
+                        // Check enclosing scope (for nested functions accessing outer locals)
+                        auto eit = enclosingLocalVariables->find(outerVarName);
+                        if (eit != enclosingLocalVariables->end()) outerPtr = &eit->second;
+                    }
                     if (!outerPtr) {
                         auto it = variables.find(outerVarName);
                         if (it != variables.end()) outerPtr = &it->second;
@@ -223,6 +228,11 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                     if (localVariables != nullptr) {
                         auto it = localVariables->find(listVarName);
                         if (it != localVariables->end()) listPtr = &it->second;
+                    }
+                    if (!listPtr && enclosingLocalVariables != nullptr) {
+                        // Check enclosing scope (for nested functions accessing outer locals)
+                        auto eit = enclosingLocalVariables->find(listVarName);
+                        if (eit != enclosingLocalVariables->end()) listPtr = &eit->second;
                     }
                     if (!listPtr) {
                         auto it = variables.find(listVarName);
@@ -822,6 +832,11 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                     } else if (!isLocal && localVariables != nullptr) {
                         auto it = localVariables->find(varName);
                         if (it != localVariables->end()) varPtr = &it->second;
+                        if (!varPtr && enclosingLocalVariables != nullptr) {
+                            // Check enclosing scope (for nested functions accessing outer locals)
+                            auto eit = enclosingLocalVariables->find(varName);
+                            if (eit != enclosingLocalVariables->end()) varPtr = &eit->second;
+                        }
                         if (!varPtr) {
                             auto git = variables.find(varName);
                             if (git != variables.end()) varPtr = &git->second;
@@ -1099,6 +1114,10 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                 // Inject captured locals for closure support
                 for (const auto& [k, v] : capturedLocals) {
                     localVars[k] = v;
+                }
+                // Inject the function itself for recursive closure calls (allows self-recursion at any depth)
+                if (!capturedLocals.empty()) {
+                    localVars[calleeName] = Value(FunctionValue(calleeName, capturedLocals));
                 }
                 
                 enclosingLocalVariables = savedLocalVariables;
@@ -1694,6 +1713,10 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                     // Inject captured locals for closure support (before binding params)
                     for (const auto& [k, v] : capturedLocals) {
                         localVars[k] = v;
+                    }
+                    // Inject the function itself for recursive closure calls (allows self-recursion at any depth)
+                    if (!capturedLocals.empty()) {
+                        localVars[funcName] = Value(FunctionValue(funcName, capturedLocals));
                     }
                     
                     enclosingLocalVariables = savedLocalVariables;
