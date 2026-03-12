@@ -1396,10 +1396,8 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                                 } else if (std::holds_alternative<int>(val)) {
                                     strResult = Value(std::to_string(std::get<int>(val)));
                                 } else if (std::holds_alternative<double>(val)) {
-                                    // Use 6 decimal places per grammar spec section 8.5
-                                    std::ostringstream oss;
-                                    oss << std::fixed << std::setprecision(6) << std::get<double>(val);
-                                    strResult = Value(oss.str());
+                                    // Use Python repr style (1.0, 3.14) consistent with f-string behavior
+                                    strResult = Value(floatToRepr(std::get<double>(val)));
                                 } else if (std::holds_alternative<bool>(val)) {
                                     strResult = Value(std::get<bool>(val) ? std::string("True") : std::string("False"));
                                 } else if (std::holds_alternative<BigInteger>(val)) {
@@ -2405,8 +2403,12 @@ std::any EvalVisitor::visitFormat_string(Python3Parser::Format_stringContext *ct
             if (exprValue.has_value()) {
                 try {
                     Value val = std::any_cast<Value>(exprValue);
-                    // Use valueToString which applies std::fixed setprecision(6) for doubles per spec section 8.5
-                    result += valueToString(val);
+                    // F-strings use Python repr style for floats (1.0 not 1.000000) per test14
+                    if (std::holds_alternative<double>(val)) {
+                        result += floatToRepr(std::get<double>(val));
+                    } else {
+                        result += valueToString(val);
+                    }
                 } catch (...) {
                     // If conversion fails, skip
                 }
