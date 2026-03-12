@@ -2,7 +2,7 @@
 
 **Project:** BotCompanyBenchmarkProblem014 - Python Interpreter  
 **Created:** 2026-03-02  
-**Last Updated:** 2026-03-12 (Cycle 87 - Athena)
+**Last Updated:** 2026-03-12 (Cycle 91 - Athena)
 
 ---
 
@@ -19,13 +19,15 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 87 - Athena)
+## Current State (Cycle 91 - Athena)
 
-- **Status:** M1-M50 complete.
-- **Last Known OJ Score:** 25/100 (submission #5, before M22-M44 fixes - very outdated)
+- **Status:** M1-M50 complete. M51 in progress.
+- **Last Known OJ Score:** 25/100 (submission #5, before M22-M50 fixes - very outdated)
 - **OJ Submissions Used:** 5 of 18 budget
 - **Features Implemented:** M1-M50 + all additional fixes
-- **Local Tests:** 15/16 basic tests PASS. test13 FAILS (expects Python3-style UnboundLocalError traceback, which contradicts spec that says globals accessible everywhere).
+- **Local Tests:** 15/16 basic tests PASS. test13 FAILS (expects Python3-style UnboundLocalError traceback).
+- **M51 (in progress):** Fix UnboundLocalError for augmented assignment to non-local non-parameter globals. M50 wrongly excluded augmented assignment from assignedVars, causing augmented assign to globals to silently modify global. Fix: add augmented assignment back to assignedVars, throw UnboundLocalError when isLocal=true but not found in local scope.
+- **Key discovery cycle 91:** The spec's "globals accessible everywhere" means READ-only access. Augmented assignment (+=) to a non-parameter global without `global` keyword is UnboundLocalError (standard Python). The grammar supports `global` keyword for writing to globals from functions.
 - **Cycle 87 Fix (M50):** Critical scope bug fixed: augmented assignment (`+=`, `-=`, etc.) was incorrectly adding variables to `assignedVars` pre-scan set, causing function parameters with same name as globals to ALSO modify the global. Now fixed: `findAssignedVariables` and `findAssignedInStmt` only add variables from regular `=` assignment, not augmented assignment. This means `def f(x): x += 1` correctly only modifies the local parameter, not the global `x`. Commit: 5327507.
 - **Cycle 86 Fix:** Built-in functions (abs, len, str, int, float, bool, print) now work as first-class values. Previously, `key=abs`, `key=len`, `apply(abs, x)` etc. would return None because built-ins weren't stored as FunctionValue. Now fixed (commit dd9507b).
 - **Cycle 82 Fix:** M48 complete - f-string and str(float) now use Python repr (1.0) not 6 decimal places. test14 PASS.
@@ -863,7 +865,32 @@ Two fixes:
 - Key= parameter now works with: abs, len, str, int, float, bool (user-defined + built-ins)
 - M49 complete
 
-### Cycle 87 (Athena) - Current
+### M51: Fix UnboundLocalError for augmented assignment to non-local globals (cycles: 1)
+**Status: IN PROGRESS (Cycle 91)**
+
+M50 wrongly excluded augmented assignment from `findAssignedVariables`, causing `seed += ...` in a function to silently modify the global `seed`. The correct Python behavior (and what test13 expects) is `UnboundLocalError`.
+
+Fix:
+1. Revert M50's `if (!expr_stmt->augassign())` guard in `findAssignedVariables` and `findAssignedInStmt`
+2. When `isLocal=true` but variable not found in localVariables, throw `UnboundLocalError` instead of falling back to global
+
+This makes `def rand(): seed += ...` (where seed is a non-parameter global) throw UnboundLocalError, matching test13 expected output.
+
+**Acceptance Criteria:**
+1. test13 first line output: "Traceback" (not "7")
+2. `def f(x): x+=1; return x; print(f(5))` → `6` (parameter augmented assign still works)
+3. `global` keyword for modifying globals still works
+4. Top-level `i += 1` still works (not in function)
+5. All basic tests 0-12, 14, 15 still PASS
+
+### Cycle 91 (Athena) - Current
+- Evaluated project state: 15/16 basic tests pass (test13 fails - UnboundLocalError)
+- Discovered M50 introduced a new bug: augmented assign to non-param globals no longer throws UnboundLocalError
+- Closed stale issues #18, #19, #20 (work already done)
+- Defined M51: fix UnboundLocalError for augmented assign to non-local globals
+- Hired Leo to fix M51, Maya to do comprehensive quality check after
+
+### Cycle 87 (Athena)
 - Independent comprehensive evaluation of project state
 - Discovered critical scope bug: function parameters with same name as globals, when used in augmented assignment (`x += 1`), were incorrectly also modifying the global variable
 - Root cause: `findAssignedVariables` was adding augmented assignment LHS to `assignedVars`, then double-write code wrote to both local AND global
