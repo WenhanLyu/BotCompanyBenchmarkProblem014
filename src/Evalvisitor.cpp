@@ -93,12 +93,12 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                 if (op == "+=") {
                                     if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
                                         int l = std::get<int>(currentVal), r = std::get<int>(rightVal);
-                                        if (willOverflowAdd(l, r)) newVal = BigInteger(l) + BigInteger(r);
+                                        if (willOverflowAdd(l, r)) newVal = tryDowncastBigInteger(BigInteger(l) + BigInteger(r));
                                         else newVal = l + r;
                                     } else if (std::holds_alternative<BigInteger>(currentVal) || std::holds_alternative<BigInteger>(rightVal)) {
                                         BigInteger l = std::holds_alternative<BigInteger>(currentVal) ? std::get<BigInteger>(currentVal) : BigInteger(std::get<int>(currentVal));
                                         BigInteger r = std::holds_alternative<BigInteger>(rightVal) ? std::get<BigInteger>(rightVal) : BigInteger(std::get<int>(rightVal));
-                                        newVal = l + r;
+                                        newVal = tryDowncastBigInteger(l + r);
                                     } else if (std::holds_alternative<double>(currentVal) || std::holds_alternative<double>(rightVal)) {
                                         double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) : static_cast<double>(std::get<int>(currentVal));
                                         double r = std::holds_alternative<double>(rightVal) ? std::get<double>(rightVal) : static_cast<double>(std::get<int>(rightVal));
@@ -107,12 +107,12 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                 } else if (op == "-=") {
                                     if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
                                         int l = std::get<int>(currentVal), r = std::get<int>(rightVal);
-                                        newVal = willOverflowSubtract(l,r) ? Value(BigInteger(l)-BigInteger(r)) : Value(l-r);
+                                        newVal = willOverflowSubtract(l,r) ? tryDowncastBigInteger(BigInteger(l)-BigInteger(r)) : Value(l-r);
                                     } else { newVal = currentVal; }
                                 } else if (op == "*=") {
                                     if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
                                         int l = std::get<int>(currentVal), r = std::get<int>(rightVal);
-                                        newVal = willOverflowMultiply(l,r) ? Value(BigInteger(l)*BigInteger(r)) : Value(l*r);
+                                        newVal = willOverflowMultiply(l,r) ? tryDowncastBigInteger(BigInteger(l)*BigInteger(r)) : Value(l*r);
                                     } else { newVal = currentVal; }
                                 } else if (op == "/=") {
                                     double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) : static_cast<double>(std::get<int>(currentVal));
@@ -175,10 +175,10 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                 if (std::holds_alternative<BigInteger>(currentVal) || std::holds_alternative<BigInteger>(rightVal)) {
                                     BigInteger l = std::holds_alternative<BigInteger>(currentVal) ? std::get<BigInteger>(currentVal) : BigInteger(std::get<int>(currentVal));
                                     BigInteger r = std::holds_alternative<BigInteger>(rightVal) ? std::get<BigInteger>(rightVal) : BigInteger(std::get<int>(rightVal));
-                                    newVal = l + r;
+                                    newVal = tryDowncastBigInteger(l + r);
                                 } else if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
                                     int l = std::get<int>(currentVal), r = std::get<int>(rightVal);
-                                    if (willOverflowAdd(l, r)) newVal = BigInteger(l) + BigInteger(r);
+                                    if (willOverflowAdd(l, r)) newVal = tryDowncastBigInteger(BigInteger(l) + BigInteger(r));
                                     else newVal = l + r;
                                 } else if (std::holds_alternative<double>(currentVal) || std::holds_alternative<double>(rightVal)) {
                                     double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) : static_cast<double>(std::get<int>(currentVal));
@@ -190,12 +190,12 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                             } else if (op == "-=") {
                                 if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
                                     int l = std::get<int>(currentVal), r = std::get<int>(rightVal);
-                                    if (willOverflowSubtract(l, r)) newVal = BigInteger(l) - BigInteger(r);
+                                    if (willOverflowSubtract(l, r)) newVal = tryDowncastBigInteger(BigInteger(l) - BigInteger(r));
                                     else newVal = l - r;
                                 } else if (std::holds_alternative<BigInteger>(currentVal) || std::holds_alternative<BigInteger>(rightVal)) {
                                     BigInteger l = std::holds_alternative<BigInteger>(currentVal) ? std::get<BigInteger>(currentVal) : BigInteger(std::get<int>(currentVal));
                                     BigInteger r = std::holds_alternative<BigInteger>(rightVal) ? std::get<BigInteger>(rightVal) : BigInteger(std::get<int>(rightVal));
-                                    newVal = l - r;
+                                    newVal = tryDowncastBigInteger(l - r);
                                 } else if (std::holds_alternative<double>(currentVal) || std::holds_alternative<double>(rightVal)) {
                                     double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) : static_cast<double>(std::get<int>(currentVal));
                                     double r = std::holds_alternative<double>(rightVal) ? std::get<double>(rightVal) : static_cast<double>(std::get<int>(rightVal));
@@ -204,12 +204,12 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                             } else if (op == "*=") {
                                 if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
                                     int l = std::get<int>(currentVal), r = std::get<int>(rightVal);
-                                    if (willOverflowMultiply(l, r)) newVal = BigInteger(l) * BigInteger(r);
+                                    if (willOverflowMultiply(l, r)) newVal = tryDowncastBigInteger(BigInteger(l) * BigInteger(r));
                                     else newVal = l * r;
                                 } else if (std::holds_alternative<BigInteger>(currentVal) || std::holds_alternative<BigInteger>(rightVal)) {
                                     BigInteger l = std::holds_alternative<BigInteger>(currentVal) ? std::get<BigInteger>(currentVal) : BigInteger(std::get<int>(currentVal));
                                     BigInteger r = std::holds_alternative<BigInteger>(rightVal) ? std::get<BigInteger>(rightVal) : BigInteger(std::get<int>(rightVal));
-                                    newVal = l * r;
+                                    newVal = tryDowncastBigInteger(l * r);
                                 } else if (std::holds_alternative<double>(currentVal) || std::holds_alternative<double>(rightVal)) {
                                     double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) : static_cast<double>(std::get<int>(currentVal));
                                     double r = std::holds_alternative<double>(rightVal) ? std::get<double>(rightVal) : static_cast<double>(std::get<int>(rightVal));
@@ -222,7 +222,7 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                 } else if (std::holds_alternative<BigInteger>(currentVal) || std::holds_alternative<BigInteger>(rightVal)) {
                                     BigInteger l = std::holds_alternative<BigInteger>(currentVal) ? std::get<BigInteger>(currentVal) : BigInteger(std::get<int>(currentVal));
                                     BigInteger r = std::holds_alternative<BigInteger>(rightVal) ? std::get<BigInteger>(rightVal) : BigInteger(std::get<int>(rightVal));
-                                    newVal = l.floorDiv(r);
+                                    newVal = tryDowncastBigInteger(l.floorDiv(r));
                                 } else { newVal = currentVal; }
                             } else if (op == "%=") {
                                 if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
@@ -231,7 +231,7 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                 } else if (std::holds_alternative<BigInteger>(currentVal) || std::holds_alternative<BigInteger>(rightVal)) {
                                     BigInteger l = std::holds_alternative<BigInteger>(currentVal) ? std::get<BigInteger>(currentVal) : BigInteger(std::get<int>(currentVal));
                                     BigInteger r = std::holds_alternative<BigInteger>(rightVal) ? std::get<BigInteger>(rightVal) : BigInteger(std::get<int>(rightVal));
-                                    newVal = l % r;
+                                    newVal = tryDowncastBigInteger(l % r);
                                 } else { newVal = currentVal; }
                             } else if (op == "/=") {
                                 double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) :
@@ -353,13 +353,13 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                     BigInteger right = std::holds_alternative<BigInteger>(rightValue) ? 
                         std::get<BigInteger>(rightValue) : 
                         (std::holds_alternative<int>(rightValue) ? BigInteger(std::get<int>(rightValue)) : BigInteger(0));
-                    result = left + right;
+                    result = tryDowncastBigInteger(left + right);
                 } else if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
                     int left = std::get<int>(currentValue);
                     int right = std::get<int>(rightValue);
                     // Check for overflow BEFORE addition
                     if (willOverflowAdd(left, right)) {
-                        result = BigInteger(left) + BigInteger(right);
+                        result = tryDowncastBigInteger(BigInteger(left) + BigInteger(right));
                     } else {
                         result = left + right;
                     }
@@ -379,13 +379,13 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                     BigInteger right = std::holds_alternative<BigInteger>(rightValue) ? 
                         std::get<BigInteger>(rightValue) : 
                         (std::holds_alternative<int>(rightValue) ? BigInteger(std::get<int>(rightValue)) : BigInteger(0));
-                    result = left - right;
+                    result = tryDowncastBigInteger(left - right);
                 } else if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
                     int left = std::get<int>(currentValue);
                     int right = std::get<int>(rightValue);
                     // Check for overflow BEFORE subtraction
                     if (willOverflowSubtract(left, right)) {
-                        result = BigInteger(left) - BigInteger(right);
+                        result = tryDowncastBigInteger(BigInteger(left) - BigInteger(right));
                     } else {
                         result = left - right;
                     }
@@ -404,13 +404,13 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                     BigInteger right = std::holds_alternative<BigInteger>(rightValue) ? 
                         std::get<BigInteger>(rightValue) : 
                         (std::holds_alternative<int>(rightValue) ? BigInteger(std::get<int>(rightValue)) : BigInteger(0));
-                    result = left * right;
+                    result = tryDowncastBigInteger(left * right);
                 } else if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
                     int left = std::get<int>(currentValue);
                     int right = std::get<int>(rightValue);
                     // Check for overflow BEFORE multiplication
                     if (willOverflowMultiply(left, right)) {
-                        result = BigInteger(left) * BigInteger(right);
+                        result = tryDowncastBigInteger(BigInteger(left) * BigInteger(right));
                     } else {
                         result = left * right;
                     }
@@ -445,13 +445,13 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                     BigInteger right = std::holds_alternative<BigInteger>(rightValue) ? 
                         std::get<BigInteger>(rightValue) : 
                         (std::holds_alternative<int>(rightValue) ? BigInteger(std::get<int>(rightValue)) : BigInteger(0));
-                    result = left.floorDiv(right);
+                    result = tryDowncastBigInteger(left.floorDiv(right));
                 } else if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
                     int left = std::get<int>(currentValue);
                     int right = std::get<int>(rightValue);
                     // Check for overflow BEFORE floor division
                     if (willOverflowFloorDiv(left, right)) {
-                        result = BigInteger(left).floorDiv(BigInteger(right));
+                        result = tryDowncastBigInteger(BigInteger(left).floorDiv(BigInteger(right)));
                     } else {
                         result = pythonFloorDiv(left, right);
                     }
@@ -470,13 +470,13 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                     BigInteger right = std::holds_alternative<BigInteger>(rightValue) ? 
                         std::get<BigInteger>(rightValue) : 
                         (std::holds_alternative<int>(rightValue) ? BigInteger(std::get<int>(rightValue)) : BigInteger(0));
-                    result = left % right;
+                    result = tryDowncastBigInteger(left % right);
                 } else if (std::holds_alternative<int>(currentValue) && std::holds_alternative<int>(rightValue)) {
                     int left = std::get<int>(currentValue);
                     int right = std::get<int>(rightValue);
                     // Check for overflow BEFORE modulo
                     if (willOverflowModulo(left, right)) {
-                        result = BigInteger(left) % BigInteger(right);
+                        result = tryDowncastBigInteger(BigInteger(left) % BigInteger(right));
                     } else {
                         result = pythonModulo(left, right);
                     }
@@ -1717,9 +1717,9 @@ std::any EvalVisitor::visitArith_expr(Python3Parser::Arith_exprContext *ctx) {
                 std::get<BigInteger>(term) : 
                 (std::holds_alternative<int>(term) ? BigInteger(std::get<int>(term)) : BigInteger(0));
             if (op == "+") {
-                result = left + right;
+                result = tryDowncastBigInteger(left + right);
             } else if (op == "-") {
-                result = left - right;
+                result = tryDowncastBigInteger(left - right);
             }
         } else if (std::holds_alternative<int>(result) && std::holds_alternative<int>(term)) {
             // int op int -> int
@@ -1729,7 +1729,7 @@ std::any EvalVisitor::visitArith_expr(Python3Parser::Arith_exprContext *ctx) {
                 // Check for overflow BEFORE addition
                 if (willOverflowAdd(left, right)) {
                     // Promote to BigInteger to handle large result
-                    result = BigInteger(left) + BigInteger(right);
+                    result = tryDowncastBigInteger(BigInteger(left) + BigInteger(right));
                 } else {
                     result = left + right;
                 }
@@ -1737,7 +1737,7 @@ std::any EvalVisitor::visitArith_expr(Python3Parser::Arith_exprContext *ctx) {
                 // Check for overflow BEFORE subtraction
                 if (willOverflowSubtract(left, right)) {
                     // Promote to BigInteger to handle large result
-                    result = BigInteger(left) - BigInteger(right);
+                    result = tryDowncastBigInteger(BigInteger(left) - BigInteger(right));
                 } else {
                     result = left - right;
                 }
@@ -1876,11 +1876,11 @@ std::any EvalVisitor::visitTerm(Python3Parser::TermContext *ctx) {
                 std::get<BigInteger>(factor) : 
                 (std::holds_alternative<int>(factor) ? BigInteger(std::get<int>(factor)) : BigInteger(0));
             if (op == "*") {
-                result = left * right;
+                result = tryDowncastBigInteger(left * right);
             } else if (op == "//") {
-                result = left.floorDiv(right);
+                result = tryDowncastBigInteger(left.floorDiv(right));
             } else if (op == "%") {
-                result = left % right;
+                result = tryDowncastBigInteger(left % right);
             } else if (op == "/") {
                 // BigInteger division returns double
                 // Convert to string and then to double for precision
@@ -1901,7 +1901,7 @@ std::any EvalVisitor::visitTerm(Python3Parser::TermContext *ctx) {
                 // Check for overflow BEFORE multiplication
                 if (willOverflowMultiply(left, right)) {
                     // Promote to BigInteger to handle large result
-                    result = BigInteger(left) * BigInteger(right);
+                    result = tryDowncastBigInteger(BigInteger(left) * BigInteger(right));
                 } else {
                     result = left * right;
                 }
@@ -1909,7 +1909,7 @@ std::any EvalVisitor::visitTerm(Python3Parser::TermContext *ctx) {
                 // Check for overflow BEFORE floor division
                 if (willOverflowFloorDiv(left, right)) {
                     // Promote to BigInteger
-                    result = BigInteger(left).floorDiv(BigInteger(right));
+                    result = tryDowncastBigInteger(BigInteger(left).floorDiv(BigInteger(right)));
                 } else {
                     result = pythonFloorDiv(left, right);
                 }
@@ -1917,7 +1917,7 @@ std::any EvalVisitor::visitTerm(Python3Parser::TermContext *ctx) {
                 // Check for overflow BEFORE modulo (though it rarely overflows)
                 if (willOverflowModulo(left, right)) {
                     // Promote to BigInteger
-                    result = BigInteger(left) % BigInteger(right);
+                    result = tryDowncastBigInteger(BigInteger(left) % BigInteger(right));
                 } else {
                     result = pythonModulo(left, right);
                 }
@@ -2222,11 +2222,93 @@ std::string EvalVisitor::valueToString(const Value& val) {
     return "";
 }
 
+std::string EvalVisitor::floatToRepr(double d) {
+    // Python-style float repr: shortest representation that uniquely identifies the double
+    // Python uses %r which for most practical purposes is like:
+    // - Show the shortest decimal that round-trips back to the same double
+    // - Use fixed notation (no scientific) for most values
+    // - Always show at least one decimal digit after the point
+    // Examples: 1.0 → "1.0", 3.14 → "3.14", 0.1 → "0.1", 100.0 → "100.0"
+    
+    // Handle special cases
+    if (std::isinf(d)) return d > 0 ? "inf" : "-inf";
+    if (std::isnan(d)) return "nan";
+    
+    // Try increasing precision to find shortest roundtrip
+    for (int prec = 1; prec <= 17; prec++) {
+        // Use %g-style formatting (shortest of %f and %e)
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%.*g", prec, d);
+        std::string s(buf);
+        
+        // Check if roundtrips correctly
+        double parsed = std::strtod(s.c_str(), nullptr);
+        if (parsed == d) {
+            // Python prefers non-scientific notation for most values
+            // If we got scientific notation, try fixed notation
+            if (s.find('e') != std::string::npos || s.find('E') != std::string::npos) {
+                // Try with enough decimal places in fixed notation
+                // Python avoids scientific notation for values between 1e-4 and 1e16
+                double absVal = std::fabs(d);
+                if (absVal >= 1e-4 && absVal < 1e16) {
+                    // Use fixed notation
+                    char buf2[256];
+                    snprintf(buf2, sizeof(buf2), "%.17f", d);
+                    std::string fixed(buf2);
+                    // Remove trailing zeros, but keep at least one decimal digit
+                    size_t dot = fixed.find('.');
+                    if (dot != std::string::npos) {
+                        size_t last_nonzero = fixed.find_last_not_of('0');
+                        if (last_nonzero != std::string::npos && last_nonzero > dot) {
+                            fixed = fixed.substr(0, last_nonzero + 1);
+                        } else {
+                            // Keep at least x.0
+                            fixed = fixed.substr(0, dot + 2);
+                        }
+                    }
+                    // Verify roundtrip
+                    double parsed2 = std::strtod(fixed.c_str(), nullptr);
+                    if (parsed2 == d) {
+                        return fixed;
+                    }
+                }
+                // Keep scientific notation if we can't use fixed
+                return s;
+            }
+            // Ensure there's a decimal point
+            if (s.find('.') == std::string::npos) {
+                s += ".0";
+            }
+            return s;
+        }
+    }
+    
+    // Fallback: full precision
+    char buf[64];
+    snprintf(buf, sizeof(buf), "%.17g", d);
+    std::string s(buf);
+    if (s.find('.') == std::string::npos && s.find('e') == std::string::npos) {
+        s += ".0";
+    }
+    return s;
+}
+
+Value EvalVisitor::tryDowncastBigInteger(const BigInteger& bi) {
+    // If the BigInteger fits in a regular int, downcast it for performance
+    if (bi.fitsInInt()) {
+        return Value(static_cast<int>(bi.toLongLong()));
+    }
+    return Value(bi);
+}
+
 std::string EvalVisitor::valueToRepr(const Value& val) {
-    // Returns the repr of a value (strings are quoted, containers recurse)
+    // Returns the repr of a value (strings are quoted, floats use Python repr, containers recurse)
     if (std::holds_alternative<std::string>(val)) {
         // Strings get quoted with single quotes in repr
         return "'" + std::get<std::string>(val) + "'";
+    } else if (std::holds_alternative<double>(val)) {
+        // Floats inside containers use Python-style repr (e.g., 1.0 not 1.000000)
+        return floatToRepr(std::get<double>(val));
     } else if (std::holds_alternative<TupleValue>(val)) {
         // Recurse for tuple elements
         return valueToString(val);

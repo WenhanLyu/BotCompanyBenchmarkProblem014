@@ -194,6 +194,12 @@ private:
     // Helper to find all global declarations in a function body
     void findGlobalDeclarations(Python3Parser::SuiteContext* suite, std::set<std::string>& globals);
     void findGlobalInStmt(Python3Parser::StmtContext* stmt, std::set<std::string>& globals);
+    
+    // Helper to format a double using Python-style repr (shortest unique representation)
+    std::string floatToRepr(double d);
+    
+    // Helper to downcast BigInteger to int if it fits (performance optimization)
+    Value tryDowncastBigInteger(const BigInteger& bi);
 };
 
 #endif//PYTHON_INTERPRETER_EVALVISITOR_H

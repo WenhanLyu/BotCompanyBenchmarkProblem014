@@ -78,6 +78,7 @@ public:
     long long toLongLong() const;          // Convert to long long (if fits)
     bool isZero() const;                   // Check if value is zero
     bool isNegative() const;               // Check if value is negative
+    bool fitsInInt() const;                // Check if value fits in int (32-bit signed)
     
     // I/O operators
     friend std::ostream& operator<<(std::ostream& os, const BigInteger& bi);
