@@ -1100,8 +1100,9 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                 for (size_t pi = 0; pi < funcDef.parameters.size(); pi++) {
                     const std::string& paramName = funcDef.parameters[pi];
                     if (boundParams.find(paramName) == boundParams.end()) {
-                        if (pi < funcDef.defaultValues.size() &&
-                            !std::holds_alternative<std::monostate>(funcDef.defaultValues[pi])) {
+                        // Check if this parameter has a default value
+                        // Parameters with defaults are the last numDefaultParams params
+                        if (pi >= funcDef.parameters.size() - funcDef.numDefaultParams) {
                             localVars[paramName] = funcDef.defaultValues[pi];
                         } else {
                             localVariables = savedLocalVariables;
@@ -1467,6 +1468,16 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                             }
                         }
                     }
+                    // If single argument is a list or tuple, unpack it
+                    if (vals.size() == 1) {
+                        if (std::holds_alternative<ListValue>(vals[0])) {
+                            std::vector<Value> elems = *std::get<ListValue>(vals[0]).elements;
+                            vals = elems;
+                        } else if (std::holds_alternative<TupleValue>(vals[0])) {
+                            std::vector<Value> elems = std::get<TupleValue>(vals[0]).elements;
+                            vals = elems;
+                        }
+                    }
                     if (!vals.empty()) {
                         Value maxVal = vals[0];
                         for (size_t i = 1; i < vals.size(); i++) {
@@ -1525,6 +1536,16 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                             if (av.has_value()) {
                                 try { vals.push_back(std::any_cast<Value>(av)); } catch (...) {}
                             }
+                        }
+                    }
+                    // If single argument is a list or tuple, unpack it
+                    if (vals.size() == 1) {
+                        if (std::holds_alternative<ListValue>(vals[0])) {
+                            std::vector<Value> elems = *std::get<ListValue>(vals[0]).elements;
+                            vals = elems;
+                        } else if (std::holds_alternative<TupleValue>(vals[0])) {
+                            std::vector<Value> elems = std::get<TupleValue>(vals[0]).elements;
+                            vals = elems;
                         }
                     }
                     if (!vals.empty()) {
@@ -1723,8 +1744,9 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                     for (size_t pi = 0; pi < funcDef.parameters.size(); pi++) {
                         const std::string& paramName = funcDef.parameters[pi];
                         if (boundParams.find(paramName) == boundParams.end()) {
-                            if (pi < funcDef.defaultValues.size() &&
-                                !std::holds_alternative<std::monostate>(funcDef.defaultValues[pi])) {
+                            // Check if this parameter has a default value
+                            // Parameters with defaults are the last numDefaultParams params
+                            if (pi >= funcDef.parameters.size() - funcDef.numDefaultParams) {
                                 localVars[paramName] = funcDef.defaultValues[pi];
                             } else {
                                 localVariables = savedLocalVariables;
@@ -1874,8 +1896,8 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                 
                 if (boundParams.find(paramName) == boundParams.end()) {
                     // Parameter not bound - try to use default
-                    if (i < funcDef.defaultValues.size() && 
-                        !std::holds_alternative<std::monostate>(funcDef.defaultValues[i])) {
+                    // Parameters with defaults are the last numDefaultParams params
+                    if (i >= funcDef.parameters.size() - funcDef.numDefaultParams) {
                         localVars[paramName] = funcDef.defaultValues[i];
                     } else {
                         // No default value - this is an error
@@ -3182,6 +3204,7 @@ std::any EvalVisitor::visitFuncdef(Python3Parser::FuncdefContext *ctx) {
     auto parametersCtx = ctx->parameters();
     std::vector<std::string> params;
     std::vector<Value> defaults;
+    size_t numDefaultParams = 0;  // Track number of parameters with defaults
     
     if (parametersCtx) {
         // parameters: '(' typedargslist? ')'
@@ -3207,6 +3230,7 @@ std::any EvalVisitor::visitFuncdef(Python3Parser::FuncdefContext *ctx) {
             // - Last tests.size() parameters have defaults from tests
             size_t numParams = params.size();
             size_t numDefaults = tests.size();
+            numDefaultParams = numDefaults;  // Save for funcDef
             size_t numNonDefaults = numParams - numDefaults;
             
             // Add None for parameters without defaults
@@ -3220,7 +3244,7 @@ std::any EvalVisitor::visitFuncdef(Python3Parser::FuncdefContext *ctx) {
                 if (defaultExpr.has_value()) {
                     defaults.push_back(std::any_cast<Value>(defaultExpr));
                 } else {
-                    defaults.push_back(Value(std::monostate{}));  // None
+                    defaults.push_back(Value(std::monostate{}));  // None (e.g., explicit None default)
                 }
             }
         }
@@ -3241,6 +3265,7 @@ std::any EvalVisitor::visitFuncdef(Python3Parser::FuncdefContext *ctx) {
     FunctionDef funcDef;
     funcDef.parameters = params;
     funcDef.defaultValues = defaults;
+    funcDef.numDefaultParams = numDefaultParams;
     funcDef.body = suite;
     funcDef.assignedVars = assignedVars;
     funcDef.globalVars = globalVars;
