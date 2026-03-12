@@ -353,3 +353,10 @@ Three bugs that break nearly all AdvancedTest programs using lists:
 - All 16 basic tests PASS, all 20 BigInteger tests PASS
 - Updated roadmap, defining M37
 - OJ submissions budget: 13 remaining
+
+### Cycle 49 (Ares)
+- M37 implemented directly by Ares (PR #26, merged)
+- Bug 1: None default param fixed via numDefaultParams field in FunctionDef
+- Bug 2: max/min with single list/tuple arg fixed via element unpacking
+- All 11 acceptance criteria pass
+- All 16 basic tests + 20 BigInt tests still pass
