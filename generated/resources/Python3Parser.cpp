@@ -962,6 +962,7 @@ Python3Parser::Expr_stmtContext* Python3Parser::expr_stmt() {
       case Python3Parser::MULT_ASSIGN:
       case Python3Parser::DIV_ASSIGN:
       case Python3Parser::MOD_ASSIGN:
+      case Python3Parser::POWER_ASSIGN:
       case Python3Parser::IDIV_ASSIGN: {
         setState(126);
         augassign();
@@ -1031,6 +1032,10 @@ tree::TerminalNode* Python3Parser::AugassignContext::MOD_ASSIGN() {
   return getToken(Python3Parser::MOD_ASSIGN, 0);
 }
 
+tree::TerminalNode* Python3Parser::AugassignContext::POWER_ASSIGN() {
+  return getToken(Python3Parser::POWER_ASSIGN, 0);
+}
+
 
 size_t Python3Parser::AugassignContext::getRuleIndex() const {
   return Python3Parser::RuleAugassign;
@@ -1061,7 +1066,7 @@ Python3Parser::AugassignContext* Python3Parser::augassign() {
     setState(138);
     _la = _input->LA(1);
     if (!(((((_la - 68) & ~ 0x3fULL) == 0) &&
-      ((1ULL << (_la - 68)) & 4151) != 0))) {
+      ((1ULL << (_la - 68)) & 6199) != 0))) {
     _errHandler->recoverInline(this);
     }
     else {
@@ -2588,6 +2593,11 @@ Python3Parser::FactorContext* Python3Parser::factor() {
         enterOuterAlt(_localctx, 2);
         setState(261);
         atom_expr();
+        // Handle ** (power) operator: atom_expr ('**' factor)?
+        if (_input->LA(1) == Python3Parser::POWER) {
+          consume(); // consume '**'
+          factor();  // parse the exponent
+        }
         break;
       }
 

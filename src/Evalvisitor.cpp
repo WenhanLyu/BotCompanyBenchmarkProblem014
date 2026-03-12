@@ -214,6 +214,8 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                         double r = std::holds_alternative<double>(rightVal) ? std::get<double>(rightVal) : static_cast<double>(std::get<int>(rightVal));
                                         newVal = l - std::floor(l / r) * r;
                                     } else { newVal = currentVal; }
+                                } else if (op == "**=") {
+                                    newVal = powerValue(currentVal, rightVal);
                                 } else { newVal = currentVal; }
                                 (*innerList.elements)[idx2] = newVal;
                             }
@@ -366,6 +368,8 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                            (std::holds_alternative<BigInteger>(rightVal) ? std::stod(std::get<BigInteger>(rightVal).toString()) : 1.0));
                                 if (r != 0.0) newVal = l / r;
                                 else newVal = currentVal;  // Division by zero protection
+                            } else if (op == "**=") {
+                                newVal = powerValue(currentVal, rightVal);
                             } else { newVal = currentVal; }
                             (*lst.elements)[idx] = newVal;
                         }
@@ -633,6 +637,8 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                     // Float modulo: a - floor(a/b)*b, result is float
                     result = left - std::floor(left / right) * right;
                 }
+            } else if (op == "**=") {
+                result = powerValue(currentValue, rightValue);
             }
             
             // Store the result (in local scope if local variable, otherwise global)
@@ -2744,10 +2750,27 @@ std::any EvalVisitor::visitFactor(Python3Parser::FactorContext *ctx) {
             }
         }
     } else {
-        // This is just an atom_expr
+        // This is atom_expr, possibly followed by ** factor
         auto atomExpr = ctx->atom_expr();
         if (atomExpr) {
-            return visit(atomExpr);
+            auto baseAny = visit(atomExpr);
+            
+            // Check if there's a ** (power) operator
+            auto factorCtx = ctx->factor();
+            if (factorCtx) {
+                // This is atom_expr ** factor
+                auto expAny = visit(factorCtx);
+                Value base, exp;
+                try {
+                    base = std::any_cast<Value>(baseAny);
+                    exp = std::any_cast<Value>(expAny);
+                } catch (...) {
+                    return Value(0);
+                }
+                return powerValue(base, exp);
+            }
+            
+            return baseAny;
         }
     }
     
@@ -3561,6 +3584,89 @@ std::any EvalVisitor::visitGlobal_stmt(Python3Parser::Global_stmtContext *ctx) {
     // The global declarations were already collected during function definition parsing.
     // This visitor method is here to handle global statements during execution (they're no-ops at runtime).
     return nullptr;
+}
+
+// Power operation: base ** exp
+Value EvalVisitor::powerValue(const Value& base, const Value& exp) {
+    // Convert bools to ints first
+    Value b = base, e = exp;
+    if (std::holds_alternative<bool>(b)) {
+        b = Value(std::get<bool>(b) ? 1 : 0);
+    }
+    if (std::holds_alternative<bool>(e)) {
+        e = Value(std::get<bool>(e) ? 1 : 0);
+    }
+    
+    // float ** anything or anything ** float → float result
+    auto toDouble = [](const Value& v) -> double {
+        if (std::holds_alternative<int>(v)) return (double)std::get<int>(v);
+        if (std::holds_alternative<double>(v)) return std::get<double>(v);
+        if (std::holds_alternative<BigInteger>(v)) {
+            std::string s = std::get<BigInteger>(v).toString();
+            return std::stod(s);
+        }
+        return 0.0;
+    };
+    
+    bool baseIsFloat = std::holds_alternative<double>(b);
+    bool expIsFloat = std::holds_alternative<double>(e);
+    
+    if (baseIsFloat || expIsFloat) {
+        double bd = toDouble(b);
+        double ed = toDouble(e);
+        return Value(std::pow(bd, ed));
+    }
+    
+    // int ** int or BigInteger ** int
+    // Get exp as integer
+    long long expInt = 0;
+    if (std::holds_alternative<int>(e)) {
+        expInt = std::get<int>(e);
+    } else if (std::holds_alternative<BigInteger>(e)) {
+        // For very large exponents, this could be huge. Just convert to long long.
+        std::string s = std::get<BigInteger>(e).toString();
+        try { expInt = std::stoll(s); } catch (...) { expInt = 0; }
+    }
+    
+    // Negative exponent → float result
+    if (expInt < 0) {
+        double bd = toDouble(b);
+        return Value(std::pow(bd, (double)expInt));
+    }
+    
+    // Non-negative integer exponent: result is BigInteger
+    BigInteger baseBI;
+    if (std::holds_alternative<int>(b)) {
+        baseBI = BigInteger(std::get<int>(b));
+    } else if (std::holds_alternative<BigInteger>(b)) {
+        baseBI = std::get<BigInteger>(b);
+    } else {
+        return Value(0);
+    }
+    
+    // Fast exponentiation
+    BigInteger result(1);
+    BigInteger curBase = baseBI;
+    long long ex = expInt;
+    while (ex > 0) {
+        if (ex % 2 == 1) {
+            result = result * curBase;
+        }
+        curBase = curBase * curBase;
+        ex /= 2;
+    }
+    
+    // Try to downcast to int if small enough
+    std::string resStr = result.toString();
+    bool isNeg = (resStr.size() > 0 && resStr[0] == '-');
+    std::string absStr = isNeg ? resStr.substr(1) : resStr;
+    if (absStr.length() < 10 || (absStr.length() == 10 && absStr <= "2147483647")) {
+        try {
+            int intVal = std::stoi(resStr);
+            return Value(intVal);
+        } catch (...) {}
+    }
+    return Value(result);
 }
 
 // Python-style floor division: floors toward -∞

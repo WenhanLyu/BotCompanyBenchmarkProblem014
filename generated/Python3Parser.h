@@ -251,6 +251,7 @@ public:
     antlr4::tree::TerminalNode *DIV_ASSIGN();
     antlr4::tree::TerminalNode *IDIV_ASSIGN();
     antlr4::tree::TerminalNode *MOD_ASSIGN();
+    antlr4::tree::TerminalNode *POWER_ASSIGN();
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;

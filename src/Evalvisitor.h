@@ -177,6 +177,9 @@ private:
     // Helper to convert Value to bool for condition evaluation
     bool valueToBool(const Value& val);
     
+    // Power operation: base ** exp
+    Value powerValue(const Value& base, const Value& exp);
+    
     // Python-style floor division for integers (floors toward -∞)
     int pythonFloorDiv(int a, int b);
     

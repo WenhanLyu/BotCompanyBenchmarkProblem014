@@ -15,7 +15,7 @@ simple_stmt: small_stmt  NEWLINE;
 small_stmt: expr_stmt | flow_stmt | global_stmt;
 expr_stmt: testlist ( (augassign testlist) |
                      ('=' testlist)*);// chained assignment, plus equals, minus equals, etc.
-augassign: ('+=' | '-=' | '*=' | '/=' | '//=' | '%=' );
+augassign: ('+=' | '-=' | '*=' | '/=' | '//=' | '%=' | '**=' );
 flow_stmt: break_stmt | continue_stmt | return_stmt;
 break_stmt: 'break';
 continue_stmt: 'continue';
@@ -35,7 +35,8 @@ arith_expr: term (addorsub_op term)*;
 addorsub_op: '+'|'-';
 term: factor (muldivmod_op factor)*;
 muldivmod_op: '*'|'/'|'//'|'%';
-factor: ('+'|'-') factor | atom_expr;
+factor: ('+'|'-') factor | power;
+power: atom_expr (POWER factor)?;
 atom_expr: atom trailer*;
 trailer: '(' (arglist)? ')' | '[' test ']' ;
 atom: (NAME | NUMBER | STRING+| 'None' | 'True' | 'False' | ('(' testlist? ')') | ('[' testlist? ']') | format_string);
