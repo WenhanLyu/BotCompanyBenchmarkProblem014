@@ -2,7 +2,7 @@
 
 **Project:** BotCompanyBenchmarkProblem014 - Python Interpreter  
 **Created:** 2026-03-02  
-**Last Updated:** 2026-03-12 (Cycle 30 - Athena)
+**Last Updated:** 2026-03-12 (Cycle 33 - Athena)
 
 ---
 
@@ -19,13 +19,13 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 30)
+## Current State (Cycle 33)
 
-- **Status:** M29+M30 complete (merged). All basic tests and BigInt tests pass.
-- **Last Known OJ Score:** 25/100 (submission #5, before M22-M30 fixes)
+- **Status:** M31 complete (merged). First-class functions/closures now working.
+- **Last Known OJ Score:** 25/100 (submission #5, before M22-M31 fixes)
 - **OJ Submissions Used:** 5 of 18 budget
-- **Features Implemented:** M1-M30 (list pass-by-ref, nested function scope)
-- **Local Tests:** All 16 basic tests PASS, all 20 BigInteger tests PASS
+- **Features Implemented:** M1-M31 (list pass-by-ref, nested function scope, first-class functions/closures)
+- **Local Tests:** 14/16 basic tests PASS (test13 TLE at 15s, test14 float repr comparison misleading), all 20 BigInteger tests run successfully
 
 ## Critical Bugs Remaining (Cycle 30 Analysis)
 
@@ -175,7 +175,7 @@ Refactored `ListValue` to use `shared_ptr<vector<Value>>`. All 5 acceptance test
 Implemented `enclosingLocalVariables` pointer. All 5 acceptance tests passed.
 
 ### M31: Functions as First-Class Values (cycles: 3)
-**Status: READY TO START**
+**Status: COMPLETE (Cycle 32, Apollo verified)**
 
 Allow Python functions to be used as first-class values: passed as arguments, stored in variables, and called via stored references.
 
@@ -274,10 +274,14 @@ struct Value : std::variant<std::monostate, int, bool, std::string, double, BigI
 5. All 16 basic tests still pass
 6. All 20 BigInteger tests still pass
 
-### M32: Float Repr in Containers + Final Polish (cycles: 2)
-**Status: PLANNED**
+### M32: Float Repr in Containers + BigInteger Downcast (cycles: 2)
+**Status: READY TO START**
 
-Fix float representation inside containers (use Python-style repr) and run full verification.
+Two fixes:
+1. Fix float representation inside containers (use Python-style repr: 1.0 not 1.000000)
+2. BigInteger downcast optimization: after BigInteger operations, convert back to int if small enough (speeds up test13 Pollard Rho from 15s → ~3s)
+
+Issue #14 assigned to Leo.
 
 ---
 
@@ -329,6 +333,21 @@ Fix float representation inside containers (use Python-style repr) and run full 
 - Discovered: functions cannot be used as first-class values (M31)
 - Discovered: float repr in containers differs from Python (M32)
 - Updated roadmap, defining M31 and M32
+
+### Cycles 31-32 (Ares/Leo + Apollo)
+- M31 implemented and verified (first-class functions, closures via capturedLocals)
+- f = double; f(5) → 10 PASS
+- apply(sq, 4) → 16 PASS
+- make_adder(5)(3) → 8 PASS (closure)
+
+### Cycle 33 (Athena)
+- Analyzed project state: M31 complete, all BigInteger tests run successfully
+- Test13 (Pollard Rho) takes ~15s - close to 16s OJ limit, at risk of TLE
+- fib(25) takes 7s - exponential recursion very slow in interpreter
+- Float repr in containers still shows 1.000000 instead of 1.0
+- Defined M32: fix float repr in containers + BigInteger downcast optimization
+- Issue #14 created for Leo
+- Submission budget: 13 remaining (of 18)
 
 ### Cycle 15 (Athena)
 - Deep code analysis of remaining issues
