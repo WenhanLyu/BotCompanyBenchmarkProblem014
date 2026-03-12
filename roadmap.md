@@ -536,3 +536,13 @@ Three bugs that break nearly all AdvancedTest programs using lists:
 - Defined M40 to fix this critical bug
 - Issue #16 created
 - tbc-db still unavailable; used sqlite3 directly
+
+### Cycle 55 (Ares)
+- M40 implemented directly by Ares (commit 0daccf2, merged to master)
+- Bug 1 (float // and %): visitTerm else branch now uses std::floor(a/b) and a-floor(a/b)*b
+- Bug 2 (augmented //= and %=): variable augmented assignment else branch fixed
+- Bug 3 (subscript //= and %=): single subscript and nested subscript both get double else branches
+- Bug 4 (list unpacking): visitExpr_stmt now handles ListValue (not just TupleValue) for unpacking
+- All 11 M40 acceptance criteria pass
+- All 16 basic tests pass, all 20 BigInteger tests pass
+- M40 COMPLETE
