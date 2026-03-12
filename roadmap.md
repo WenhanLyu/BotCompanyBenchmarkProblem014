@@ -2,7 +2,7 @@
 
 **Project:** BotCompanyBenchmarkProblem014 - Python Interpreter  
 **Created:** 2026-03-02  
-**Last Updated:** 2026-03-12 (Cycle 40 - Athena)
+**Last Updated:** 2026-03-12 (Cycle 45 - Athena)
 
 ---
 
@@ -19,36 +19,46 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 40)
+## Current State (Cycle 45)
 
-- **Status:** M34 complete (merged). print sep/end kwargs, f-string float repr, len() all fixed.
-- **Last Known OJ Score:** 25/100 (submission #5, before M22-M34 fixes)
+- **Status:** M35 complete (merged). abs/max/min/bool-list-tuple all fixed.
+- **Last Known OJ Score:** 25/100 (submission #5, before M22-M35 fixes)
 - **OJ Submissions Used:** 5 of 18 budget
-- **Features Implemented:** M1-M34
-- **Local Tests:** All basic and BigInteger tests run without crash
+- **Features Implemented:** M1-M35
+- **Local Tests:** All 16 basic tests PASS, all 20 BigInteger tests PASS
 
-## Critical Bugs Found (Cycle 40 Analysis)
+## Critical Bugs Found (Cycle 45 Analysis)
 
-### Bug A: `abs()` Not Implemented (CRITICAL for AdvancedTest)
+### Bug A: `list += list` and `list *= int` in Augmented Assignment → None (CRITICAL)
 
-`abs(x)` returns `None` for all inputs. This built-in is commonly used in algorithms.
+`a += [x]` sets `a` to `None` instead of the concatenated list.
+`a *= 3` sets `a` to `None` instead of the repeated list.
 
-**Fix needed:** Add `abs` handler in `visitAtom_expr` that returns the absolute value of int, BigInteger, float, or bool.
+**Root cause:** In `visitExpr_stmt`, the augmented assignment `+=` handler for the simple-variable case (lines 346-372) does NOT handle `ListValue`. So when `a` is a list and you do `a += [x]`, neither string/int/BigInteger/double branches match and `result` stays default (monostate = None).
 
-### Bug B: `max()` / `min()` Not Implemented (CRITICAL for AdvancedTest)
+**Fix needed:** Add ListValue handling to `+=` in the augmented assignment for the variable case:
+- For `+=`: if both currentValue and rightValue are ListValue, concatenate them (create a new ListValue with elements from both)
+- For `*=`: if currentValue is ListValue and rightValue is int, repeat the list
 
-`max(a, b, c...)` and `min(a, b, c...)` return `None`. These are commonly used in algorithms.
+### Bug B: `list < list` and `tuple < tuple` Ordering Comparisons → False (CRITICAL)
 
-**Fix needed:** Add `max` and `min` handlers in `visitAtom_expr` that return the maximum/minimum of multiple arguments (at least 2 args, possibly also with list arg).
+`[1, 2, 3] < [1, 2, 4]` returns `False` instead of `True` (should be lexicographic).
+`(1, 2, 3) < (1, 2, 4)` returns `False` instead of `True`.
+Same for `>`, `<=`, `>=`.
 
-### Bug C: `bool()` Does Not Handle ListValue/TupleValue
+**Root cause:** In `visitComparison` (around line 2516-2525), for TupleValue and ListValue, only `==` and `!=` are handled. For `<`, `>`, `<=`, `>=`, it falls through to `else compResult = false`.
 
-`bool([0])` returns `False` (wrong - should be `True` since non-empty list).
-`bool((0,))` returns `False` (wrong - should be `True` since non-empty tuple).
+**Fix needed:** Implement lexicographic comparison for lists and tuples — compare element by element.
 
-**Root cause:** In `visitAtom_expr` bool() handler, only int/float/string/bool/BigInteger/None are handled. ListValue and TupleValue are not handled.
+### Bug C: `sorted()` Not Implemented (Needed for AdvancedTest)
 
-**Fix needed:** Add ListValue and TupleValue cases to the bool() handler: return `true` if non-empty, `false` if empty.
+`sorted(a)` returns `None`. This is a commonly used built-in for sorting lists.
+
+**Fix needed:** Add `sorted` handler in `visitAtom_expr` that:
+- Takes a list argument
+- Returns a NEW list sorted in ascending order
+- Uses Python-style comparison (same as the comparison operators)
+- Does NOT modify the original list
 
 ---
 
@@ -85,7 +95,7 @@ All acceptance tests passed. Commit `4c2289b` on master.
 **Status: COMPLETE (Cycle 41, Apollo verified)**
 
 ### M35: abs() + max() + min() built-ins + bool() fix (cycles: 2)
-**Status: READY TO START**
+**Status: COMPLETE (Cycle 44, Apollo verified)**
 
 Four changes needed:
 
@@ -143,6 +153,36 @@ Three bugs that likely affect Sample tests (21-34) and AdvancedTest (35-52):
 9. All 16 basic tests still pass
 10. All 20 BigInteger tests still pass
 
+### M36: list/tuple ordering comparison + list augmented assignment + sorted() (cycles: 2)
+**Status: READY TO START**
+
+Three bugs that break nearly all AdvancedTest programs using lists:
+
+1. **`list += list` augmented assignment** → None (should concatenate). Same for `list *= int`.
+   - In `visitExpr_stmt`, the `+=` augmented-assignment block for variables (around line 346) has no ListValue branch. Add: if currentValue is ListValue and rightValue is ListValue, create new list with all elements concatenated.
+   - For `*=`: if currentValue is ListValue and rightValue is int, repeat list elements.
+
+2. **`list < list` and `tuple < tuple` ordering** → always False (should be lexicographic).
+   - In `visitComparison` (around line 2516-2525), add lexicographic comparison for <, >, <=, >= for both ListValue and TupleValue.
+
+3. **`sorted(iterable)` built-in** → None (should return sorted list).
+   - In `visitAtom_expr`, add handler for "sorted" that sorts a list or tuple and returns a new list.
+
+**Acceptance Criteria:**
+1. `a = []; a += [1]; a += [2]; print(a)` → `[1, 2]`
+2. `a = [1, 2]; a *= 3; print(a)` → `[1, 2, 1, 2, 1, 2]`
+3. `print([1, 2, 3] < [1, 2, 4])` → `True`
+4. `print([1, 2, 3] > [1, 2, 4])` → `False`
+5. `print([1, 2, 3] <= [1, 2, 3])` → `True`
+6. `print([1, 2, 3] >= [1, 2, 3])` → `True`
+7. `print((1, 2, 3) < (1, 2, 4))` → `True`
+8. `print((1, 2, 3) > (1, 2, 4))` → `False`
+9. `print(sorted([3, 1, 4, 1, 5]))` → `[1, 1, 3, 4, 5]`
+10. `a = [3, 1, 4]; b = sorted(a); print(b); print(a)` → `[1, 3, 4]` then `[3, 1, 4]` (original unchanged)
+11. Merge sort using list += works correctly
+12. All 16 basic tests still pass
+13. All 20 BigInteger tests still pass
+
 ---
 
 ## Lessons Learned
@@ -161,6 +201,7 @@ Three bugs that likely affect Sample tests (21-34) and AdvancedTest (35-52):
 12. **M33 analysis** - multi-trailer function calls and tuple unpacking with subscripts are critical for AdvancedTest
 13. **M34 analysis** - print sep/end kwargs and f-string float repr are Sample test blockers; len() is missing
 14. **M35 analysis** - abs(), max(), min() are critical missing built-ins; bool() has bug with list/tuple args
+15. **M36 analysis** - list += list in augmented assignment broken (returns None), list </>/<=/>=  ordering broken, sorted() missing
 
 ---
 
@@ -237,9 +278,22 @@ Three bugs that likely affect Sample tests (21-34) and AdvancedTest (35-52):
 - M34 implemented and verified (print sep/end, f-string float repr, len())
 - All 11 acceptance tests pass
 
-### Cycle 40 (Athena - this cycle)
+### Cycle 40 (Athena)
 - Deep analysis of remaining bugs
 - Discovered: abs(), max(), min() not implemented (critical for algorithm tests)
 - Discovered: bool() built-in doesn't handle ListValue/TupleValue (bug - returns False for non-empty containers)
 - Updated roadmap, defining M35
+- OJ submissions budget: 13 remaining
+
+### Cycles 43-44 (Ares/Leo + Apollo)
+- M35 implemented and verified (abs/max/min/bool-fix all working)
+
+### Cycle 45 (Athena - this cycle)
+- Deep analysis of remaining bugs
+- Discovered: list += list in augmented assignment → None (CRITICAL)
+- Discovered: list *= int in augmented assignment → None (CRITICAL)
+- Discovered: list < list and tuple < tuple ordering comparison → always False (CRITICAL)
+- Discovered: sorted() not implemented
+- All 16 basic tests PASS, all 20 BigInteger tests PASS
+- Updated roadmap, defining M36
 - OJ submissions budget: 13 remaining
