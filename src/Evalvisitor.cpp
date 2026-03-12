@@ -1268,6 +1268,10 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                                     boolResult = Value(!std::get<BigInteger>(val).isZero());
                                 } else if (std::holds_alternative<std::monostate>(val)) {
                                     boolResult = Value(false);
+                                } else if (std::holds_alternative<ListValue>(val)) {
+                                    boolResult = Value(!std::get<ListValue>(val).elements->empty());
+                                } else if (std::holds_alternative<TupleValue>(val)) {
+                                    boolResult = Value(!std::get<TupleValue>(val).elements.empty());
                                 }
                             } catch (...) {
                                 // Error in conversion
@@ -1310,6 +1314,161 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                 }
             }
             currentValue = lenResult;
+            isFirstTrailer = false;
+            continue;
+        }
+
+        // Handle abs() built-in function
+        if (funcName == "abs") {
+            Value absResult(0);
+            auto arglist = trailer->arglist();
+            if (arglist) {
+                auto args = arglist->argument();
+                if (!args.empty() && args.size() == 1) {
+                    auto arg = args[0];
+                    auto tests = arg->test();
+                    if (!tests.empty()) {
+                        auto argValue = visit(tests[0]);
+                        if (argValue.has_value()) {
+                            try {
+                                Value val = std::any_cast<Value>(argValue);
+                                if (std::holds_alternative<int>(val)) {
+                                    int v = std::get<int>(val);
+                                    absResult = Value(v < 0 ? -v : v);
+                                } else if (std::holds_alternative<bool>(val)) {
+                                    absResult = Value(std::get<bool>(val) ? 1 : 0);
+                                } else if (std::holds_alternative<double>(val)) {
+                                    absResult = Value(std::fabs(std::get<double>(val)));
+                                } else if (std::holds_alternative<BigInteger>(val)) {
+                                    BigInteger bi = std::get<BigInteger>(val);
+                                    if (bi.isNegative()) bi = -bi;
+                                    absResult = Value(bi);
+                                }
+                            } catch (...) {}
+                        }
+                    }
+                }
+            }
+            currentValue = absResult;
+            isFirstTrailer = false;
+            continue;
+        }
+
+        // Handle max() built-in function — returns the maximum of 1+ arguments
+        if (funcName == "max") {
+            auto arglist = trailer->arglist();
+            if (arglist) {
+                auto args = arglist->argument();
+                if (!args.empty()) {
+                    // Evaluate all arguments
+                    std::vector<Value> vals;
+                    for (auto arg : args) {
+                        auto tests = arg->test();
+                        if (!tests.empty()) {
+                            auto av = visit(tests[0]);
+                            if (av.has_value()) {
+                                try { vals.push_back(std::any_cast<Value>(av)); } catch (...) {}
+                            }
+                        }
+                    }
+                    if (!vals.empty()) {
+                        Value maxVal = vals[0];
+                        for (size_t i = 1; i < vals.size(); i++) {
+                            // Compare vals[i] > maxVal using Python-style numeric comparison
+                            bool greater = false;
+                            Value& a = vals[i];
+                            Value& b = maxVal;
+                            auto toDouble = [](const Value& v) -> double {
+                                if (std::holds_alternative<int>(v)) return std::get<int>(v);
+                                if (std::holds_alternative<bool>(v)) return std::get<bool>(v) ? 1.0 : 0.0;
+                                if (std::holds_alternative<double>(v)) return std::get<double>(v);
+                                return 0.0;
+                            };
+                            bool aIsNumeric = std::holds_alternative<int>(a) || std::holds_alternative<bool>(a) || std::holds_alternative<double>(a);
+                            bool bIsNumeric = std::holds_alternative<int>(b) || std::holds_alternative<bool>(b) || std::holds_alternative<double>(b);
+                            bool aIsBigInt = std::holds_alternative<BigInteger>(a);
+                            bool bIsBigInt = std::holds_alternative<BigInteger>(b);
+                            if (aIsBigInt && bIsBigInt) {
+                                greater = std::get<BigInteger>(a) > std::get<BigInteger>(b);
+                            } else if (aIsBigInt && bIsNumeric) {
+                                // BigInteger vs numeric: compare as BigInteger
+                                BigInteger bval((long long)toDouble(b));
+                                greater = std::get<BigInteger>(a) > bval;
+                            } else if (aIsNumeric && bIsBigInt) {
+                                BigInteger aval((long long)toDouble(a));
+                                greater = aval > std::get<BigInteger>(b);
+                            } else if (aIsNumeric && bIsNumeric) {
+                                greater = toDouble(a) > toDouble(b);
+                            } else if (std::holds_alternative<std::string>(a) && std::holds_alternative<std::string>(b)) {
+                                greater = std::get<std::string>(a) > std::get<std::string>(b);
+                            }
+                            if (greater) maxVal = a;
+                        }
+                        currentValue = maxVal;
+                        isFirstTrailer = false;
+                        continue;
+                    }
+                }
+            }
+            currentValue = Value(0);
+            isFirstTrailer = false;
+            continue;
+        }
+
+        // Handle min() built-in function — returns the minimum of 1+ arguments
+        if (funcName == "min") {
+            auto arglist = trailer->arglist();
+            if (arglist) {
+                auto args = arglist->argument();
+                if (!args.empty()) {
+                    std::vector<Value> vals;
+                    for (auto arg : args) {
+                        auto tests = arg->test();
+                        if (!tests.empty()) {
+                            auto av = visit(tests[0]);
+                            if (av.has_value()) {
+                                try { vals.push_back(std::any_cast<Value>(av)); } catch (...) {}
+                            }
+                        }
+                    }
+                    if (!vals.empty()) {
+                        Value minVal = vals[0];
+                        for (size_t i = 1; i < vals.size(); i++) {
+                            bool lesser = false;
+                            Value& a = vals[i];
+                            Value& b = minVal;
+                            auto toDouble = [](const Value& v) -> double {
+                                if (std::holds_alternative<int>(v)) return std::get<int>(v);
+                                if (std::holds_alternative<bool>(v)) return std::get<bool>(v) ? 1.0 : 0.0;
+                                if (std::holds_alternative<double>(v)) return std::get<double>(v);
+                                return 0.0;
+                            };
+                            bool aIsNumeric = std::holds_alternative<int>(a) || std::holds_alternative<bool>(a) || std::holds_alternative<double>(a);
+                            bool bIsNumeric = std::holds_alternative<int>(b) || std::holds_alternative<bool>(b) || std::holds_alternative<double>(b);
+                            bool aIsBigInt = std::holds_alternative<BigInteger>(a);
+                            bool bIsBigInt = std::holds_alternative<BigInteger>(b);
+                            if (aIsBigInt && bIsBigInt) {
+                                lesser = std::get<BigInteger>(a) < std::get<BigInteger>(b);
+                            } else if (aIsBigInt && bIsNumeric) {
+                                BigInteger bval((long long)toDouble(b));
+                                lesser = std::get<BigInteger>(a) < bval;
+                            } else if (aIsNumeric && bIsBigInt) {
+                                BigInteger aval((long long)toDouble(a));
+                                lesser = aval < std::get<BigInteger>(b);
+                            } else if (aIsNumeric && bIsNumeric) {
+                                lesser = toDouble(a) < toDouble(b);
+                            } else if (std::holds_alternative<std::string>(a) && std::holds_alternative<std::string>(b)) {
+                                lesser = std::get<std::string>(a) < std::get<std::string>(b);
+                            }
+                            if (lesser) minVal = a;
+                        }
+                        currentValue = minVal;
+                        isFirstTrailer = false;
+                        continue;
+                    }
+                }
+            }
+            currentValue = Value(0);
             isFirstTrailer = false;
             continue;
         }
