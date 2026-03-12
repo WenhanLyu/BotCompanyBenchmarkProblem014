@@ -1313,10 +1313,8 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                                 } else if (std::holds_alternative<int>(val)) {
                                     strResult = Value(std::to_string(std::get<int>(val)));
                                 } else if (std::holds_alternative<double>(val)) {
-                                    double d = std::get<double>(val);
-                                    std::ostringstream oss;
-                                    oss << std::fixed << std::setprecision(6) << d;
-                                    strResult = Value(oss.str());
+                                    // Use floatToRepr for Python-style float representation (e.g. 3.14 not 3.140000)
+                                    strResult = Value(floatToRepr(std::get<double>(val)));
                                 } else if (std::holds_alternative<bool>(val)) {
                                     strResult = Value(std::get<bool>(val) ? std::string("True") : std::string("False"));
                                 } else if (std::holds_alternative<BigInteger>(val)) {
@@ -1481,35 +1479,8 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                     if (!vals.empty()) {
                         Value maxVal = vals[0];
                         for (size_t i = 1; i < vals.size(); i++) {
-                            // Compare vals[i] > maxVal using Python-style numeric comparison
-                            bool greater = false;
-                            Value& a = vals[i];
-                            Value& b = maxVal;
-                            auto toDouble = [](const Value& v) -> double {
-                                if (std::holds_alternative<int>(v)) return std::get<int>(v);
-                                if (std::holds_alternative<bool>(v)) return std::get<bool>(v) ? 1.0 : 0.0;
-                                if (std::holds_alternative<double>(v)) return std::get<double>(v);
-                                return 0.0;
-                            };
-                            bool aIsNumeric = std::holds_alternative<int>(a) || std::holds_alternative<bool>(a) || std::holds_alternative<double>(a);
-                            bool bIsNumeric = std::holds_alternative<int>(b) || std::holds_alternative<bool>(b) || std::holds_alternative<double>(b);
-                            bool aIsBigInt = std::holds_alternative<BigInteger>(a);
-                            bool bIsBigInt = std::holds_alternative<BigInteger>(b);
-                            if (aIsBigInt && bIsBigInt) {
-                                greater = std::get<BigInteger>(a) > std::get<BigInteger>(b);
-                            } else if (aIsBigInt && bIsNumeric) {
-                                // BigInteger vs numeric: compare as BigInteger
-                                BigInteger bval((long long)toDouble(b));
-                                greater = std::get<BigInteger>(a) > bval;
-                            } else if (aIsNumeric && bIsBigInt) {
-                                BigInteger aval((long long)toDouble(a));
-                                greater = aval > std::get<BigInteger>(b);
-                            } else if (aIsNumeric && bIsNumeric) {
-                                greater = toDouble(a) > toDouble(b);
-                            } else if (std::holds_alternative<std::string>(a) && std::holds_alternative<std::string>(b)) {
-                                greater = std::get<std::string>(a) > std::get<std::string>(b);
-                            }
-                            if (greater) maxVal = a;
+                            // Compare using compareValues which handles all types including TupleValue/ListValue
+                            if (compareValues(vals[i], maxVal) > 0) maxVal = vals[i];
                         }
                         currentValue = maxVal;
                         isFirstTrailer = false;
@@ -1551,33 +1522,8 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                     if (!vals.empty()) {
                         Value minVal = vals[0];
                         for (size_t i = 1; i < vals.size(); i++) {
-                            bool lesser = false;
-                            Value& a = vals[i];
-                            Value& b = minVal;
-                            auto toDouble = [](const Value& v) -> double {
-                                if (std::holds_alternative<int>(v)) return std::get<int>(v);
-                                if (std::holds_alternative<bool>(v)) return std::get<bool>(v) ? 1.0 : 0.0;
-                                if (std::holds_alternative<double>(v)) return std::get<double>(v);
-                                return 0.0;
-                            };
-                            bool aIsNumeric = std::holds_alternative<int>(a) || std::holds_alternative<bool>(a) || std::holds_alternative<double>(a);
-                            bool bIsNumeric = std::holds_alternative<int>(b) || std::holds_alternative<bool>(b) || std::holds_alternative<double>(b);
-                            bool aIsBigInt = std::holds_alternative<BigInteger>(a);
-                            bool bIsBigInt = std::holds_alternative<BigInteger>(b);
-                            if (aIsBigInt && bIsBigInt) {
-                                lesser = std::get<BigInteger>(a) < std::get<BigInteger>(b);
-                            } else if (aIsBigInt && bIsNumeric) {
-                                BigInteger bval((long long)toDouble(b));
-                                lesser = std::get<BigInteger>(a) < bval;
-                            } else if (aIsNumeric && bIsBigInt) {
-                                BigInteger aval((long long)toDouble(a));
-                                lesser = aval < std::get<BigInteger>(b);
-                            } else if (aIsNumeric && bIsNumeric) {
-                                lesser = toDouble(a) < toDouble(b);
-                            } else if (std::holds_alternative<std::string>(a) && std::holds_alternative<std::string>(b)) {
-                                lesser = std::get<std::string>(a) < std::get<std::string>(b);
-                            }
-                            if (lesser) minVal = a;
+                            // Compare using compareValues which handles all types including TupleValue/ListValue
+                            if (compareValues(vals[i], minVal) < 0) minVal = vals[i];
                         }
                         currentValue = minVal;
                         isFirstTrailer = false;
@@ -2308,6 +2254,14 @@ std::any EvalVisitor::visitArith_expr(Python3Parser::Arith_exprContext *ctx) {
                 newElems.insert(newElems.end(), rhs.begin(), rhs.end());
                 result = ListValue(newElems);
             }
+        } else if (std::holds_alternative<TupleValue>(result) && std::holds_alternative<TupleValue>(term)) {
+            // Tuple concatenation: (1, 2) + (3, 4) = (1, 2, 3, 4)
+            if (op == "+") {
+                std::vector<Value> newElems = std::get<TupleValue>(result).elements;
+                const auto& rhs = std::get<TupleValue>(term).elements;
+                newElems.insert(newElems.end(), rhs.begin(), rhs.end());
+                result = TupleValue(newElems);
+            }
         }
     }
     
@@ -2409,6 +2363,26 @@ std::any EvalVisitor::visitTerm(Python3Parser::TermContext *ctx) {
                 }
             }
             result = newList;
+        } else if (op == "*" && ((std::holds_alternative<TupleValue>(result) && std::holds_alternative<int>(factor)) ||
+                                  (std::holds_alternative<int>(result) && std::holds_alternative<TupleValue>(factor)))) {
+            // Tuple repetition: (1, 2) * 3 = (1, 2, 1, 2, 1, 2)
+            TupleValue baseTuple;
+            int count;
+            if (std::holds_alternative<TupleValue>(result)) {
+                baseTuple = std::get<TupleValue>(result);
+                count = std::get<int>(factor);
+            } else {
+                count = std::get<int>(result);
+                baseTuple = std::get<TupleValue>(factor);
+            }
+            std::vector<Value> newElems;
+            if (count > 0) {
+                newElems.reserve(baseTuple.elements.size() * count);
+                for (int i = 0; i < count; i++) {
+                    newElems.insert(newElems.end(), baseTuple.elements.begin(), baseTuple.elements.end());
+                }
+            }
+            result = TupleValue(newElems);
         } else if (std::holds_alternative<BigInteger>(result) || std::holds_alternative<BigInteger>(factor)) {
             // Handle BigInteger operations
             // Promote to BigInteger if needed
