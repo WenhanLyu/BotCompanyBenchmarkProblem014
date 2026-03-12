@@ -21,6 +21,17 @@
 // TupleValue and ListValue are recursive types with wrapper structs to differentiate them
 struct Value;
 
+// FunctionValue represents a first-class function value (closure support via capturedLocals)
+struct FunctionValue {
+    std::string name;
+    std::map<std::string, Value> capturedLocals;
+    FunctionValue() = default;
+    explicit FunctionValue(std::string n) : name(std::move(n)) {}
+    FunctionValue(std::string n, std::map<std::string, Value> captured) : name(std::move(n)), capturedLocals(std::move(captured)) {}
+    bool operator==(const FunctionValue& other) const { return name == other.name; }
+    bool operator!=(const FunctionValue& other) const { return !(*this == other); }
+};
+
 struct TupleValue {
     std::vector<Value> elements;
     TupleValue() = default;
@@ -37,7 +48,7 @@ struct ListValue {
     bool operator!=(const ListValue& other) const { return !(*this == other); }
 };
 
-struct Value : std::variant<std::monostate, int, bool, std::string, double, BigInteger, TupleValue, ListValue> {
+struct Value : std::variant<std::monostate, int, bool, std::string, double, BigInteger, TupleValue, ListValue, FunctionValue> {
     using variant::variant;
 };
 

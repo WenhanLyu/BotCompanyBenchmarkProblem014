@@ -1087,6 +1087,157 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
             continue;
         }
         
+        // Check if funcName refers to a variable holding a FunctionValue (first-class function)
+        // This allows: f = double; f(5)  or  apply(double, 5)
+        {
+            Value* varPtr = nullptr;
+            if (localVariables != nullptr) {
+                auto lit = localVariables->find(funcName);
+                if (lit != localVariables->end()) varPtr = &lit->second;
+            }
+            if (!varPtr && enclosingLocalVariables != nullptr) {
+                auto eit = enclosingLocalVariables->find(funcName);
+                if (eit != enclosingLocalVariables->end()) varPtr = &eit->second;
+            }
+            if (!varPtr) {
+                auto git = variables.find(funcName);
+                if (git != variables.end()) varPtr = &git->second;
+            }
+            if (varPtr && std::holds_alternative<FunctionValue>(*varPtr)) {
+                const FunctionValue& fv = std::get<FunctionValue>(*varPtr);
+                funcName = fv.name;  // Use the actual function name for lookup
+                // (capturedLocals will be injected below after we find the FunctionDef)
+                // Store fv captured locals to inject
+                // We'll handle this inline below by storing a local copy
+                const std::map<std::string, Value> capturedLocals = fv.capturedLocals;
+                
+                auto funcIt2 = functions.find(funcName);
+                if (funcIt2 != functions.end()) {
+                    const FunctionDef& funcDef = funcIt2->second;
+                    
+                    std::vector<Value> positionalArgs;
+                    std::map<std::string, Value> keywordArgs;
+                    bool seenKeyword = false;
+                    
+                    auto arglist = trailer->arglist();
+                    if (arglist) {
+                        auto args = arglist->argument();
+                        for (auto arg : args) {
+                            auto tests = arg->test();
+                            if (tests.size() == 2) {
+                                seenKeyword = true;
+                                std::string paramName = tests[0]->getText();
+                                auto argValue = visit(tests[1]);
+                                Value val = Value(std::monostate{});
+                                if (argValue.has_value()) {
+                                    try { val = std::any_cast<Value>(argValue); } catch (...) {}
+                                }
+                                if (keywordArgs.find(paramName) != keywordArgs.end()) {
+                                    throw std::runtime_error("Duplicate keyword argument: " + paramName);
+                                }
+                                keywordArgs[paramName] = val;
+                            } else if (!tests.empty()) {
+                                if (seenKeyword) {
+                                    throw std::runtime_error("Positional argument follows keyword argument");
+                                }
+                                auto argValue = visit(tests[0]);
+                                Value val = Value(std::monostate{});
+                                if (argValue.has_value()) {
+                                    try { val = std::any_cast<Value>(argValue); } catch (...) {}
+                                }
+                                positionalArgs.push_back(val);
+                            }
+                        }
+                    }
+                    
+                    std::map<std::string, Value> localVars;
+                    std::map<std::string, Value>* savedLocalVariables = localVariables;
+                    const std::set<std::string>* savedFunctionLocals = currentFunctionLocals;
+                    std::set<std::string> savedFunctionGlobals = currentFunctionGlobals;
+                    std::map<std::string, Value>* savedEnclosingLocalVariables = enclosingLocalVariables;
+                    
+                    // Inject captured locals for closure support (before binding params)
+                    for (const auto& [k, v] : capturedLocals) {
+                        localVars[k] = v;
+                    }
+                    
+                    enclosingLocalVariables = savedLocalVariables;
+                    localVariables = &localVars;
+                    currentFunctionLocals = &funcDef.assignedVars;
+                    currentFunctionGlobals = funcDef.globalVars;
+                    
+                    std::set<std::string> boundParams;
+                    
+                    if (positionalArgs.size() > funcDef.parameters.size()) {
+                        localVariables = savedLocalVariables;
+                        currentFunctionLocals = savedFunctionLocals;
+                        currentFunctionGlobals = savedFunctionGlobals;
+                        enclosingLocalVariables = savedEnclosingLocalVariables;
+                        throw std::runtime_error("Too many positional arguments");
+                    }
+                    
+                    // Bind positional args (overrides captured locals for params)
+                    for (size_t pi = 0; pi < positionalArgs.size(); pi++) {
+                        localVars[funcDef.parameters[pi]] = positionalArgs[pi];
+                        boundParams.insert(funcDef.parameters[pi]);
+                    }
+                    
+                    for (const auto& kwarg : keywordArgs) {
+                        const std::string& paramName = kwarg.first;
+                        auto it = std::find(funcDef.parameters.begin(), funcDef.parameters.end(), paramName);
+                        if (it == funcDef.parameters.end()) {
+                            localVariables = savedLocalVariables;
+                            currentFunctionLocals = savedFunctionLocals;
+                            currentFunctionGlobals = savedFunctionGlobals;
+                            enclosingLocalVariables = savedEnclosingLocalVariables;
+                            throw std::runtime_error("Unknown parameter name: " + paramName);
+                        }
+                        if (boundParams.find(paramName) != boundParams.end()) {
+                            localVariables = savedLocalVariables;
+                            currentFunctionLocals = savedFunctionLocals;
+                            currentFunctionGlobals = savedFunctionGlobals;
+                            enclosingLocalVariables = savedEnclosingLocalVariables;
+                            throw std::runtime_error("Parameter " + paramName + " specified multiple times");
+                        }
+                        localVars[paramName] = kwarg.second;
+                        boundParams.insert(paramName);
+                    }
+                    
+                    for (size_t pi = 0; pi < funcDef.parameters.size(); pi++) {
+                        const std::string& paramName = funcDef.parameters[pi];
+                        if (boundParams.find(paramName) == boundParams.end()) {
+                            if (pi < funcDef.defaultValues.size() &&
+                                !std::holds_alternative<std::monostate>(funcDef.defaultValues[pi])) {
+                                localVars[paramName] = funcDef.defaultValues[pi];
+                            } else {
+                                localVariables = savedLocalVariables;
+                                currentFunctionLocals = savedFunctionLocals;
+                                currentFunctionGlobals = savedFunctionGlobals;
+                                enclosingLocalVariables = savedEnclosingLocalVariables;
+                                throw std::runtime_error("Missing required parameter: " + paramName);
+                            }
+                        }
+                    }
+                    
+                    Value returnValue = Value(std::monostate{});
+                    try {
+                        visit(funcDef.body);
+                    } catch (const ReturnException& e) {
+                        returnValue = e.returnValue;
+                    }
+                    
+                    localVariables = savedLocalVariables;
+                    currentFunctionLocals = savedFunctionLocals;
+                    currentFunctionGlobals = savedFunctionGlobals;
+                    enclosingLocalVariables = savedEnclosingLocalVariables;
+                    
+                    currentValue = returnValue;
+                    isFirstTrailer = false;
+                    continue;
+                }
+            }
+        }
+
         // Check if this is a user-defined function
         auto funcIt = functions.find(funcName);
         if (funcIt != functions.end()) {
@@ -1362,10 +1513,13 @@ std::any EvalVisitor::visitAtom(Python3Parser::AtomContext *ctx) {
         auto it = variables.find(varName);
         if (it != variables.end()) {
             return it->second;
-        } else {
-            // Variable not found, return None
-            return Value(std::monostate{});
         }
+        // Variable not found in variables — check if it's a function name
+        if (functions.find(varName) != functions.end()) {
+            return Value(FunctionValue(varName));
+        }
+        // Not found anywhere, return None
+        return Value(std::monostate{});
     }
     
     // Check if this is a list literal: '[' testlist? ']'
@@ -2062,6 +2216,8 @@ std::string EvalVisitor::valueToString(const Value& val) {
         }
         result += "]";
         return result;
+    } else if (std::holds_alternative<FunctionValue>(val)) {
+        return "<function " + std::get<FunctionValue>(val).name + ">";
     }
     return "";
 }
@@ -2127,6 +2283,8 @@ bool EvalVisitor::valueToBool(const Value& val) {
         return !std::get<TupleValue>(val).elements.empty();
     } else if (std::holds_alternative<ListValue>(val)) {
         return !std::get<ListValue>(val).elements->empty();
+    } else if (std::holds_alternative<FunctionValue>(val)) {
+        return true; // Functions are always truthy
     }
     return false;
 }
@@ -2453,6 +2611,21 @@ std::any EvalVisitor::visitFuncdef(Python3Parser::FuncdefContext *ctx) {
     funcDef.assignedVars = assignedVars;
     funcDef.globalVars = globalVars;
     functions[funcName] = funcDef;
+    
+    // Also store the function as a first-class value so it can be passed around
+    if (localVariables != nullptr) {
+        // Inside a function: capture current locals for closure support
+        std::map<std::string, Value> captured = *localVariables;
+        if (enclosingLocalVariables != nullptr) {
+            for (auto& [k, v] : *enclosingLocalVariables) {
+                if (captured.find(k) == captured.end()) captured[k] = v;
+            }
+        }
+        (*localVariables)[funcName] = Value(FunctionValue(funcName, captured));
+    } else {
+        // At global scope
+        variables[funcName] = Value(FunctionValue(funcName));
+    }
     
     return std::any();
 }
