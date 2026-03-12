@@ -2,7 +2,7 @@
 
 **Project:** BotCompanyBenchmarkProblem014 - Python Interpreter  
 **Created:** 2026-03-02  
-**Last Updated:** 2026-03-12 (Cycle 48 - Athena)
+**Last Updated:** 2026-03-12 (Cycle 51 - Athena)
 
 ---
 
@@ -19,33 +19,45 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 48)
+## Current State (Cycle 51)
 
-- **Status:** M36 complete (PR #25, merged). M37 pending definition.
-- **Last Known OJ Score:** 25/100 (submission #5, before M22-M36 fixes)
+- **Status:** M37 complete (PR #26, merged, Apollo verified). M38 defined.
+- **Last Known OJ Score:** 25/100 (submission #5, before M22-M37 fixes)
 - **OJ Submissions Used:** 5 of 18 budget
-- **Features Implemented:** M1-M36
+- **Features Implemented:** M1-M37
 - **Local Tests:** All 16 basic tests PASS, all 20 BigInteger tests PASS
 
-## Critical Bugs Found (Cycle 48 Analysis)
+## Critical Bugs Found (Cycle 51 Analysis) — M38 Required
 
-### Bug A: `def f(x=None)` crashes with "Missing required parameter" (CRITICAL)
-When `None` is used as a default parameter value, it is stored as `std::monostate{}` - same as "no default". The check `!std::holds_alternative<std::monostate>(funcDef.defaultValues[pi])` then treats `None` as "no default", causing crash.
+### Bug A: `str(float)` uses 6 decimal places instead of Python repr (CRITICAL)
+`str(3.14)` returns `"3.140000"` instead of `"3.14"`. `str(1.0)` returns `"1.000000"` instead of `"1.0"`.
+This breaks string operations involving floats.
 
-**Fix needed:** Add `numDefaultParams` field to `FunctionDef` tracking how many TRAILING parameters have explicit defaults. Then check uses index >= numParams - numDefaultParams instead of checking if value is non-monostate.
+**Fix:** In `str()` handler (~line 1316), replace `std::fixed << std::setprecision(6)` with `floatToRepr(d)`.
 
-### Bug B: `max([list])` and `min([list])` don't work with single iterable (CRITICAL)
-`max([3, 1, 4])` should return `4` (max of list elements), not the list itself.
-Currently, when called with one list argument, the function returns that single argument as the "maximum".
+### Bug B: `TupleValue + TupleValue` not implemented (CRITICAL)
+`(1, 2) + (3, 4)` returns `(1, 2)` instead of `(1, 2, 3, 4)`.
+No TupleValue case in `visitArith_expr`.
 
-**Fix needed:** In the `max`/`min` built-in handlers in `visitAtom_expr`: if there's exactly 1 argument and it's a ListValue or TupleValue, iterate over its elements and compute max/min.
+**Fix:** Add TupleValue concatenation case in `visitArith_expr` (after ListValue + ListValue, ~line 2303).
 
-### Bug C: Closures cannot modify outer scope variables (MEDIUM)
-`count += 1` inside an inner function does NOT propagate to outer function's `count`.
-The capturedLocals mechanism copies values at closure creation time, so mutations are isolated to each call.
+### Bug C: `TupleValue * int` crashes (CRITICAL)
+`(1, 2) * 3` crashes with `bad_variant_access`.
+In `visitTerm`, TupleValue falls into `else` branch which tries `std::get<double>` on a TupleValue.
 
-**Workaround (working):** Using a list `count = [0]; count[0] += 1` works since lists are shared by reference.
-**Real fix:** This requires significant architecture changes (shared_ptr to scope maps), deprioritized unless test cases specifically need it.
+**Fix:** Add TupleValue * int handling in `visitTerm` (after ListValue * int, ~line 2391).
+
+### Bug D: `max()`/`min()` comparison for TupleValue/ListValue returns wrong result (CRITICAL)
+`min([(3,1),(1,2)])` returns `(3,1)` instead of `(1,2)`.
+Inline comparison in max/min handlers doesn't handle TupleValue/ListValue.
+
+**Fix:** Replace inline comparison with `compareValues()` function in both max and min handlers.
+
+## Critical Bugs Found (Cycle 48 Analysis) — FIXED IN M37
+
+### Bug A: `def f(x=None)` crashes with "Missing required parameter" ✅ FIXED M37
+### Bug B: `max([list])` and `min([list])` don't work with single iterable ✅ FIXED M37
+### Bug C: Closures cannot modify outer scope variables (MEDIUM, using list workaround)
 
 ## Critical Bugs Found (Cycle 45 Analysis) — ALL FIXED IN M36
 
@@ -174,7 +186,7 @@ Three bugs that likely affect Sample tests (21-34) and AdvancedTest (35-52):
 10. All 20 BigInteger tests still pass
 
 ### M37: Fix None default parameter + max/min with single iterable (cycles: 2)
-**Status: PENDING**
+**Status: COMPLETE (Cycle 49-50, Ares implemented, Apollo verified, PR #26 merged)**
 
 Two critical bugs blocking AdvancedTest:
 
@@ -195,6 +207,44 @@ Two critical bugs blocking AdvancedTest:
 10. `print(max((5, 2, 8)))` → `8` (tuple arg also works)
 11. All 16 basic tests still pass
 12. All 20 BigInteger tests still pass
+
+### M38: str(float) repr fix + tuple concatenation/repetition + max/min tuple comparison (cycles: 2)
+**Status: PENDING**
+
+Four critical bugs affecting AdvancedTest, ComplexTest, and CornerTest:
+
+1. **`str(float)` uses 6 decimal places** → should use Python repr style (e.g., `str(3.14)` = `"3.14"`, not `"3.140000"`)
+   - In `visitAtom_expr`, the `str()` built-in handler (around line 1316-1319) uses `std::fixed << std::setprecision(6)`.
+   - Fix: use `floatToRepr(d)` instead.
+
+2. **`TupleValue + TupleValue` not implemented** → returns first operand unchanged
+   - In `visitArith_expr` (around line 2303), ListValue + ListValue is handled but TupleValue + TupleValue is missing.
+   - Fix: Add TupleValue concatenation similar to ListValue (create new TupleValue with elements from both).
+
+3. **`TupleValue * int` crashes** → bad_variant_access
+   - In `visitTerm` (around line 2391), ListValue * int is handled but TupleValue * int is missing.
+   - For TupleValue * int, it falls through to the `else` branch that tries `std::get<double>(result)` → crash.
+   - Fix: Add TupleValue * int handling (and int * TupleValue) similar to list repetition.
+
+4. **`max()`/`min()` comparison for TupleValue/ListValue not implemented** → always returns first element
+   - In `visitAtom_expr`, the max handler (around line 1484-1511) uses inline comparison that handles numeric, BigInteger, and string types but NOT TupleValue or ListValue.
+   - Fix: Replace inline comparison with `compareValues()` function which already handles TupleValue and ListValue correctly.
+
+**Acceptance Criteria:**
+1. `print(str(3.14))` → `3.14`
+2. `print(str(1.0))` → `1.0`
+3. `print(str(-2.5))` → `-2.5`
+4. `s = "value: " + str(3.14); print(s)` → `value: 3.14`
+5. `t1 = (1, 2); t2 = (3, 4); print(t1 + t2)` → `(1, 2, 3, 4)`
+6. `print((1, 2) * 3)` → `(1, 2, 1, 2, 1, 2)`
+7. `print(3 * (1, 2))` → `(1, 2, 1, 2, 1, 2)`
+8. `print((0,) * 5)` → `(0, 0, 0, 0, 0)`
+9. `pairs = [(3, 1), (1, 2), (2, 3), (1, 1)]; print(max(pairs))` → `(3, 1)`
+10. `pairs = [(3, 1), (1, 2), (2, 3), (1, 1)]; print(min(pairs))` → `(1, 1)`
+11. `print(max([(1, 3), (1, 2), (2, 1)]))` → `(2, 1)` (tuple comparison in max works)
+12. `print(min([(1, 3), (1, 2), (2, 1)]))` → `(1, 2)` (tuple comparison in min works)
+13. All 16 basic tests still pass
+14. All 20 BigInteger tests still pass
 
 ### M36: list/tuple ordering comparison + list augmented assignment + sorted() (cycles: 2)
 **Status: COMPLETE (PR #25, merged)**
@@ -246,6 +296,7 @@ Three bugs that break nearly all AdvancedTest programs using lists:
 14. **M35 analysis** - abs(), max(), min() are critical missing built-ins; bool() has bug with list/tuple args
 15. **M36 analysis** - list += list in augmented assignment broken (returns None), list </>/<=/>=  ordering broken, sorted() missing
 16. **M37 analysis** - None as default parameter crashes (monostate ambiguity with "no default"), max/min with single list/tuple arg returns the container instead of its max/min element
+17. **M38 analysis** - str(float) uses 6 decimal places (should be Python repr), tuple + tuple and tuple * int not implemented, max/min inline comparison doesn't handle TupleValue/ListValue
 
 ---
 
@@ -360,3 +411,18 @@ Three bugs that break nearly all AdvancedTest programs using lists:
 - Bug 2: max/min with single list/tuple arg fixed via element unpacking
 - All 11 acceptance criteria pass
 - All 16 basic tests + 20 BigInt tests still pass
+
+### Cycle 50 (Apollo)
+- M37 verified: all 11 acceptance criteria pass
+- All 16 basic tests + 20 BigInt tests pass
+- PR #26 merged to master
+
+### Cycle 51 (Athena)
+- Deep analysis of remaining bugs via targeted testing
+- Discovered: `str(float)` uses 6 decimal places instead of Python repr (CRITICAL) — `str(3.14)` returns `"3.140000"` instead of `"3.14"`
+- Discovered: `TupleValue + TupleValue` not implemented → returns first operand unchanged (CRITICAL)
+- Discovered: `TupleValue * int` crashes with bad_variant_access (CRITICAL)
+- Discovered: `max()`/`min()` comparison for TupleValue/ListValue not implemented → always returns first element (CRITICAL)
+- All 16 basic tests PASS, all 20 BigInteger tests PASS
+- Updated roadmap, defining M38
+- OJ submissions budget: 13 remaining
