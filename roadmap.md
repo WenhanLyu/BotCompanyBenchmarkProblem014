@@ -2,7 +2,7 @@
 
 **Project:** BotCompanyBenchmarkProblem014 - Python Interpreter  
 **Created:** 2026-03-02  
-**Last Updated:** 2026-03-12 (Cycle 33 - Athena)
+**Last Updated:** 2026-03-12 (Cycle 36 - Athena)
 
 ---
 
@@ -19,147 +19,63 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 33)
+## Current State (Cycle 36)
 
-- **Status:** M31 complete (merged). First-class functions/closures now working.
-- **Last Known OJ Score:** 25/100 (submission #5, before M22-M31 fixes)
+- **Status:** M32 complete (merged). Float repr in containers and BigInteger downcast working.
+- **Last Known OJ Score:** 25/100 (submission #5, before M22-M32 fixes)
 - **OJ Submissions Used:** 5 of 18 budget
-- **Features Implemented:** M1-M31 (list pass-by-ref, nested function scope, first-class functions/closures)
-- **Local Tests:** 14/16 basic tests PASS (test13 TLE at 15s, test14 float repr comparison misleading), all 20 BigInteger tests run successfully
+- **Features Implemented:** M1-M32
+- **Local Tests:** 16/16 basic test inputs run without crash; BigInteger tests produce output
 
-## Critical Bugs Remaining (Cycle 30 Analysis)
+## Critical Bugs Found (Cycle 36 Analysis)
 
-### Bug A: Functions as First-Class Values (CRITICAL for AdvancedTest)
-Functions cannot be passed as arguments, stored in variables, or returned and called later.
+### Bug A: Multi-Trailer Function Calls CRASH (CRITICAL for AdvancedTest)
+
+When the first trailer produces a value (function result or subscript), and the next trailer is a function call, it throws: "Invalid syntax: cannot call result of subscript as function"
 
 **Examples that fail:**
 ```python
-def double(x): return x * 2
-f = double          # f gets None instead of function ref
-print(f(5))         # None called, doesn't work
+# Calling return value of a function directly:
+make_adder(5)(3)          # → crash
+outer(1)(2)(3)            # → crash
 
-def apply(g, x): return g(x)
-print(apply(double, 5))  # g is None, fails
+# Calling function stored in list:
+ops = [add, mul]
+ops[0](3, 4)              # → crash
+multipliers[0](5)         # → crash
 ```
 
-**Root cause:** In `visitAtom`, when a NAME is a function name, it returns `None`. Functions are stored in a separate `functions` map, not in `variables`.
+**Root cause:** In `visitAtom_expr`, when processing trailers, the code at `i != 0` throws for function call trailers. It only handles function calls when `i == 0` (the first trailer after the atom).
 
-**Fix:** Add `FunctionValue` struct to Value variant:
-```cpp
-struct FunctionValue {
-    std::string name;  // function name to look up
-    explicit FunctionValue(std::string n) : name(std::move(n)) {}
-};
-```
-1. In `visitAtom`, if NAME is in `functions` and not in variables → return `Value(FunctionValue(name))`
-2. In `visitAtom_expr`, when call trailer is processed:
-   - If `funcName` is a variable holding `FunctionValue`, use that function
-   - Also: currentValue might be a FunctionValue from a previous expression
-3. In `visitFuncdef`, store function in both `functions` AND as `Value(FunctionValue(name))` in `variables`
+**Fix needed:** When `i > 0` and current trailer is a function call `(args)`:
+1. Get `currentValue` from previous trailer evaluation
+2. If `currentValue` holds a `FunctionValue`, call that function with the provided args
+3. If `currentValue` holds some other callable, handle appropriately
 
-### Bug B: Float Repr in Containers (May affect ComplexTest/CornerTest)
-When printing lists or tuples containing floats, we output `3.140000` but Python outputs `3.14`.
+The function call logic (argument binding, scope management, etc.) already exists for the `i == 0` case — just need to add the same logic for `i > 0` using the `currentValue` instead of the atom name.
 
-**Example:**
+### Bug B: Tuple Unpacking with Subscript LHS (CRITICAL for sorting/swapping)
+
+Multiple assignment where LHS contains list subscripts doesn't work:
 ```python
-print([1.0, 3.14])   # We: [1.000000, 3.14...] Python: [1.0, 3.14]
+arr[i], arr[j] = arr[j], arr[i]  # Doesn't modify arr
+lst[0], lst[1] = 99, 88           # Doesn't modify lst
 ```
 
-The spec says "Output float with 6 decimal places" for `print`. But inside containers, Python uses natural repr.
-This is ambiguous - the OJ might expect Python behavior here.
+**Root cause:** In `visitExpr_stmt`, the tuple unpacking code (`tests.size() > 1`) calls `tests[j]->getText()` to get variable names, then assigns to those names as variables. But for subscript targets like `arr[i]`, `getText()` returns "arr[i]" which is not a valid variable name, so it creates a new global variable instead of modifying the list.
 
-**Fix (if needed):** In `valueToRepr()`, format floats using Python's natural repr (not fixed 6 decimal places).
+**Fix needed:** In the tuple unpacking loop, for each target in the LHS:
+1. Check if the target is a simple name or a subscript expression (has trailers with `[`)
+2. If subscript, use the same subscript assignment logic as the single-assign case
+3. If simple name, use the current variable assignment logic
 
-### Bug C: Returned Functions / Closures (IMPORTANT for AdvancedTest)
-When a function is returned and stored, then called, the enclosing scope is not captured.
+---
 
-**Example:**
-```python
-def make_adder(n):
-    def adder(x): return x + n
-    return adder
+## Previous Critical Bugs (Cycle 30 Analysis)
 
-add5 = make_adder(5)
-print(add5(3))  # Expected: 8, Gets: None
-```
-
-**Root cause:** `enclosingLocalVariables` is set dynamically when a function is called. When `make_adder` returns `adder`, there's no way to capture `n=5` for later use.
-
-**Fix:** Store captured variables in `FunctionValue`. When defining a function inside another, capture the current local scope. When calling a FunctionValue that has captured locals, set them as enclosing scope.
-
-This is complex but important.
-
-## Previous Critical Bugs (Cycle 20 Analysis)
-
-### Bug A: List Pass-By-Reference Broken (CRITICAL)
-When a list is passed to a function and the function modifies it via subscript assignment,
-the modification does NOT affect the original list.
-
-**Example that fails:**
-```python
-lst = [1, 2, 3]
-def modify(L):
-    L[0] = 99
-modify(lst)
-print(lst[0])   # Expected: 99, Gets: 1
-```
-
-**Root cause:** `ListValue` copies the entire `vector<Value>` when passed as function argument.
-Python lists are objects passed by reference (shared underlying storage).
-
-**Fix:** Change `ListValue` to use `shared_ptr<vector<Value>>`:
-```cpp
-struct ListValue {
-    std::shared_ptr<std::vector<Value>> elements;
-    ListValue() : elements(std::make_shared<std::vector<Value>>()) {}
-    ListValue(const std::vector<Value>& elems) : elements(std::make_shared<std::vector<Value>>(elems)) {}
-    // operator== needs to compare contents
-};
-```
-
-When copying a ListValue (e.g., when storing in localVars), the shared_ptr is copied (shallow),
-so both copies point to the same underlying vector. This gives pass-by-reference semantics.
-
-Access elements via `*elements` or `(*elements)[i]` everywhere.
-
-**CAREFUL:** There are many places that access `listValue.elements` which need updating.
-But most importantly: subscript assignment to a list (`lst[i] = v`) modifies `*elements` in place,
-which is the same underlying storage as the caller's list.
-
-**CAUTION:** `list + list` and `list * int` should create NEW lists with NEW shared_ptr,
-NOT share the underlying storage of the originals. Only direct assignment/passing shares storage.
-
-### Bug B: Nested Function Scope Broken (IMPORTANT)
-When a function is defined inside another function, the inner function cannot access the
-outer function's local variables.
-
-**Example that fails:**
-```python
-def outer():
-    x = 42
-    def inner():
-        return x   # Should read outer's local x
-    return inner()
-print(outer())   # Expected: 42, Gets: None
-```
-
-**Root cause:** When `inner()` is called, its `localVariables` is a fresh empty map,
-and it only looks in `variables` (global scope) for unresolved variables.
-There's no mechanism to access the enclosing (outer) function's local scope.
-
-**Fix:** Add an "enclosing scope" pointer to EvalVisitor:
-- In `EvalVisitor`, add: `std::map<std::string, Value>* enclosingLocalVariables = nullptr;`
-- When calling any function, save and set `enclosingLocalVariables = savedLocalVariables`
-- In `visitAtom` variable lookup, after checking localVariables and before checking global,
-  also check `enclosingLocalVariables`.
-
-This handles one level of nesting. For deeper nesting, you'd need a chain, but the spec
-likely doesn't test more than one or two levels.
-
-**Scope of fix:** Variable READ in visitAtom needs to also check enclosingLocalVariables.
-Variable WRITE (augmented assignment) in visitExpr_stmt currently only writes to local/global.
-Per spec, the non-standard rule is: globals are accessible everywhere. Local-to-outer-function
-variables should only be readable (not writable) unless we implement full closures.
+### Bug A: Functions as First-Class Values (CRITICAL for AdvancedTest) ✅ FIXED M31
+### Bug B: Float Repr in Containers (FIXED M32)
+### Bug C: Returned Functions / Closures (FIXED M31 partial)
 
 ---
 
@@ -174,114 +90,38 @@ Refactored `ListValue` to use `shared_ptr<vector<Value>>`. All 5 acceptance test
 ### M30: Nested Function Scope ✅ COMPLETE (Cycle 29)
 Implemented `enclosingLocalVariables` pointer. All 5 acceptance tests passed.
 
-### M31: Functions as First-Class Values (cycles: 3)
-**Status: COMPLETE (Cycle 32, Apollo verified)**
-
+### M31: Functions as First-Class Values ✅ COMPLETE (Cycle 32, Apollo verified)
 Allow Python functions to be used as first-class values: passed as arguments, stored in variables, and called via stored references.
 
-**Implementation Plan:**
+### M32: Float Repr in Containers + BigInteger Downcast ✅ COMPLETE (Cycle 35, Apollo verified)
+- Float repr fix: `[1.0, 3.14]` instead of `[1.000000, 3.140000]`
+- BigInteger downcast: Test13 improved from ~15s to ~5.3s
 
-1. Add `FunctionValue` struct to `Evalvisitor.h`:
-```cpp
-struct FunctionValue {
-    std::string name;  // function name to look up in functions map
-    std::map<std::string, Value> capturedLocals;  // for closures
-    FunctionValue() = default;
-    explicit FunctionValue(std::string n) : name(std::move(n)) {}
-    FunctionValue(std::string n, std::map<std::string, Value> captured)
-        : name(std::move(n)), capturedLocals(std::move(captured)) {}
-};
-```
-
-2. Add `FunctionValue` to `Value` variant in `Evalvisitor.h`:
-```cpp
-struct Value : std::variant<std::monostate, int, bool, std::string, double, BigInteger, TupleValue, ListValue, FunctionValue> {
-```
-
-3. In `visitAtom` (NAME lookup):
-   - After checking localVariables and variables for the name, ALSO check if it's in `functions`
-   - If found in functions but NOT in variables → return `Value(FunctionValue(varName))`
-   - This handles `f = double` where `double` is a known function
-   - If found in variables, return the variable value (as before)
-
-4. In `visitAtom_expr` (function call trailers):
-   Currently: `std::string funcName = atom->getText()` then look up in `functions`
-   
-   **New logic - after getting funcName:**
-   ```cpp
-   // Check if funcName is a variable holding a FunctionValue
-   std::string actualFuncName = funcName;
-   std::map<std::string, Value>* capturedLocalsPtr = nullptr;
-   
-   // Look up in local then global scope
-   Value* varPtr = nullptr;
-   if (localVariables) {
-       auto it = localVariables->find(funcName);
-       if (it != localVariables->end()) varPtr = &it->second;
-   }
-   if (!varPtr) {
-       auto it = variables.find(funcName);
-       if (it != variables.end()) varPtr = &it->second;
-   }
-   
-   if (varPtr && std::holds_alternative<FunctionValue>(*varPtr)) {
-       FunctionValue& fv = std::get<FunctionValue>(*varPtr);
-       actualFuncName = fv.name;
-       capturedLocalsPtr = &fv.capturedLocals;
-   }
-   ```
-   
-   Then use `actualFuncName` instead of `funcName` to look up the function.
-   
-   When calling with captured locals, inject them into the function scope:
-   ```cpp
-   // If calling a function with captured locals (closure), inject them
-   if (capturedLocalsPtr && !capturedLocalsPtr->empty()) {
-       for (auto& [k, v] : *capturedLocalsPtr) {
-           if (localVars.find(k) == localVars.end()) {  // don't override parameters
-               localVars[k] = v;
-           }
-       }
-   }
-   ```
-
-5. In `visitFuncdef`:
-   When a function is defined inside another function, capture the current local variables:
-   ```cpp
-   // If we're inside a function, store the function name as a FunctionValue in localVariables
-   // AND capture current locals for closure support
-   if (localVariables != nullptr) {
-       std::map<std::string, Value> captured;
-       // Capture all current local variables
-       if (localVariables) captured = *localVariables;
-       if (enclosingLocalVariables) {
-           for (auto& [k, v] : *enclosingLocalVariables) {
-               if (captured.find(k) == captured.end()) captured[k] = v;
-           }
-       }
-       (*localVariables)[funcName] = Value(FunctionValue(funcName, captured));
-   } else {
-       // At global level, just store the function reference
-       variables[funcName] = Value(FunctionValue(funcName));
-   }
-   ```
-
-**Acceptance Criteria:**
-1. `def double(x): return x*2; f = double; print(f(5))` → `10`
-2. `def apply(g, x): return g(x); def sq(x): return x*x; print(apply(sq, 4))` → `16`
-3. `def make_adder(n): def adder(x): return x+n; return adder; add5 = make_adder(5); print(add5(3))` → `8`
-4. Functions stored in lists: `funcs = [add, mul]; print(funcs[0](3, 4))` → `7` (if functions support this)
-5. All 16 basic tests still pass
-6. All 20 BigInteger tests still pass
-
-### M32: Float Repr in Containers + BigInteger Downcast (cycles: 2)
+### M33: Multi-Trailer Function Calls + Tuple Unpacking Subscript LHS (cycles: 3)
 **Status: READY TO START**
 
-Two fixes:
-1. Fix float representation inside containers (use Python-style repr: 1.0 not 1.000000)
-2. BigInteger downcast optimization: after BigInteger operations, convert back to int if small enough (speeds up test13 Pollard Rho from 15s → ~3s)
+Two critical fixes:
 
-Issue #14 assigned to Leo.
+1. **Multi-trailer function calls**: When atom_expr has multiple trailers and the current trailer is a function call but we have a value from a previous trailer, call that value as a function (if it's a FunctionValue).
+
+   Key case: In `visitAtom_expr`, when `trailer->OPEN_PAREN()` and `i > 0`:
+   - Get `currentValue` (the FunctionValue from list indexing or prior function call result)
+   - Look up the actual function in `functions` map
+   - Bind args and execute, injecting capturedLocals if any
+   - Set `currentValue = returnValue`
+
+2. **Tuple unpacking with subscript LHS**: When LHS of `a, b = c, d` has subscript expressions (like `arr[i], arr[j] = ...`):
+   - For each target in LHS, check if it's a subscript (has atom + trailer with `[`)
+   - If so, perform subscript assignment using the corresponding RHS value
+   - Reuse the existing single-subscript assignment logic
+
+**Acceptance Criteria:**
+1. `def make_adder(n): def adder(x): return x+n; return adder; print(make_adder(5)(3))` → `8`
+2. `def add(a,b): return a+b; ops=[add]; print(ops[0](3,4))` → `7`
+3. `arr = [1,2,3]; arr[0], arr[2] = arr[2], arr[0]; print(arr)` → `[3, 2, 1]`
+4. `arr = [5,3,1]; i=0; while i<2: j=0; while j<2-i: if arr[j]>arr[j+1]: arr[j],arr[j+1]=arr[j+1],arr[j]; j+=1; i+=1; print(arr)` → `[1, 3, 5]`
+5. All 16 basic tests still pass
+6. All 20 BigInteger tests still pass
 
 ---
 
@@ -298,6 +138,7 @@ Issue #14 assigned to Leo.
 9. **M25 shows** - scope issues for augmented assignment were breaking global variable modification
 10. **Cycle 15 analysis** - scope fallback missing in READ path (visitAtom) is critical bug
 11. **List semantics** - Python lists are passed by reference; failing to implement this breaks many programs
+12. **M33 analysis** - multi-trailer function calls and tuple unpacking with subscripts are critical for AdvancedTest
 
 ---
 
@@ -343,31 +184,17 @@ Issue #14 assigned to Leo.
 ### Cycle 33 (Athena)
 - Analyzed project state: M31 complete, all BigInteger tests run successfully
 - Test13 (Pollard Rho) takes ~15s - close to 16s OJ limit, at risk of TLE
-- fib(25) takes 7s - exponential recursion very slow in interpreter
 - Float repr in containers still shows 1.000000 instead of 1.0
 - Defined M32: fix float repr in containers + BigInteger downcast optimization
 - Issue #14 created for Leo
-- Submission budget: 13 remaining (of 18)
 
-### Cycle 15 (Athena)
-- Deep code analysis of remaining issues
-- Discovered critical scope fallback bug in visitAtom
-- Discovered function call chaining bug in visitAtom_expr
-- Updated roadmap, defined M26
+### Cycles 34-35 (Ares/Leo + Apollo)
+- M32 implemented and verified (float repr in containers, BigInteger downcast)
+- Test13 now completes in ~5.3s
 
-### Cycles 16-18 (Ares/Leo + Apollo)
-- M26 implemented (scope fallback in visitAtom, function call chaining foo()[0], /= in subscript augmented)
-- M27 implemented (multiple augmented assignments on global variables)
-- Apollo verified both M26 and M27
-
-### Cycle 19 (Athena)
-- Deep code analysis of remaining issues
-- Discovered: list+list broken, list*int crashes, tuple/list equality broken
-- Discovered: nested subscript augmented assignment broken, list pass by reference broken
-- Updated roadmap, defined M28 and M29
-
-### Cycle 20 (Athena)
-- M28 verified complete (PR #19 merged): list+list, list*int, container equality, nested subscript augassign
-- All 16 basic tests PASS, all 20 BigInteger tests PASS
-- Deep analysis: identified list pass-by-reference (M29) and nested function scope (M30) as remaining critical bugs
-- Updated roadmap, defining M29 and M30
+### Cycle 36 (Athena)
+- Deep analysis of remaining bugs
+- Discovered: multi-trailer function calls crash (f(a)(b), ops[0](a)) - affects AdvancedTest
+- Discovered: tuple unpacking with subscript LHS doesn't work (arr[i], arr[j] = ...) - affects sorting
+- Updated roadmap, defining M33
+- OJ submissions budget: 13 remaining
