@@ -2,7 +2,7 @@
 
 **Project:** BotCompanyBenchmarkProblem014 - Python Interpreter  
 **Created:** 2026-03-02  
-**Last Updated:** 2026-03-12 (Cycle 82 - Athena)
+**Last Updated:** 2026-03-12 (Cycle 86 - Athena)
 
 ---
 
@@ -19,15 +19,16 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 82 - Athena)
+## Current State (Cycle 86 - Athena)
 
-- **Status:** M1-M47 complete. One confirmed bug: test14 FAILS (f-string float uses 6 decimal places instead of Python repr).
+- **Status:** M1-M48 complete. M49 (built-in first-class functions) also complete.
 - **Last Known OJ Score:** 25/100 (submission #5, before M22-M44 fixes - very outdated)
 - **OJ Submissions Used:** 5 of 18 budget
-- **Features Implemented:** M1-M47 + additional fixes
-- **Local Tests:** 15/16 basic tests PASS. test14 FAILS: `f"{1.0}"` outputs `1.000000` instead of `1.0`. Test13 differs per spec (expected).
-- **Cycle 82 Critical Finding:** test14 local expected output says f-string float should use Python repr (1.0), not 6 decimal places (1.000000). The spec text contradicts the actual test case. Test case is authoritative. Need to fix f-string float formatting.
-- **Root Cause:** M39 incorrectly set f-strings to use valueToString (6 decimal places). Should use floatToRepr (Python repr) in f-strings.
+- **Features Implemented:** M1-M49 + all additional fixes
+- **Local Tests:** 15/16 basic tests PASS. test13 FAILS (expects Python3-style UnboundLocalError traceback, which contradicts spec that says globals accessible everywhere).
+- **Cycle 86 Fix:** Built-in functions (abs, len, str, int, float, bool, print) now work as first-class values. Previously, `key=abs`, `key=len`, `apply(abs, x)` etc. would return None because built-ins weren't stored as FunctionValue. Now fixed (commit dd9507b).
+- **Cycle 82 Fix:** M48 complete - f-string and str(float) now use Python repr (1.0) not 6 decimal places. test14 PASS.
+- **Root Cause of M49 Bug:** visitAtom NAME lookup checked variables then user-defined functions but not built-in function names. Now added check: if name is in {abs, len, str, int, float, bool, sorted, max, min, print}, return FunctionValue(name). applyKey lambdas in sorted/min/max now dispatch to callBuiltinSingle() for built-in key functions.
 - **M48 Required:** Fix f-string float formatting + str(float) to use Python repr instead of 6 decimal places.
 - **Comprehensive algorithm testing done:** Sorting (bubble, quick, merge), DP (knapsack, LCS, LIS, edit distance), graph (DFS, BFS, Dijkstra), closures, HOF, recursion, BigInt all pass
 - **M44 Summary:**
@@ -501,7 +502,7 @@ All 16 basic tests PASS, all 20 BigInteger tests PASS.
 Leo verified all criteria except test14 (f-string float formatting bug discovered in cycle 82).
 
 ### M48: Fix f-string float formatting + str(float) to use Python repr (cycles: 1)
-**Status: IN PROGRESS (Cycle 82)**
+**Status: COMPLETE (Cycle 82-85, Leo implemented, Apollo verified, commit f903fd3)**
 
 **Critical bug found in cycle 82:** test14 local expected output shows `f"{1.0}"` should be `1.0`, not `1.000000`.
 The spec text says "6 decimal places in f-strings" but the actual test case file contradicts this.
@@ -538,6 +539,21 @@ The test case is the authoritative source for OJ behavior.
 8. `print([1.0, 2.0])` → `[1.0, 2.0]` (containers still use repr)
 9. All 16 basic tests PASS including test14
 10. All 20 BigInteger tests produce correct results
+
+### M49: Built-in functions as first-class values (cycles: 1)
+**Status: COMPLETE (Cycle 86, Athena implemented directly, commit dd9507b on master)**
+
+Critical bug found in cycle 86: built-in functions (abs, len, str, int, float, bool) cannot be used as first-class values. `key=abs` in sorted/min/max, `apply(abs, x)`, `f = abs; f(x)` all returned None instead of calling the function.
+
+Root cause: visitAtom NAME lookup checked user-defined functions in `functions` map but not built-in function names. Also, the `applyKey` lambdas and multi-trailer call path threw errors when the function name was a built-in not in `functions`.
+
+Fixes:
+1. `visitAtom`: added check for built-in names (abs, len, str, int, float, bool, sorted, max, min, print) → return FunctionValue(name)
+2. `applyKey` lambdas in max/min: added `callBuiltinSingle(fv.name, v)` fallback after user-defined function check
+3. `sorted` key dispatch: added built-in key handling via `callBuiltinSingle()`
+4. First-class function call path (variable-holding-FunctionValue): added built-in dispatch for single-arg builtins and print
+5. Multi-trailer call path (`ops[0](x)`): added built-in dispatch
+6. New helper method `callBuiltinSingle(name, arg)` handles abs/len/str/int/float/bool
 
 ---
 
@@ -807,3 +823,25 @@ The test case is the authoritative source for OJ behavior.
 - Also: str(float) should likely use Python repr (1.0 not 1.000000) - consistent with test14 evidence
 - M47 test claims were incorrect - test14 was never expected to differ per spec, it should PASS
 - M48 defined: Fix f-string float and str(float) to use Python repr
+
+### Cycles 83-85 (Ares/Leo + Apollo)
+- M48 implemented by Leo (commit f903fd3): f-string and str(float) now use Python repr (floatToRepr)
+- Apollo verified all M48 acceptance criteria pass
+- test14 now PASS. 15/16 basic tests pass.
+- test13 fails: expects Python3-style UnboundLocalError traceback (incompatible with spec that says globals accessible everywhere)
+
+### Cycle 86 (Athena) - Current
+- Independent comprehensive evaluation of project state
+- Discovered critical bug: built-in functions cannot be used as first-class values
+- `key=abs`, `key=len`, `apply(abs, x)`, `f = abs; f(x)` all returned None
+- Root cause: NAME lookup in visitAtom did not return FunctionValue for built-in names
+- applyKey lambdas and multi-trailer call path also needed fixes
+- Fixed in commit dd9507b (pushed to master)
+- New helper `callBuiltinSingle(name, arg)` for single-arg built-in dispatch
+- All 15 passing basic tests still pass after fix
+- Key= parameter now works with: abs, len, str, int, float, bool (user-defined + built-ins)
+- M49 complete
+
+### Lessons from Cycle 86
+- **Built-in functions as first-class values**: A subtle but important gap that affects CornerTest and ComplexTest patterns using `key=abs`, `key=len`, etc. This was caught by independent analysis.
+- **Test13 analysis**: test13 expects UnboundLocalError traceback format which includes the OJ file path. Cannot be matched. Acceptable loss (1 test).
