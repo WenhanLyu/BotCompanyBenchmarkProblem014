@@ -196,10 +196,18 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                 } else if (op == "//=") {
                                     if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
                                         newVal = pythonFloorDiv(std::get<int>(currentVal), std::get<int>(rightVal));
+                                    } else if (std::holds_alternative<double>(currentVal) || std::holds_alternative<double>(rightVal)) {
+                                        double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) : static_cast<double>(std::get<int>(currentVal));
+                                        double r = std::holds_alternative<double>(rightVal) ? std::get<double>(rightVal) : static_cast<double>(std::get<int>(rightVal));
+                                        newVal = std::floor(l / r);
                                     } else { newVal = currentVal; }
                                 } else if (op == "%=") {
                                     if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
                                         newVal = pythonModulo(std::get<int>(currentVal), std::get<int>(rightVal));
+                                    } else if (std::holds_alternative<double>(currentVal) || std::holds_alternative<double>(rightVal)) {
+                                        double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) : static_cast<double>(std::get<int>(currentVal));
+                                        double r = std::holds_alternative<double>(rightVal) ? std::get<double>(rightVal) : static_cast<double>(std::get<int>(rightVal));
+                                        newVal = l - std::floor(l / r) * r;
                                     } else { newVal = currentVal; }
                                 } else { newVal = currentVal; }
                                 (*innerList.elements)[idx2] = newVal;
@@ -298,7 +306,12 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                     BigInteger l = std::holds_alternative<BigInteger>(currentVal) ? std::get<BigInteger>(currentVal) : BigInteger(std::get<int>(currentVal));
                                     BigInteger r = std::holds_alternative<BigInteger>(rightVal) ? std::get<BigInteger>(rightVal) : BigInteger(std::get<int>(rightVal));
                                     newVal = tryDowncastBigInteger(l.floorDiv(r));
-                                } else { newVal = currentVal; }
+                                } else {
+                                    // Float floor division: floor toward -infinity, result is float
+                                    double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) : static_cast<double>(std::get<int>(currentVal));
+                                    double r = std::holds_alternative<double>(rightVal) ? std::get<double>(rightVal) : static_cast<double>(std::get<int>(rightVal));
+                                    newVal = std::floor(l / r);
+                                }
                             } else if (op == "%=") {
                                 if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
                                     int l = std::get<int>(currentVal), r = std::get<int>(rightVal);
@@ -307,7 +320,12 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                     BigInteger l = std::holds_alternative<BigInteger>(currentVal) ? std::get<BigInteger>(currentVal) : BigInteger(std::get<int>(currentVal));
                                     BigInteger r = std::holds_alternative<BigInteger>(rightVal) ? std::get<BigInteger>(rightVal) : BigInteger(std::get<int>(rightVal));
                                     newVal = tryDowncastBigInteger(l % r);
-                                } else { newVal = currentVal; }
+                                } else {
+                                    // Float modulo: a - floor(a/b)*b, result is float
+                                    double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) : static_cast<double>(std::get<int>(currentVal));
+                                    double r = std::holds_alternative<double>(rightVal) ? std::get<double>(rightVal) : static_cast<double>(std::get<int>(rightVal));
+                                    newVal = l - std::floor(l / r) * r;
+                                }
                             } else if (op == "/=") {
                                 double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) :
                                            (std::holds_alternative<int>(currentVal) ? static_cast<double>(std::get<int>(currentVal)) :
@@ -554,7 +572,8 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                 } else {
                     double left = std::holds_alternative<double>(currentValue) ? std::get<double>(currentValue) : static_cast<double>(std::get<int>(currentValue));
                     double right = std::holds_alternative<double>(rightValue) ? std::get<double>(rightValue) : static_cast<double>(std::get<int>(rightValue));
-                    result = pythonFloorDiv(static_cast<int>(left), static_cast<int>(right));
+                    // Float floor division: floor toward -infinity, result is float
+                    result = std::floor(left / right);
                 }
             } else if (op == "%=") {
                 // Modulo
@@ -579,7 +598,8 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                 } else {
                     double left = std::holds_alternative<double>(currentValue) ? std::get<double>(currentValue) : static_cast<double>(std::get<int>(currentValue));
                     double right = std::holds_alternative<double>(rightValue) ? std::get<double>(rightValue) : static_cast<double>(std::get<int>(rightValue));
-                    result = pythonModulo(static_cast<int>(left), static_cast<int>(right));
+                    // Float modulo: a - floor(a/b)*b, result is float
+                    result = left - std::floor(left / right) * right;
                 }
             }
             
@@ -648,10 +668,13 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
             if (valueAny.has_value()) {
                 try {
                     Value value = std::any_cast<Value>(valueAny);
-                    // If the value is a TupleValue AND we have multiple vars on LHS, unpack it
+                    // If the value is a TupleValue or ListValue AND we have multiple vars on LHS, unpack it
                     if (needsUnpacking && std::holds_alternative<TupleValue>(value)) {
                         TupleValue tuple = std::get<TupleValue>(value);
                         values = tuple.elements;
+                    } else if (needsUnpacking && std::holds_alternative<ListValue>(value)) {
+                        ListValue lst = std::get<ListValue>(value);
+                        values = *lst.elements;
                     } else {
                         // Single value or no unpacking needed - keep as-is
                         values.push_back(value);
@@ -2444,9 +2467,11 @@ std::any EvalVisitor::visitTerm(Python3Parser::TermContext *ctx) {
             if (op == "*") {
                 result = left * right;
             } else if (op == "//") {
-                result = pythonFloorDiv(static_cast<int>(left), static_cast<int>(right));
+                // Float floor division: floor toward -infinity, result is float
+                result = std::floor(left / right);
             } else if (op == "%") {
-                result = pythonModulo(static_cast<int>(left), static_cast<int>(right));
+                // Float modulo: a - floor(a/b)*b, result is float
+                result = left - std::floor(left / right) * right;
             }
         }
     }
