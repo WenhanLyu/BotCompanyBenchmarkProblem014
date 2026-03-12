@@ -463,14 +463,13 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                 } else if (std::holds_alternative<std::string>(currentValue) && std::holds_alternative<std::string>(rightValue)) {
                     result = std::get<std::string>(currentValue) + std::get<std::string>(rightValue);
                 } else if (std::holds_alternative<ListValue>(currentValue) && std::holds_alternative<ListValue>(rightValue)) {
-                    // List concatenation: a += [x] appends elements
-                    const ListValue& lhs = std::get<ListValue>(currentValue);
+                    // List concatenation: extend in-place so caller's list is modified
+                    ListValue& lhs = std::get<ListValue>(currentValue);
                     const ListValue& rhs = std::get<ListValue>(rightValue);
-                    std::vector<Value> newElems = *lhs.elements;
                     for (const auto& elem : *rhs.elements) {
-                        newElems.push_back(elem);
+                        lhs.elements->push_back(elem);
                     }
-                    result = ListValue(newElems);
+                    result = lhs;  // Same shared_ptr - caller's list is modified
                 }
             } else if (op == "-=") {
                 if (std::holds_alternative<BigInteger>(currentValue) || std::holds_alternative<BigInteger>(rightValue)) {
@@ -532,17 +531,19 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                     }
                     result = repeated;
                 } else if (std::holds_alternative<ListValue>(currentValue) && std::holds_alternative<int>(rightValue)) {
-                    // List repetition: a *= 3 repeats elements 3 times
-                    const ListValue& lst = std::get<ListValue>(currentValue);
+                    // List repetition: modify in-place so caller's list is modified
+                    ListValue& lst = std::get<ListValue>(currentValue);
                     int count = std::get<int>(rightValue);
-                    std::vector<Value> newElems;
-                    newElems.reserve(lst.elements->size() * (count > 0 ? count : 0));
+                    // Snapshot original elements before we modify
+                    std::vector<Value> original = *lst.elements;
+                    lst.elements->clear();
+                    lst.elements->reserve(original.size() * (count > 0 ? count : 0));
                     for (int i = 0; i < count; i++) {
-                        for (const auto& elem : *lst.elements) {
-                            newElems.push_back(elem);
+                        for (const auto& elem : original) {
+                            lst.elements->push_back(elem);
                         }
                     }
-                    result = ListValue(newElems);
+                    result = lst;  // Same shared_ptr
                 }
             } else if (op == "/=") {
                 // Division always returns double
@@ -1344,6 +1345,10 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                                     strResult = Value(std::get<bool>(val) ? std::string("True") : std::string("False"));
                                 } else if (std::holds_alternative<BigInteger>(val)) {
                                     strResult = Value(std::get<BigInteger>(val).toString());
+                                } else if (std::holds_alternative<ListValue>(val)) {
+                                    strResult = Value(valueToRepr(val));
+                                } else if (std::holds_alternative<TupleValue>(val)) {
+                                    strResult = Value(valueToRepr(val));
                                 } else if (std::holds_alternative<std::monostate>(val)) {
                                     strResult = Value(std::string("None"));
                                 }
