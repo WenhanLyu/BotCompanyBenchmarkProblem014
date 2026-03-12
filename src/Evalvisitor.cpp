@@ -1313,8 +1313,10 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                                 } else if (std::holds_alternative<int>(val)) {
                                     strResult = Value(std::to_string(std::get<int>(val)));
                                 } else if (std::holds_alternative<double>(val)) {
-                                    // Use floatToRepr for Python-style float representation (e.g. 3.14 not 3.140000)
-                                    strResult = Value(floatToRepr(std::get<double>(val)));
+                                    // Use 6 decimal places per grammar spec section 8.5
+                                    std::ostringstream oss;
+                                    oss << std::fixed << std::setprecision(6) << std::get<double>(val);
+                                    strResult = Value(oss.str());
                                 } else if (std::holds_alternative<bool>(val)) {
                                     strResult = Value(std::get<bool>(val) ? std::string("True") : std::string("False"));
                                 } else if (std::holds_alternative<BigInteger>(val)) {
@@ -2134,12 +2136,8 @@ std::any EvalVisitor::visitFormat_string(Python3Parser::Format_stringContext *ct
             if (exprValue.has_value()) {
                 try {
                     Value val = std::any_cast<Value>(exprValue);
-                    // For doubles, use Python-style repr (e.g. 1.0, 3.14) not 6 decimal places
-                    if (std::holds_alternative<double>(val)) {
-                        result += floatToRepr(std::get<double>(val));
-                    } else {
-                        result += valueToString(val);
-                    }
+                    // Use valueToString which applies std::fixed setprecision(6) for doubles per spec section 8.5
+                    result += valueToString(val);
                 } catch (...) {
                     // If conversion fails, skip
                 }
