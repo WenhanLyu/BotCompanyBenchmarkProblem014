@@ -2,7 +2,7 @@
 
 **Project:** BotCompanyBenchmarkProblem014 - Python Interpreter  
 **Created:** 2026-03-02  
-**Last Updated:** 2026-03-12 (Cycle 39 - Athena)
+**Last Updated:** 2026-03-12 (Cycle 40 - Athena)
 
 ---
 
@@ -19,52 +19,36 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 39)
+## Current State (Cycle 40)
 
-- **Status:** M33 complete (merged). Multi-trailer function calls and tuple unpacking with subscript LHS working.
-- **Last Known OJ Score:** 25/100 (submission #5, before M22-M33 fixes)
+- **Status:** M34 complete (merged). print sep/end kwargs, f-string float repr, len() all fixed.
+- **Last Known OJ Score:** 25/100 (submission #5, before M22-M34 fixes)
 - **OJ Submissions Used:** 5 of 18 budget
-- **Features Implemented:** M1-M33
+- **Features Implemented:** M1-M34
 - **Local Tests:** All basic and BigInteger tests run without crash
 
-## Critical Bugs Found (Cycle 39 Analysis)
+## Critical Bugs Found (Cycle 40 Analysis)
 
-### Bug A: `print(sep=...)` and `print(end=...)` Broken (CRITICAL for Sample tests)
+### Bug A: `abs()` Not Implemented (CRITICAL for AdvancedTest)
 
-`print` keyword arguments `sep` and `end` are not handled. When called with these kwargs:
-- The positional args still print, but each keyword arg (`sep`, `end`) is also evaluated as a positional arg (its name `sep`/`end` resolves to `None`) and printed
-- The sep/end values are ignored entirely
+`abs(x)` returns `None` for all inputs. This built-in is commonly used in algorithms.
 
-**Examples that fail:**
-```python
-print(1, 2, 3, sep=", ")  # prints "1 2 3 None" instead of "1, 2, 3"
-print("x", end="!")        # prints "x None\n" instead of "x!"
-```
+**Fix needed:** Add `abs` handler in `visitAtom_expr` that returns the absolute value of int, BigInteger, float, or bool.
 
-**Root cause:** In `visitAtom_expr` print handler (around line 1040), the code loops through all args and tries to print them. For keyword args (tests.size()==2), it prints tests[0] which is the name "sep" or "end", which evaluates to None.
+### Bug B: `max()` / `min()` Not Implemented (CRITICAL for AdvancedTest)
 
-**Fix needed:** 
-1. Parse all args, separating positional args from keyword args (sep, end)
-2. For keyword args: extract the value from tests[1]
-3. Print positional args joined by `sep` (default " "), then print `end` (default "\n")
+`max(a, b, c...)` and `min(a, b, c...)` return `None`. These are commonly used in algorithms.
 
-### Bug B: F-string Float Formatting Wrong (CRITICAL for Sample tests)
+**Fix needed:** Add `max` and `min` handlers in `visitAtom_expr` that return the maximum/minimum of multiple arguments (at least 2 args, possibly also with list arg).
 
-Inside f-strings, floats show 6 decimal places instead of Python repr.
-```python
-print(f"{1.0}")    # prints "1.000000" instead of "1.0"
-print(f"{3.14}")   # prints "3.140000" instead of "3.14"
-```
+### Bug C: `bool()` Does Not Handle ListValue/TupleValue
 
-**Root cause:** In `visitFormat_string`, when converting expression values to strings with `valueToString()`, floats use 6-decimal-place fixed format. It should use `floatToRepr()` instead.
+`bool([0])` returns `False` (wrong - should be `True` since non-empty list).
+`bool((0,))` returns `False` (wrong - should be `True` since non-empty tuple).
 
-**Fix needed:** In `visitFormat_string` around line 1829, change `result += valueToString(val)` to use floatToRepr for doubles specifically (or add a `valueToFStrRepr` function that uses floatToRepr for doubles).
+**Root cause:** In `visitAtom_expr` bool() handler, only int/float/string/bool/BigInteger/None are handled. ListValue and TupleValue are not handled.
 
-### Bug C: `len()` Not Implemented (CRITICAL for AdvancedTest)
-
-`len(x)` returns `None` for all inputs (lists, strings, tuples).
-
-**Fix needed:** Add `len` handler in `visitAtom_expr`, similar to `int()`, `str()`, `bool()` handlers. Return size of list, string, or tuple.
+**Fix needed:** Add ListValue and TupleValue cases to the bool() handler: return `true` if non-empty, `false` if empty.
 
 ---
 
@@ -98,7 +82,43 @@ Allow Python functions to be used as first-class values: passed as arguments, st
 All acceptance tests passed. Commit `4c2289b` on master.
 
 ### M34: print() sep/end kwargs + F-string float repr + len() (cycles: 2)
+**Status: COMPLETE (Cycle 41, Apollo verified)**
+
+### M35: abs() + max() + min() built-ins + bool() fix (cycles: 2)
 **Status: READY TO START**
+
+Four changes needed:
+
+1. **`abs(x)` built-in**: Returns absolute value. Handle int (and BigInteger), float, bool types.
+   - `abs(-5)` → `5`, `abs(3)` → `3`, `abs(-3.14)` → `3.14`
+   - `abs(-big_integer)` → positive big integer
+   
+2. **`max(a, b, ...)` built-in**: Returns maximum of 2+ args using Python comparison.
+   - `max(1, 2, 3)` → `3`
+   - `max(3)` → `3` (single arg, return it)
+   - Should handle int, BigInteger, float, str comparison
+   
+3. **`min(a, b, ...)` built-in**: Returns minimum of 2+ args using Python comparison.
+   - `min(1, 2, 3)` → `1`
+   - `min(3)` → `3` (single arg, return it)
+   
+4. **`bool()` fix for ListValue/TupleValue**: `bool([0])` returns `False` (wrong, should be `True`).
+   - Add ListValue case: return `true` if non-empty, `false` if empty
+   - Add TupleValue case: return `true` if non-empty, `false` if empty
+
+**Acceptance Criteria:**
+1. `print(abs(-5))` → `5`
+2. `print(abs(3))` → `3`
+3. `print(abs(-3.14))` → `3.140000`
+4. `print(max(1, 2, 3))` → `3`
+5. `print(max(5, 1))` → `5`
+6. `print(min(1, 2, 3))` → `1`
+7. `print(min(5, 1))` → `1`
+8. `print(bool([0]))` → `True`
+9. `print(bool([]))` → `False`
+10. `print(bool((0,)))` → `True`
+11. All 16 basic tests still pass
+12. All 20 BigInteger tests still pass
 
 Three bugs that likely affect Sample tests (21-34) and AdvancedTest (35-52):
 
@@ -140,6 +160,7 @@ Three bugs that likely affect Sample tests (21-34) and AdvancedTest (35-52):
 11. **List semantics** - Python lists are passed by reference; failing to implement this breaks many programs
 12. **M33 analysis** - multi-trailer function calls and tuple unpacking with subscripts are critical for AdvancedTest
 13. **M34 analysis** - print sep/end kwargs and f-string float repr are Sample test blockers; len() is missing
+14. **M35 analysis** - abs(), max(), min() are critical missing built-ins; bool() has bug with list/tuple args
 
 ---
 
@@ -210,4 +231,15 @@ Three bugs that likely affect Sample tests (21-34) and AdvancedTest (35-52):
 - Discovered: f-string float shows 6 decimal places instead of Python repr
 - Discovered: len() not implemented
 - Updated roadmap, defining M34
+- OJ submissions budget: 13 remaining
+
+### Cycles 40-41 (Ares/Leo + Apollo)
+- M34 implemented and verified (print sep/end, f-string float repr, len())
+- All 11 acceptance tests pass
+
+### Cycle 40 (Athena - this cycle)
+- Deep analysis of remaining bugs
+- Discovered: abs(), max(), min() not implemented (critical for algorithm tests)
+- Discovered: bool() built-in doesn't handle ListValue/TupleValue (bug - returns False for non-empty containers)
+- Updated roadmap, defining M35
 - OJ submissions budget: 13 remaining
