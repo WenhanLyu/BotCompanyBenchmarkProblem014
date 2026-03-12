@@ -100,31 +100,31 @@ private:
 
 STRING: STRING_LITERAL | BYTES_LITERAL;
 
-NUMBER: INTEGER | FLOAT_NUMBER | IMAG_NUMBER;
+NUMBER: {format_mode == 0 || expr_mode}? INTEGER | FLOAT_NUMBER | IMAG_NUMBER;
 
 INTEGER:
-	DECIMAL_INTEGER
+	{format_mode == 0 || expr_mode}? DECIMAL_INTEGER
 	| OCT_INTEGER
 	| HEX_INTEGER
 	| BIN_INTEGER;
 
-DEF: 'def';
-RETURN: 'return';
-IF: 'if';
-ELIF: 'elif';
-ELSE: 'else';
-WHILE: 'while';
-FOR: 'for';
-IN: 'in';
-OR: 'or';
-AND: 'and';
-NOT: 'not';
-NONE: 'None';
-TRUE: 'True';
-FALSE: 'False';
-CONTINUE: 'continue';
-BREAK: 'break';
-GLOBAL: 'global';
+DEF: {format_mode == 0 || expr_mode}? 'def';
+RETURN: {format_mode == 0 || expr_mode}? 'return';
+IF: {format_mode == 0 || expr_mode}? 'if';
+ELIF: {format_mode == 0 || expr_mode}? 'elif';
+ELSE: {format_mode == 0 || expr_mode}? 'else';
+WHILE: {format_mode == 0 || expr_mode}? 'while';
+FOR: {format_mode == 0 || expr_mode}? 'for';
+IN: {format_mode == 0 || expr_mode}? 'in';
+OR: {format_mode == 0 || expr_mode}? 'or';
+AND: {format_mode == 0 || expr_mode}? 'and';
+NOT: {format_mode == 0 || expr_mode}? 'not';
+NONE: {format_mode == 0 || expr_mode}? 'None';
+TRUE: {format_mode == 0 || expr_mode}? 'True';
+FALSE: {format_mode == 0 || expr_mode}? 'False';
+CONTINUE: {format_mode == 0 || expr_mode}? 'continue';
+BREAK: {format_mode == 0 || expr_mode}? 'break';
+GLOBAL: {format_mode == 0 || expr_mode}? 'global';
 
 NEWLINE: (
 		{atStartOfInput()}? SPACES
@@ -165,7 +165,7 @@ NEWLINE: (
 };
 
 /// identifier   ::=  id_start id_continue*
-NAME: ID_START ID_CONTINUE*;
+NAME: {format_mode == 0 || expr_mode}? ID_START ID_CONTINUE*;
 
 /// stringliteral ::= [stringprefix](shortstring | longstring) / stringprefix ::= "r" | "u" | "R" |
 // "U" | "f" | "F" / | "fr" | "Fr" | "fR" | "FR" | "rf" | "rF" | "Rf" | "RF"

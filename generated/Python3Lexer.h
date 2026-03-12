@@ -165,7 +165,27 @@ private:
   void QUOTATIONAction(antlr4::RuleContext *context, size_t actionIndex);
 
   // Individual semantic predicate functions triggered by sempred() above.
+  bool NUMBERSempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
+  bool INTEGERSempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
+  bool DEFSempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
+  bool RETURNSempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
+  bool IFSempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
+  bool ELIFSempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
+  bool ELSESempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
+  bool WHILESempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
+  bool FORSempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
+  bool INSempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
+  bool ORSempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
+  bool ANDSempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
+  bool NOTSempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
+  bool NONESempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
+  bool TRUESempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
+  bool FALSESempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
+  bool CONTINUESempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
+  bool BREAKSempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
+  bool GLOBALSempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
   bool NEWLINESempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
+  bool NAMESempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
   bool STRING_LITERALSempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
   bool FORMAT_STRING_LITERALSempred(antlr4::RuleContext *_localctx, size_t predicateIndex);
   bool QUOTATIONSempred(antlr4::RuleContext *_localctx, size_t predicateIndex);

@@ -2,7 +2,6 @@
 // Generated from resources/Python3Parser.g4 by ANTLR 4.13.2
 
 
-#include "Python3ParserListener.h"
 #include "Python3ParserVisitor.h"
 
 #include "Python3Parser.h"
@@ -284,18 +283,6 @@ size_t Python3Parser::File_inputContext::getRuleIndex() const {
   return Python3Parser::RuleFile_input;
 }
 
-void Python3Parser::File_inputContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterFile_input(this);
-}
-
-void Python3Parser::File_inputContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitFile_input(this);
-}
-
 
 std::any Python3Parser::File_inputContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -407,18 +394,6 @@ size_t Python3Parser::FuncdefContext::getRuleIndex() const {
   return Python3Parser::RuleFuncdef;
 }
 
-void Python3Parser::FuncdefContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterFuncdef(this);
-}
-
-void Python3Parser::FuncdefContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitFuncdef(this);
-}
-
 
 std::any Python3Parser::FuncdefContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -482,18 +457,6 @@ Python3Parser::TypedargslistContext* Python3Parser::ParametersContext::typedargs
 
 size_t Python3Parser::ParametersContext::getRuleIndex() const {
   return Python3Parser::RuleParameters;
-}
-
-void Python3Parser::ParametersContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterParameters(this);
-}
-
-void Python3Parser::ParametersContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitParameters(this);
 }
 
 
@@ -584,18 +547,6 @@ size_t Python3Parser::TypedargslistContext::getRuleIndex() const {
   return Python3Parser::RuleTypedargslist;
 }
 
-void Python3Parser::TypedargslistContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTypedargslist(this);
-}
-
-void Python3Parser::TypedargslistContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTypedargslist(this);
-}
-
 
 std::any Python3Parser::TypedargslistContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -678,18 +629,6 @@ size_t Python3Parser::TfpdefContext::getRuleIndex() const {
   return Python3Parser::RuleTfpdef;
 }
 
-void Python3Parser::TfpdefContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTfpdef(this);
-}
-
-void Python3Parser::TfpdefContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTfpdef(this);
-}
-
 
 std::any Python3Parser::TfpdefContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -741,18 +680,6 @@ Python3Parser::Compound_stmtContext* Python3Parser::StmtContext::compound_stmt()
 
 size_t Python3Parser::StmtContext::getRuleIndex() const {
   return Python3Parser::RuleStmt;
-}
-
-void Python3Parser::StmtContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterStmt(this);
-}
-
-void Python3Parser::StmtContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitStmt(this);
 }
 
 
@@ -842,18 +769,6 @@ size_t Python3Parser::Simple_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleSimple_stmt;
 }
 
-void Python3Parser::Simple_stmtContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterSimple_stmt(this);
-}
-
-void Python3Parser::Simple_stmtContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitSimple_stmt(this);
-}
-
 
 std::any Python3Parser::Simple_stmtContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -911,18 +826,6 @@ Python3Parser::Global_stmtContext* Python3Parser::Small_stmtContext::global_stmt
 
 size_t Python3Parser::Small_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleSmall_stmt;
-}
-
-void Python3Parser::Small_stmtContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterSmall_stmt(this);
-}
-
-void Python3Parser::Small_stmtContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitSmall_stmt(this);
 }
 
 
@@ -1025,18 +928,6 @@ tree::TerminalNode* Python3Parser::Expr_stmtContext::ASSIGN(size_t i) {
 
 size_t Python3Parser::Expr_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleExpr_stmt;
-}
-
-void Python3Parser::Expr_stmtContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterExpr_stmt(this);
-}
-
-void Python3Parser::Expr_stmtContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitExpr_stmt(this);
 }
 
 
@@ -1145,18 +1036,6 @@ size_t Python3Parser::AugassignContext::getRuleIndex() const {
   return Python3Parser::RuleAugassign;
 }
 
-void Python3Parser::AugassignContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAugassign(this);
-}
-
-void Python3Parser::AugassignContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAugassign(this);
-}
-
 
 std::any Python3Parser::AugassignContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -1221,18 +1100,6 @@ Python3Parser::Return_stmtContext* Python3Parser::Flow_stmtContext::return_stmt(
 
 size_t Python3Parser::Flow_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleFlow_stmt;
-}
-
-void Python3Parser::Flow_stmtContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterFlow_stmt(this);
-}
-
-void Python3Parser::Flow_stmtContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitFlow_stmt(this);
 }
 
 
@@ -1308,18 +1175,6 @@ size_t Python3Parser::Break_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleBreak_stmt;
 }
 
-void Python3Parser::Break_stmtContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterBreak_stmt(this);
-}
-
-void Python3Parser::Break_stmtContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitBreak_stmt(this);
-}
-
 
 std::any Python3Parser::Break_stmtContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -1367,18 +1222,6 @@ tree::TerminalNode* Python3Parser::Continue_stmtContext::CONTINUE() {
 
 size_t Python3Parser::Continue_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleContinue_stmt;
-}
-
-void Python3Parser::Continue_stmtContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterContinue_stmt(this);
-}
-
-void Python3Parser::Continue_stmtContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitContinue_stmt(this);
 }
 
 
@@ -1432,18 +1275,6 @@ Python3Parser::TestlistContext* Python3Parser::Return_stmtContext::testlist() {
 
 size_t Python3Parser::Return_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleReturn_stmt;
-}
-
-void Python3Parser::Return_stmtContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterReturn_stmt(this);
-}
-
-void Python3Parser::Return_stmtContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitReturn_stmt(this);
 }
 
 
@@ -1521,18 +1352,6 @@ size_t Python3Parser::Global_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleGlobal_stmt;
 }
 
-void Python3Parser::Global_stmtContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterGlobal_stmt(this);
-}
-
-void Python3Parser::Global_stmtContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitGlobal_stmt(this);
-}
-
 
 std::any Python3Parser::Global_stmtContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -1603,18 +1422,6 @@ Python3Parser::FuncdefContext* Python3Parser::Compound_stmtContext::funcdef() {
 
 size_t Python3Parser::Compound_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleCompound_stmt;
-}
-
-void Python3Parser::Compound_stmtContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterCompound_stmt(this);
-}
-
-void Python3Parser::Compound_stmtContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitCompound_stmt(this);
 }
 
 
@@ -1726,18 +1533,6 @@ size_t Python3Parser::If_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleIf_stmt;
 }
 
-void Python3Parser::If_stmtContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterIf_stmt(this);
-}
-
-void Python3Parser::If_stmtContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitIf_stmt(this);
-}
-
 
 std::any Python3Parser::If_stmtContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -1834,18 +1629,6 @@ size_t Python3Parser::While_stmtContext::getRuleIndex() const {
   return Python3Parser::RuleWhile_stmt;
 }
 
-void Python3Parser::While_stmtContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterWhile_stmt(this);
-}
-
-void Python3Parser::While_stmtContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitWhile_stmt(this);
-}
-
 
 std::any Python3Parser::While_stmtContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -1919,18 +1702,6 @@ Python3Parser::StmtContext* Python3Parser::SuiteContext::stmt(size_t i) {
 
 size_t Python3Parser::SuiteContext::getRuleIndex() const {
   return Python3Parser::RuleSuite;
-}
-
-void Python3Parser::SuiteContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterSuite(this);
-}
-
-void Python3Parser::SuiteContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitSuite(this);
 }
 
 
@@ -2030,18 +1801,6 @@ size_t Python3Parser::TestContext::getRuleIndex() const {
   return Python3Parser::RuleTest;
 }
 
-void Python3Parser::TestContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTest(this);
-}
-
-void Python3Parser::TestContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTest(this);
-}
-
 
 std::any Python3Parser::TestContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -2101,18 +1860,6 @@ tree::TerminalNode* Python3Parser::Or_testContext::OR(size_t i) {
 
 size_t Python3Parser::Or_testContext::getRuleIndex() const {
   return Python3Parser::RuleOr_test;
-}
-
-void Python3Parser::Or_testContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterOr_test(this);
-}
-
-void Python3Parser::Or_testContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitOr_test(this);
 }
 
 
@@ -2189,18 +1936,6 @@ size_t Python3Parser::And_testContext::getRuleIndex() const {
   return Python3Parser::RuleAnd_test;
 }
 
-void Python3Parser::And_testContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAnd_test(this);
-}
-
-void Python3Parser::And_testContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAnd_test(this);
-}
-
 
 std::any Python3Parser::And_testContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -2269,18 +2004,6 @@ Python3Parser::ComparisonContext* Python3Parser::Not_testContext::comparison() {
 
 size_t Python3Parser::Not_testContext::getRuleIndex() const {
   return Python3Parser::RuleNot_test;
-}
-
-void Python3Parser::Not_testContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterNot_test(this);
-}
-
-void Python3Parser::Not_testContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitNot_test(this);
 }
 
 
@@ -2373,18 +2096,6 @@ size_t Python3Parser::ComparisonContext::getRuleIndex() const {
   return Python3Parser::RuleComparison;
 }
 
-void Python3Parser::ComparisonContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterComparison(this);
-}
-
-void Python3Parser::ComparisonContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitComparison(this);
-}
-
 
 std::any Python3Parser::ComparisonContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -2468,18 +2179,6 @@ size_t Python3Parser::Comp_opContext::getRuleIndex() const {
   return Python3Parser::RuleComp_op;
 }
 
-void Python3Parser::Comp_opContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterComp_op(this);
-}
-
-void Python3Parser::Comp_opContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitComp_op(this);
-}
-
 
 std::any Python3Parser::Comp_opContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -2550,18 +2249,6 @@ size_t Python3Parser::Arith_exprContext::getRuleIndex() const {
   return Python3Parser::RuleArith_expr;
 }
 
-void Python3Parser::Arith_exprContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterArith_expr(this);
-}
-
-void Python3Parser::Arith_exprContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitArith_expr(this);
-}
-
 
 std::any Python3Parser::Arith_exprContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -2628,18 +2315,6 @@ tree::TerminalNode* Python3Parser::Addorsub_opContext::MINUS() {
 
 size_t Python3Parser::Addorsub_opContext::getRuleIndex() const {
   return Python3Parser::RuleAddorsub_op;
-}
-
-void Python3Parser::Addorsub_opContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAddorsub_op(this);
-}
-
-void Python3Parser::Addorsub_opContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAddorsub_op(this);
 }
 
 
@@ -2711,18 +2386,6 @@ Python3Parser::Muldivmod_opContext* Python3Parser::TermContext::muldivmod_op(siz
 
 size_t Python3Parser::TermContext::getRuleIndex() const {
   return Python3Parser::RuleTerm;
-}
-
-void Python3Parser::TermContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTerm(this);
-}
-
-void Python3Parser::TermContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTerm(this);
 }
 
 
@@ -2800,18 +2463,6 @@ size_t Python3Parser::Muldivmod_opContext::getRuleIndex() const {
   return Python3Parser::RuleMuldivmod_op;
 }
 
-void Python3Parser::Muldivmod_opContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterMuldivmod_op(this);
-}
-
-void Python3Parser::Muldivmod_opContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitMuldivmod_op(this);
-}
-
 
 std::any Python3Parser::Muldivmod_opContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -2880,18 +2531,6 @@ Python3Parser::Atom_exprContext* Python3Parser::FactorContext::atom_expr() {
 
 size_t Python3Parser::FactorContext::getRuleIndex() const {
   return Python3Parser::RuleFactor;
-}
-
-void Python3Parser::FactorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterFactor(this);
-}
-
-void Python3Parser::FactorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitFactor(this);
 }
 
 
@@ -2989,18 +2628,6 @@ size_t Python3Parser::Atom_exprContext::getRuleIndex() const {
   return Python3Parser::RuleAtom_expr;
 }
 
-void Python3Parser::Atom_exprContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAtom_expr(this);
-}
-
-void Python3Parser::Atom_exprContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAtom_expr(this);
-}
-
 
 std::any Python3Parser::Atom_exprContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -3081,18 +2708,6 @@ tree::TerminalNode* Python3Parser::TrailerContext::CLOSE_BRACK() {
 
 size_t Python3Parser::TrailerContext::getRuleIndex() const {
   return Python3Parser::RuleTrailer;
-}
-
-void Python3Parser::TrailerContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTrailer(this);
-}
-
-void Python3Parser::TrailerContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTrailer(this);
 }
 
 
@@ -3223,18 +2838,6 @@ Python3Parser::TestlistContext* Python3Parser::AtomContext::testlist() {
 
 size_t Python3Parser::AtomContext::getRuleIndex() const {
   return Python3Parser::RuleAtom;
-}
-
-void Python3Parser::AtomContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAtom(this);
-}
-
-void Python3Parser::AtomContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAtom(this);
 }
 
 
@@ -3411,18 +3014,6 @@ size_t Python3Parser::Format_stringContext::getRuleIndex() const {
   return Python3Parser::RuleFormat_string;
 }
 
-void Python3Parser::Format_stringContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterFormat_string(this);
-}
-
-void Python3Parser::Format_stringContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitFormat_string(this);
-}
-
 
 std::any Python3Parser::Format_stringContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -3519,18 +3110,6 @@ size_t Python3Parser::TestlistContext::getRuleIndex() const {
   return Python3Parser::RuleTestlist;
 }
 
-void Python3Parser::TestlistContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTestlist(this);
-}
-
-void Python3Parser::TestlistContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTestlist(this);
-}
-
 
 std::any Python3Parser::TestlistContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -3616,18 +3195,6 @@ size_t Python3Parser::ArglistContext::getRuleIndex() const {
   return Python3Parser::RuleArglist;
 }
 
-void Python3Parser::ArglistContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterArglist(this);
-}
-
-void Python3Parser::ArglistContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitArglist(this);
-}
-
 
 std::any Python3Parser::ArglistContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<Python3ParserVisitor*>(visitor))
@@ -3707,18 +3274,6 @@ tree::TerminalNode* Python3Parser::ArgumentContext::ASSIGN() {
 
 size_t Python3Parser::ArgumentContext::getRuleIndex() const {
   return Python3Parser::RuleArgument;
-}
-
-void Python3Parser::ArgumentContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterArgument(this);
-}
-
-void Python3Parser::ArgumentContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<Python3ParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitArgument(this);
 }
 
 
