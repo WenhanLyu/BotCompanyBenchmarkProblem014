@@ -593,23 +593,64 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
             
             // Check if this is tuple unpacking (multiple tests on the left)
             if (tests.size() > 1) {
-                // Tuple unpacking: a, b = expr1, expr2
+                // Tuple unpacking: a, b = expr1, expr2  OR  arr[0], arr[2] = arr[2], arr[0]
                 // Assign each value to the corresponding variable
                 for (size_t j = 0; j < tests.size(); j++) {
-                    std::string varName = tests[j]->getText();
                     Value value = (j < values.size()) ? values[j] : Value(std::monostate{});
                     
-                    // Determine if this variable is local
-                    // If declared global, always use global scope
-                    bool isGlobal = (currentFunctionGlobals.find(varName) != currentFunctionGlobals.end());
-                    bool isLocal = !isGlobal && (currentFunctionLocals != nullptr && 
-                                   currentFunctionLocals->find(varName) != currentFunctionLocals->end());
-                    
-                    // Assign to the appropriate scope
-                    if (isLocal && localVariables != nullptr) {
-                        (*localVariables)[varName] = value;
+                    // Check if this target is a subscript expression (e.g., arr[i])
+                    auto lhsAtomExpr = getAtomExprFromTest(tests[j]);
+                    if (lhsAtomExpr && !lhsAtomExpr->trailer().empty() && 
+                        lhsAtomExpr->trailer(0)->OPEN_BRACK()) {
+                        // Subscript assignment: arr[i] = value
+                        std::string varName = lhsAtomExpr->atom()->getText();
+                        
+                        bool isGlobal = (currentFunctionGlobals.find(varName) != currentFunctionGlobals.end());
+                        Value* varPtr = nullptr;
+                        if (!isGlobal && localVariables != nullptr) {
+                            auto it = localVariables->find(varName);
+                            if (it != localVariables->end()) varPtr = &it->second;
+                        }
+                        if (!varPtr) {
+                            auto it = variables.find(varName);
+                            if (it != variables.end()) varPtr = &it->second;
+                        }
+                        
+                        if (varPtr) {
+                            auto trailers = lhsAtomExpr->trailer();
+                            if (trailers.size() >= 1 && trailers[0]->OPEN_BRACK()) {
+                                auto indexTest = trailers[0]->test();
+                                auto indexAny = visit(indexTest);
+                                Value indexVal = std::any_cast<Value>(indexAny);
+                                int index = std::holds_alternative<int>(indexVal) ? std::get<int>(indexVal) :
+                                            static_cast<int>(std::get<BigInteger>(indexVal).toLongLong());
+                                
+                                if (std::holds_alternative<ListValue>(*varPtr)) {
+                                    ListValue& lst = std::get<ListValue>(*varPtr);
+                                    int size = static_cast<int>(lst.elements->size());
+                                    if (index < 0) index = size + index;
+                                    if (index >= 0 && index < size) {
+                                        (*lst.elements)[index] = value;
+                                    }
+                                }
+                            }
+                        }
                     } else {
-                        variables[varName] = value;
+                        // Simple variable target
+                        std::string varName = tests[j]->getText();
+                        
+                        // Determine if this variable is local
+                        // If declared global, always use global scope
+                        bool isGlobal = (currentFunctionGlobals.find(varName) != currentFunctionGlobals.end());
+                        bool isLocal = !isGlobal && (currentFunctionLocals != nullptr && 
+                                       currentFunctionLocals->find(varName) != currentFunctionLocals->end());
+                        
+                        // Assign to the appropriate scope
+                        if (isLocal && localVariables != nullptr) {
+                            (*localVariables)[varName] = value;
+                        } else {
+                            variables[varName] = value;
+                        }
                     }
                 }
             } else if (!tests.empty()) {
@@ -853,12 +894,147 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
             }
         } else {
             // This is a function call trailer (OPEN_PAREN)
-            // Can only call from the atom directly (position 0)
+            // If i > 0, the "function" is the result of a previous trailer (e.g., ops[0](3,4) or make_adder(5)(3))
             if (i != 0) {
-                throw std::runtime_error("Invalid syntax: cannot call result of subscript as function");
+                // currentValue must hold a FunctionValue to be callable
+                if (!currentValue.has_value()) {
+                    throw std::runtime_error("Cannot call non-callable");
+                }
+                Value calleeVal = std::any_cast<Value>(currentValue);
+                if (!std::holds_alternative<FunctionValue>(calleeVal)) {
+                    throw std::runtime_error("Object is not callable");
+                }
+                const FunctionValue& fv = std::get<FunctionValue>(calleeVal);
+                std::string calleeName = fv.name;
+                const std::map<std::string, Value> capturedLocals = fv.capturedLocals;
+                
+                auto funcIt2 = functions.find(calleeName);
+                if (funcIt2 == functions.end()) {
+                    throw std::runtime_error("Function not found: " + calleeName);
+                }
+                const FunctionDef& funcDef = funcIt2->second;
+                
+                std::vector<Value> positionalArgs;
+                std::map<std::string, Value> keywordArgs;
+                bool seenKeyword = false;
+                
+                auto arglist = trailer->arglist();
+                if (arglist) {
+                    auto args = arglist->argument();
+                    for (auto arg : args) {
+                        auto tests = arg->test();
+                        if (tests.size() == 2) {
+                            seenKeyword = true;
+                            std::string paramName = tests[0]->getText();
+                            auto argValue = visit(tests[1]);
+                            Value val = Value(std::monostate{});
+                            if (argValue.has_value()) {
+                                try { val = std::any_cast<Value>(argValue); } catch (...) {}
+                            }
+                            if (keywordArgs.find(paramName) != keywordArgs.end()) {
+                                throw std::runtime_error("Duplicate keyword argument: " + paramName);
+                            }
+                            keywordArgs[paramName] = val;
+                        } else if (!tests.empty()) {
+                            if (seenKeyword) {
+                                throw std::runtime_error("Positional argument follows keyword argument");
+                            }
+                            auto argValue = visit(tests[0]);
+                            Value val = Value(std::monostate{});
+                            if (argValue.has_value()) {
+                                try { val = std::any_cast<Value>(argValue); } catch (...) {}
+                            }
+                            positionalArgs.push_back(val);
+                        }
+                    }
+                }
+                
+                std::map<std::string, Value> localVars;
+                std::map<std::string, Value>* savedLocalVariables = localVariables;
+                const std::set<std::string>* savedFunctionLocals = currentFunctionLocals;
+                std::set<std::string> savedFunctionGlobals = currentFunctionGlobals;
+                std::map<std::string, Value>* savedEnclosingLocalVariables = enclosingLocalVariables;
+                
+                // Inject captured locals for closure support
+                for (const auto& [k, v] : capturedLocals) {
+                    localVars[k] = v;
+                }
+                
+                enclosingLocalVariables = savedLocalVariables;
+                localVariables = &localVars;
+                currentFunctionLocals = &funcDef.assignedVars;
+                currentFunctionGlobals = funcDef.globalVars;
+                
+                std::set<std::string> boundParams;
+                
+                if (positionalArgs.size() > funcDef.parameters.size()) {
+                    localVariables = savedLocalVariables;
+                    currentFunctionLocals = savedFunctionLocals;
+                    currentFunctionGlobals = savedFunctionGlobals;
+                    enclosingLocalVariables = savedEnclosingLocalVariables;
+                    throw std::runtime_error("Too many positional arguments");
+                }
+                
+                for (size_t pi = 0; pi < positionalArgs.size(); pi++) {
+                    localVars[funcDef.parameters[pi]] = positionalArgs[pi];
+                    boundParams.insert(funcDef.parameters[pi]);
+                }
+                
+                for (const auto& kwarg : keywordArgs) {
+                    const std::string& paramName = kwarg.first;
+                    auto it = std::find(funcDef.parameters.begin(), funcDef.parameters.end(), paramName);
+                    if (it == funcDef.parameters.end()) {
+                        localVariables = savedLocalVariables;
+                        currentFunctionLocals = savedFunctionLocals;
+                        currentFunctionGlobals = savedFunctionGlobals;
+                        enclosingLocalVariables = savedEnclosingLocalVariables;
+                        throw std::runtime_error("Unknown parameter name: " + paramName);
+                    }
+                    if (boundParams.find(paramName) != boundParams.end()) {
+                        localVariables = savedLocalVariables;
+                        currentFunctionLocals = savedFunctionLocals;
+                        currentFunctionGlobals = savedFunctionGlobals;
+                        enclosingLocalVariables = savedEnclosingLocalVariables;
+                        throw std::runtime_error("Parameter " + paramName + " specified multiple times");
+                    }
+                    localVars[paramName] = kwarg.second;
+                    boundParams.insert(paramName);
+                }
+                
+                for (size_t pi = 0; pi < funcDef.parameters.size(); pi++) {
+                    const std::string& paramName = funcDef.parameters[pi];
+                    if (boundParams.find(paramName) == boundParams.end()) {
+                        if (pi < funcDef.defaultValues.size() &&
+                            !std::holds_alternative<std::monostate>(funcDef.defaultValues[pi])) {
+                            localVars[paramName] = funcDef.defaultValues[pi];
+                        } else {
+                            localVariables = savedLocalVariables;
+                            currentFunctionLocals = savedFunctionLocals;
+                            currentFunctionGlobals = savedFunctionGlobals;
+                            enclosingLocalVariables = savedEnclosingLocalVariables;
+                            throw std::runtime_error("Missing required parameter: " + paramName);
+                        }
+                    }
+                }
+                
+                Value returnValue = Value(std::monostate{});
+                try {
+                    visit(funcDef.body);
+                } catch (const ReturnException& e) {
+                    returnValue = e.returnValue;
+                }
+                
+                localVariables = savedLocalVariables;
+                currentFunctionLocals = savedFunctionLocals;
+                currentFunctionGlobals = savedFunctionGlobals;
+                enclosingLocalVariables = savedEnclosingLocalVariables;
+                
+                currentValue = returnValue;
+                isFirstTrailer = false;
+                continue;
             }
             
-            // Get the function name from the atom
+            // Get the function name from the atom (i == 0 case)
             std::string funcName = atom->getText();
         
         // Handle print function
