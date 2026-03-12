@@ -273,8 +273,12 @@ Four critical bugs affecting AdvancedTest, ComplexTest, and CornerTest:
 13. All 16 basic tests still pass
 14. All 20 BigInteger tests still pass
 
-### M40: Fix float floor division and modulo with float operands (cycles: 1)
+### M40: Fix float floor division/modulo + list unpacking in tuple assignment (cycles: 1)
 **Status: PENDING**
+
+Two critical bugs to fix:
+
+**Bug 1: Float floor division and modulo with float operands**
 
 When either operand in `//` or `%` is a float, the result should be a float (Python behavior).
 Currently, the code casts to int before computing, returning wrong results.
@@ -293,7 +297,15 @@ Three locations to fix in Evalvisitor.cpp:
 3. **Subscript augmented assignment `//=` and `%=` (~line 196-203)**:
    Same fix.
 
-Also need to handle bool operands (bool should be treated as float in these operations).
+**Bug 2: List unpacking in tuple assignment**
+
+When `a, b, c = list_value` (a list instead of tuple), it should unpack like a tuple.
+Currently only TupleValue is unpacked; ListValue is assigned to the first variable unchanged.
+
+Location: visitExpr_stmt() ~line 652:
+Change: `if (needsUnpacking && std::holds_alternative<TupleValue>(value)) {`
+To: `if (needsUnpacking && (std::holds_alternative<TupleValue>(value) || std::holds_alternative<ListValue>(value))) {`
+Then handle both TupleValue (use tuple.elements) and ListValue (use *list.elements).
 
 **Acceptance Criteria:**
 1. `print(7.5 // 2)` → `3.000000`
@@ -308,8 +320,10 @@ Also need to handle bool operands (bool should be treated as float in these oper
 10. `x = 7; x //= 2.5; print(x)` → `2.000000`
 11. `x = 7.5; x %= 2; print(x)` → `1.500000`
 12. `a = [7.5]; a[0] //= 2; print(a[0])` → `3.000000`
-13. All 16 basic tests still pass
-14. All 20 BigInteger tests still pass
+13. `x, y, z = [1, 2, 3]; print(x, y, z)` → `1 2 3`
+14. `x, y = sorted([3, 1]); print(x, y)` → `1 3`
+15. All 16 basic tests still pass
+16. All 20 BigInteger tests still pass
 
 ### M36: list/tuple ordering comparison + list augmented assignment + sorted() (cycles: 2)
 **Status: COMPLETE (PR #25, merged)**
