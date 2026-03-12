@@ -137,6 +137,7 @@ private:
     struct FunctionDef {
         std::vector<std::string> parameters;  // Parameter names
         std::vector<Value> defaultValues;      // Default values (aligned with parameters, None if no default)
+        size_t numDefaultParams = 0;           // Number of parameters that have defaults (at the end)
         Python3Parser::SuiteContext* body;     // Function body (suite)
         std::set<std::string> assignedVars;    // Variables assigned in function (local vars)
         std::set<std::string> globalVars;      // Variables declared with global keyword
