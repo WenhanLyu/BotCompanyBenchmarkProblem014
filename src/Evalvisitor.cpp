@@ -1525,11 +1525,23 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
             if (arglist) {
                 auto args = arglist->argument();
                 if (!args.empty()) {
-                    // Evaluate all arguments
+                    // Separate positional args from keyword args (specifically key=)
                     std::vector<Value> vals;
+                    Value keyFunc = Value(std::monostate{});  // None = no key function
+                    
                     for (auto arg : args) {
                         auto tests = arg->test();
-                        if (!tests.empty()) {
+                        if (tests.size() == 2) {
+                            // Keyword argument: check if it's key=
+                            std::string kwName = tests[0]->getText();
+                            if (kwName == "key") {
+                                auto av = visit(tests[1]);
+                                if (av.has_value()) {
+                                    try { keyFunc = std::any_cast<Value>(av); } catch (...) {}
+                                }
+                            }
+                            // Ignore other keyword args (like default=)
+                        } else if (!tests.empty()) {
                             auto av = visit(tests[0]);
                             if (av.has_value()) {
                                 try { vals.push_back(std::any_cast<Value>(av)); } catch (...) {}
@@ -1547,10 +1559,47 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                         }
                     }
                     if (!vals.empty()) {
+                        // Helper lambda to apply key function if provided
+                        auto applyKey = [&](const Value& v) -> Value {
+                            if (std::holds_alternative<FunctionValue>(keyFunc)) {
+                                const FunctionValue& fv = std::get<FunctionValue>(keyFunc);
+                                auto funcIt2 = functions.find(fv.name);
+                                if (funcIt2 != functions.end()) {
+                                    const FunctionDef& kfuncDef = funcIt2->second;
+                                    std::map<std::string, Value> kLocalVars;
+                                    // Inject captured locals from closure
+                                    for (const auto& cl : fv.capturedLocals) kLocalVars[cl.first] = cl.second;
+                                    // Inject self-reference for recursive closures
+                                    kLocalVars[fv.name] = keyFunc;
+                                    if (!kfuncDef.parameters.empty()) kLocalVars[kfuncDef.parameters[0]] = v;
+                                    auto* savedLV = localVariables;
+                                    auto* savedELV = enclosingLocalVariables;
+                                    auto* savedFL = currentFunctionLocals;
+                                    auto savedFG = currentFunctionGlobals;
+                                    enclosingLocalVariables = savedLV;
+                                    localVariables = &kLocalVars;
+                                    currentFunctionLocals = &kfuncDef.assignedVars;
+                                    currentFunctionGlobals = kfuncDef.globalVars;
+                                    Value kResult = Value(std::monostate{});
+                                    try { visit(kfuncDef.body); } catch (const ReturnException& e) { kResult = e.returnValue; }
+                                    localVariables = savedLV;
+                                    enclosingLocalVariables = savedELV;
+                                    currentFunctionLocals = savedFL;
+                                    currentFunctionGlobals = savedFG;
+                                    return kResult;
+                                }
+                            }
+                            return v;  // No key function, use value itself
+                        };
+                        
                         Value maxVal = vals[0];
+                        Value maxKey = applyKey(vals[0]);
                         for (size_t i = 1; i < vals.size(); i++) {
-                            // Compare using compareValues which handles all types including TupleValue/ListValue
-                            if (compareValues(vals[i], maxVal) > 0) maxVal = vals[i];
+                            Value k = applyKey(vals[i]);
+                            if (compareValues(k, maxKey) > 0) {
+                                maxVal = vals[i];
+                                maxKey = k;
+                            }
                         }
                         currentValue = maxVal;
                         isFirstTrailer = false;
@@ -1570,9 +1619,19 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                 auto args = arglist->argument();
                 if (!args.empty()) {
                     std::vector<Value> vals;
+                    Value keyFunc = Value(std::monostate{});  // None = no key function
+                    
                     for (auto arg : args) {
                         auto tests = arg->test();
-                        if (!tests.empty()) {
+                        if (tests.size() == 2) {
+                            std::string kwName = tests[0]->getText();
+                            if (kwName == "key") {
+                                auto av = visit(tests[1]);
+                                if (av.has_value()) {
+                                    try { keyFunc = std::any_cast<Value>(av); } catch (...) {}
+                                }
+                            }
+                        } else if (!tests.empty()) {
                             auto av = visit(tests[0]);
                             if (av.has_value()) {
                                 try { vals.push_back(std::any_cast<Value>(av)); } catch (...) {}
@@ -1590,10 +1649,44 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                         }
                     }
                     if (!vals.empty()) {
+                        auto applyKey = [&](const Value& v) -> Value {
+                            if (std::holds_alternative<FunctionValue>(keyFunc)) {
+                                const FunctionValue& fv = std::get<FunctionValue>(keyFunc);
+                                auto funcIt2 = functions.find(fv.name);
+                                if (funcIt2 != functions.end()) {
+                                    const FunctionDef& kfuncDef = funcIt2->second;
+                                    std::map<std::string, Value> kLocalVars;
+                                    for (const auto& cl : fv.capturedLocals) kLocalVars[cl.first] = cl.second;
+                                    kLocalVars[fv.name] = keyFunc;
+                                    if (!kfuncDef.parameters.empty()) kLocalVars[kfuncDef.parameters[0]] = v;
+                                    auto* savedLV = localVariables;
+                                    auto* savedELV = enclosingLocalVariables;
+                                    auto* savedFL = currentFunctionLocals;
+                                    auto savedFG = currentFunctionGlobals;
+                                    enclosingLocalVariables = savedLV;
+                                    localVariables = &kLocalVars;
+                                    currentFunctionLocals = &kfuncDef.assignedVars;
+                                    currentFunctionGlobals = kfuncDef.globalVars;
+                                    Value kResult = Value(std::monostate{});
+                                    try { visit(kfuncDef.body); } catch (const ReturnException& e) { kResult = e.returnValue; }
+                                    localVariables = savedLV;
+                                    enclosingLocalVariables = savedELV;
+                                    currentFunctionLocals = savedFL;
+                                    currentFunctionGlobals = savedFG;
+                                    return kResult;
+                                }
+                            }
+                            return v;
+                        };
+                        
                         Value minVal = vals[0];
+                        Value minKey = applyKey(vals[0]);
                         for (size_t i = 1; i < vals.size(); i++) {
-                            // Compare using compareValues which handles all types including TupleValue/ListValue
-                            if (compareValues(vals[i], minVal) < 0) minVal = vals[i];
+                            Value k = applyKey(vals[i]);
+                            if (compareValues(k, minKey) < 0) {
+                                minVal = vals[i];
+                                minKey = k;
+                            }
                         }
                         currentValue = minVal;
                         isFirstTrailer = false;
@@ -1607,32 +1700,95 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
         }
         
         if (funcName == "sorted") {
-            // sorted(iterable) → returns a new sorted list (non-destructive)
+            // sorted(iterable, key=None) → returns a new sorted list (non-destructive)
             auto arglist = trailer->arglist();
             if (arglist) {
                 auto args = arglist->argument();
                 if (!args.empty()) {
-                    auto tests = args[0]->test();
-                    if (!tests.empty()) {
-                        auto av = visit(tests[0]);
-                        if (av.has_value()) {
-                            try {
-                                Value argVal = std::any_cast<Value>(av);
-                                std::vector<Value> elems;
-                                if (std::holds_alternative<ListValue>(argVal)) {
-                                    elems = *std::get<ListValue>(argVal).elements;
-                                } else if (std::holds_alternative<TupleValue>(argVal)) {
-                                    elems = std::get<TupleValue>(argVal).elements;
+                    // First positional arg is the iterable, key= is optional
+                    Value iterableVal;
+                    Value keyFunc = Value(std::monostate{});
+                    bool hasIterable = false;
+                    
+                    for (auto arg : args) {
+                        auto tests = arg->test();
+                        if (tests.size() == 2) {
+                            std::string kwName = tests[0]->getText();
+                            if (kwName == "key") {
+                                auto av = visit(tests[1]);
+                                if (av.has_value()) {
+                                    try { keyFunc = std::any_cast<Value>(av); } catch (...) {}
                                 }
-                                // Sort using compareValues for Python-style ordering
-                                std::stable_sort(elems.begin(), elems.end(), [](const Value& a, const Value& b) {
-                                    return compareValues(a, b) < 0;
-                                });
-                                currentValue = Value(ListValue(elems));
-                                isFirstTrailer = false;
-                                continue;
-                            } catch (...) {}
+                            }
+                        } else if (!tests.empty() && !hasIterable) {
+                            auto av = visit(tests[0]);
+                            if (av.has_value()) {
+                                try { iterableVal = std::any_cast<Value>(av); hasIterable = true; } catch (...) {}
+                            }
                         }
+                    }
+                    
+                    if (hasIterable) {
+                        try {
+                            std::vector<Value> elems;
+                            if (std::holds_alternative<ListValue>(iterableVal)) {
+                                elems = *std::get<ListValue>(iterableVal).elements;
+                            } else if (std::holds_alternative<TupleValue>(iterableVal)) {
+                                elems = std::get<TupleValue>(iterableVal).elements;
+                            }
+                            
+                            // Apply key function if provided
+                            if (std::holds_alternative<FunctionValue>(keyFunc)) {
+                                const FunctionValue& fv = std::get<FunctionValue>(keyFunc);
+                                auto funcIt2 = functions.find(fv.name);
+                                if (funcIt2 != functions.end()) {
+                                    const FunctionDef& kfuncDef = funcIt2->second;
+                                    // Compute keys for all elements
+                                    std::vector<Value> keys;
+                                    for (const auto& elem : elems) {
+                                        std::map<std::string, Value> kLocalVars;
+                                        for (const auto& cl : fv.capturedLocals) kLocalVars[cl.first] = cl.second;
+                                        kLocalVars[fv.name] = keyFunc;
+                                        if (!kfuncDef.parameters.empty()) kLocalVars[kfuncDef.parameters[0]] = elem;
+                                        auto* savedLV = localVariables;
+                                        auto* savedELV = enclosingLocalVariables;
+                                        auto* savedFL = currentFunctionLocals;
+                                        auto savedFG = currentFunctionGlobals;
+                                        enclosingLocalVariables = savedLV;
+                                        localVariables = &kLocalVars;
+                                        currentFunctionLocals = &kfuncDef.assignedVars;
+                                        currentFunctionGlobals = kfuncDef.globalVars;
+                                        Value kResult = Value(std::monostate{});
+                                        try { visit(kfuncDef.body); } catch (const ReturnException& e) { kResult = e.returnValue; }
+                                        localVariables = savedLV;
+                                        enclosingLocalVariables = savedELV;
+                                        currentFunctionLocals = savedFL;
+                                        currentFunctionGlobals = savedFG;
+                                        keys.push_back(kResult);
+                                    }
+                                    // Sort by key (using indices to avoid extra copies)
+                                    std::vector<size_t> indices(elems.size());
+                                    std::iota(indices.begin(), indices.end(), 0);
+                                    std::stable_sort(indices.begin(), indices.end(), [&](size_t a, size_t b) {
+                                        return compareValues(keys[a], keys[b]) < 0;
+                                    });
+                                    std::vector<Value> sortedElems;
+                                    sortedElems.reserve(elems.size());
+                                    for (size_t idx : indices) sortedElems.push_back(elems[idx]);
+                                    currentValue = Value(ListValue(sortedElems));
+                                    isFirstTrailer = false;
+                                    continue;
+                                }
+                            }
+                            
+                            // No key function - sort normally
+                            std::stable_sort(elems.begin(), elems.end(), [](const Value& a, const Value& b) {
+                                return compareValues(a, b) < 0;
+                            });
+                            currentValue = Value(ListValue(elems));
+                            isFirstTrailer = false;
+                            continue;
+                        } catch (...) {}
                     }
                 }
             }
