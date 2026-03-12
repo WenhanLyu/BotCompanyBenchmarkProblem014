@@ -1041,37 +1041,55 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
         if (funcName == "print") {
             // Get the arglist from the trailer
             auto arglist = trailer->arglist();
+            // Defaults for sep and end
+            std::string sepStr = " ";
+            std::string endStr = "\n";
+            std::vector<Value> positionalPrintArgs;
             if (arglist) {
-                // Get the arguments
+                // Get the arguments - separate positional args from keyword args
                 auto args = arglist->argument();
-                if (!args.empty()) {
-                    // Loop through all arguments and print them space-separated
-                    for (size_t i = 0; i < args.size(); ++i) {
-                        auto arg = args[i];
-                        auto tests = arg->test();
-                        if (!tests.empty()) {
-                            // Visit the test to get its value
-                            auto argValue = visit(tests[0]);
-                            
-                            // If it's a Value, print it
-                            if (argValue.has_value()) {
-                                try {
-                                    Value val = std::any_cast<Value>(argValue);
-                                    std::cout << valueToString(val);
-                                    // Print space after each argument except the last
-                                    if (i < args.size() - 1) {
-                                        std::cout << " ";
-                                    }
-                                } catch (...) {
-                                    // Not a Value, ignore
-                                }
+                for (auto arg : args) {
+                    auto tests = arg->test();
+                    if (tests.size() == 2) {
+                        // Keyword argument: name=value
+                        std::string kwName = tests[0]->getText();
+                        auto kwValue = visit(tests[1]);
+                        Value kwVal(std::monostate{});
+                        if (kwValue.has_value()) {
+                            try { kwVal = std::any_cast<Value>(kwValue); } catch (...) {}
+                        }
+                        if (kwName == "sep") {
+                            if (std::holds_alternative<std::string>(kwVal)) {
+                                sepStr = std::get<std::string>(kwVal);
+                            } else if (std::holds_alternative<std::monostate>(kwVal)) {
+                                sepStr = " ";  // sep=None means default space
+                            }
+                        } else if (kwName == "end") {
+                            if (std::holds_alternative<std::string>(kwVal)) {
+                                endStr = std::get<std::string>(kwVal);
+                            } else if (std::holds_alternative<std::monostate>(kwVal)) {
+                                endStr = "\n";  // end=None means default newline
                             }
                         }
+                        // Other keyword args (file, flush) are ignored
+                    } else if (!tests.empty()) {
+                        // Positional argument
+                        auto argValue = visit(tests[0]);
+                        Value val(std::monostate{});
+                        if (argValue.has_value()) {
+                            try { val = std::any_cast<Value>(argValue); } catch (...) {}
+                        }
+                        positionalPrintArgs.push_back(val);
                     }
                 }
             }
-            // Always print newline, even if no arguments
-            std::cout << std::endl;
+            // Print positional args joined by sep
+            for (size_t i = 0; i < positionalPrintArgs.size(); ++i) {
+                if (i > 0) std::cout << sepStr;
+                std::cout << valueToString(positionalPrintArgs[i]);
+            }
+            // Print end (default newline)
+            std::cout << endStr;
             currentValue = std::any();
             isFirstTrailer = false;
             continue;  // Allow subsequent trailers (subscripts on return value)
@@ -1259,6 +1277,39 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                 }
             }
             currentValue = boolResult;
+            isFirstTrailer = false;
+            continue;
+        }
+
+        // Handle len() built-in function
+        if (funcName == "len") {
+            Value lenResult(0);
+            auto arglist = trailer->arglist();
+            if (arglist) {
+                auto args = arglist->argument();
+                if (!args.empty()) {
+                    auto arg = args[0];
+                    auto tests = arg->test();
+                    if (!tests.empty()) {
+                        auto argValue = visit(tests[0]);
+                        if (argValue.has_value()) {
+                            try {
+                                Value val = std::any_cast<Value>(argValue);
+                                if (std::holds_alternative<std::string>(val)) {
+                                    lenResult = Value((int)std::get<std::string>(val).size());
+                                } else if (std::holds_alternative<TupleValue>(val)) {
+                                    lenResult = Value((int)std::get<TupleValue>(val).elements.size());
+                                } else if (std::holds_alternative<ListValue>(val)) {
+                                    lenResult = Value((int)std::get<ListValue>(val).elements->size());
+                                }
+                            } catch (...) {
+                                // Error in len()
+                            }
+                        }
+                    }
+                }
+            }
+            currentValue = lenResult;
             isFirstTrailer = false;
             continue;
         }
@@ -1825,8 +1876,12 @@ std::any EvalVisitor::visitFormat_string(Python3Parser::Format_stringContext *ct
             if (exprValue.has_value()) {
                 try {
                     Value val = std::any_cast<Value>(exprValue);
-                    // Convert the value to string and append
-                    result += valueToString(val);
+                    // For doubles, use Python-style repr (e.g. 1.0, 3.14) not 6 decimal places
+                    if (std::holds_alternative<double>(val)) {
+                        result += floatToRepr(std::get<double>(val));
+                    } else {
+                        result += valueToString(val);
+                    }
                 } catch (...) {
                     // If conversion fails, skip
                 }
@@ -2332,11 +2387,32 @@ std::any EvalVisitor::visitComparison(Python3Parser::ComparisonContext *ctx) {
 }
 
 std::string EvalVisitor::unquoteString(const std::string& str) {
-    // Remove surrounding quotes from string literals
+    // Remove surrounding quotes from string literals and process escape sequences
     if (str.length() >= 2) {
         if ((str.front() == '"' && str.back() == '"') ||
             (str.front() == '\'' && str.back() == '\'')) {
-            return str.substr(1, str.length() - 2);
+            std::string inner = str.substr(1, str.length() - 2);
+            // Process escape sequences
+            std::string result;
+            result.reserve(inner.size());
+            for (size_t i = 0; i < inner.size(); ++i) {
+                if (inner[i] == '\\' && i + 1 < inner.size()) {
+                    char next = inner[i + 1];
+                    switch (next) {
+                        case 'n':  result += '\n'; ++i; break;
+                        case 't':  result += '\t'; ++i; break;
+                        case 'r':  result += '\r'; ++i; break;
+                        case '\\': result += '\\'; ++i; break;
+                        case '\'': result += '\''; ++i; break;
+                        case '"':  result += '"';  ++i; break;
+                        case '0':  result += '\0'; ++i; break;
+                        default:   result += inner[i]; break;
+                    }
+                } else {
+                    result += inner[i];
+                }
+            }
+            return result;
         }
     }
     return str;
