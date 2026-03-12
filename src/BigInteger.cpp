@@ -99,6 +99,30 @@ bool BigInteger::isNegative() const {
     return negative && !isZero();
 }
 
+bool BigInteger::fitsInInt() const {
+    // Check if the value fits in a 32-bit signed integer [-2147483648, 2147483647]
+    if (isZero()) return true;
+    
+    // More than 1 digit in base 10^9 means > 999,999,999 which is fine for int,
+    // but 2 digits means >= 1,000,000,000 which might not fit
+    if (digits.size() > 2) return false;
+    if (digits.size() == 1) return true;  // max 999,999,999 < INT_MAX
+    
+    // digits.size() == 2: value = digits[1] * 10^9 + digits[0]
+    // INT_MAX = 2,147,483,647 = 2 * 10^9 + 147,483,647
+    // INT_MIN = -2,147,483,648
+    if (digits[1] > 2) return false;
+    if (digits[1] < 2) return true;
+    // digits[1] == 2
+    if (negative) {
+        // -2,147,483,648 is the limit
+        return digits[0] <= 147483648;
+    } else {
+        // 2,147,483,647 is the limit
+        return digits[0] <= 147483647;
+    }
+}
+
 int BigInteger::compareAbs(const BigInteger& other) const {
     if (digits.size() != other.digits.size()) {
         return digits.size() < other.digits.size() ? -1 : 1;
