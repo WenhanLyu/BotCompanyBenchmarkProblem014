@@ -211,6 +211,9 @@ private:
     
     // Helper to downcast BigInteger to int if it fits (performance optimization)
     Value tryDowncastBigInteger(const BigInteger& bi);
+    
+    // Helper to call a built-in function with a single argument (for key= support)
+    Value callBuiltinSingle(const std::string& name, const Value& arg);
 };
 
 #endif//PYTHON_INTERPRETER_EVALVISITOR_H

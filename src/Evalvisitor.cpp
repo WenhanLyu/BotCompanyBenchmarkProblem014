@@ -1082,6 +1082,38 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                 
                 auto funcIt2 = functions.find(calleeName);
                 if (funcIt2 == functions.end()) {
+                    // Check if calleeName is a built-in — dispatch if so
+                    static const std::set<std::string> builtinNames2 = {
+                        "abs", "len", "str", "int", "float", "bool", "print"
+                    };
+                    if (builtinNames2.count(calleeName)) {
+                        // Evaluate first positional arg and call the built-in
+                        std::vector<Value> builtinArgs;
+                        auto blArglist = trailer->arglist();
+                        if (blArglist) {
+                            for (auto arg : blArglist->argument()) {
+                                auto tests = arg->test();
+                                if (!tests.empty() && tests.size() == 1) {
+                                    auto av = visit(tests[0]);
+                                    Value val = Value(std::monostate{});
+                                    if (av.has_value()) { try { val = std::any_cast<Value>(av); } catch (...) {} }
+                                    builtinArgs.push_back(val);
+                                }
+                            }
+                        }
+                        if (!builtinArgs.empty() && calleeName != "print") {
+                            currentValue = callBuiltinSingle(calleeName, builtinArgs[0]);
+                        } else if (calleeName == "print") {
+                            for (size_t pi = 0; pi < builtinArgs.size(); pi++) {
+                                if (pi > 0) std::cout << " ";
+                                std::cout << valueToString(builtinArgs[pi]);
+                            }
+                            std::cout << "\n";
+                            currentValue = Value(std::monostate{});
+                        }
+                        isFirstTrailer = false;
+                        continue;
+                    }
                     throw std::runtime_error("Function not found: " + calleeName);
                 }
                 const FunctionDef& funcDef = funcIt2->second;
@@ -1605,6 +1637,8 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                                     currentFunctionGlobals = savedFG;
                                     return kResult;
                                 }
+                                // Try as built-in function (abs, len, str, int, float, bool)
+                                return callBuiltinSingle(fv.name, v);
                             }
                             return v;  // No key function, use value itself
                         };
@@ -1692,6 +1726,8 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                                     currentFunctionGlobals = savedFG;
                                     return kResult;
                                 }
+                                // Try as built-in function (abs, len, str, int, float, bool)
+                                return callBuiltinSingle(fv.name, v);
                             }
                             return v;
                         };
@@ -1758,10 +1794,10 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                             if (std::holds_alternative<FunctionValue>(keyFunc)) {
                                 const FunctionValue& fv = std::get<FunctionValue>(keyFunc);
                                 auto funcIt2 = functions.find(fv.name);
+                                // Compute keys for all elements
+                                std::vector<Value> keys;
                                 if (funcIt2 != functions.end()) {
                                     const FunctionDef& kfuncDef = funcIt2->second;
-                                    // Compute keys for all elements
-                                    std::vector<Value> keys;
                                     for (const auto& elem : elems) {
                                         std::map<std::string, Value> kLocalVars;
                                         for (const auto& cl : fv.capturedLocals) kLocalVars[cl.first] = cl.second;
@@ -1783,19 +1819,24 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                                         currentFunctionGlobals = savedFG;
                                         keys.push_back(kResult);
                                     }
-                                    // Sort by key (using indices to avoid extra copies)
-                                    std::vector<size_t> indices(elems.size());
-                                    std::iota(indices.begin(), indices.end(), 0);
-                                    std::stable_sort(indices.begin(), indices.end(), [&](size_t a, size_t b) {
-                                        return compareValues(keys[a], keys[b]) < 0;
-                                    });
-                                    std::vector<Value> sortedElems;
-                                    sortedElems.reserve(elems.size());
-                                    for (size_t idx : indices) sortedElems.push_back(elems[idx]);
-                                    currentValue = Value(ListValue(sortedElems));
-                                    isFirstTrailer = false;
-                                    continue;
+                                } else {
+                                    // Try as built-in function (abs, len, str, int, float, bool)
+                                    for (const auto& elem : elems) {
+                                        keys.push_back(callBuiltinSingle(fv.name, elem));
+                                    }
                                 }
+                                // Sort by key (using indices to avoid extra copies)
+                                std::vector<size_t> indices(elems.size());
+                                std::iota(indices.begin(), indices.end(), 0);
+                                std::stable_sort(indices.begin(), indices.end(), [&](size_t a, size_t b) {
+                                    return compareValues(keys[a], keys[b]) < 0;
+                                });
+                                std::vector<Value> sortedElems;
+                                sortedElems.reserve(elems.size());
+                                for (size_t idx : indices) sortedElems.push_back(elems[idx]);
+                                currentValue = Value(ListValue(sortedElems));
+                                isFirstTrailer = false;
+                                continue;
                             }
                             
                             // No key function - sort normally
@@ -1969,6 +2010,60 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                     currentValue = returnValue;
                     isFirstTrailer = false;
                     continue;
+                }
+                // If funcName is a built-in, dispatch with evaluated arguments
+                {
+                    static const std::set<std::string> builtinFuncNames = {
+                        "abs", "len", "str", "int", "float", "bool", "print",
+                        "sorted", "max", "min"
+                    };
+                    if (builtinFuncNames.count(funcName)) {
+                        // Evaluate positional args and dispatch to built-in
+                        auto arglist = trailer->arglist();
+                        std::vector<Value> positionalArgs;
+                        std::map<std::string, Value> kwArgs;
+                        if (arglist) {
+                            for (auto arg : arglist->argument()) {
+                                auto tests = arg->test();
+                                if (tests.size() == 2) {
+                                    std::string kwName = tests[0]->getText();
+                                    auto av = visit(tests[1]);
+                                    Value val = Value(std::monostate{});
+                                    if (av.has_value()) { try { val = std::any_cast<Value>(av); } catch (...) {} }
+                                    kwArgs[kwName] = val;
+                                } else if (!tests.empty()) {
+                                    auto av = visit(tests[0]);
+                                    Value val = Value(std::monostate{});
+                                    if (av.has_value()) { try { val = std::any_cast<Value>(av); } catch (...) {} }
+                                    positionalArgs.push_back(val);
+                                }
+                            }
+                        }
+                        // For single-arg builtins (abs, len, str, int, float, bool):
+                        if (!positionalArgs.empty() && (funcName == "abs" || funcName == "len" || 
+                            funcName == "str" || funcName == "int" || funcName == "float" || funcName == "bool")) {
+                            currentValue = callBuiltinSingle(funcName, positionalArgs[0]);
+                            isFirstTrailer = false;
+                            continue;
+                        }
+                        // For other built-ins (print, max, min, sorted), the dispatch is complex.
+                        // Fall through to let the built-in names be picked up as no-op for now.
+                        // print: just print the args separated by spaces
+                        if (funcName == "print") {
+                            std::string sepStr = " ";
+                            std::string endStr = "\n";
+                            if (kwArgs.count("sep") && std::holds_alternative<std::string>(kwArgs["sep"])) sepStr = std::get<std::string>(kwArgs["sep"]);
+                            if (kwArgs.count("end") && std::holds_alternative<std::string>(kwArgs["end"])) endStr = std::get<std::string>(kwArgs["end"]);
+                            for (size_t pi = 0; pi < positionalArgs.size(); pi++) {
+                                if (pi > 0) std::cout << sepStr;
+                                std::cout << valueToString(positionalArgs[pi]);
+                            }
+                            std::cout << endStr;
+                            currentValue = Value(std::monostate{});
+                            isFirstTrailer = false;
+                            continue;
+                        }
+                    }
                 }
             }
         }
@@ -2270,6 +2365,14 @@ std::any EvalVisitor::visitAtom(Python3Parser::AtomContext *ctx) {
         }
         // Variable not found in variables — check if it's a function name
         if (functions.find(varName) != functions.end()) {
+            return Value(FunctionValue(varName));
+        }
+        // Check if it's a built-in function name — return as first-class value
+        static const std::set<std::string> builtinNames = {
+            "abs", "len", "str", "int", "float", "bool",
+            "sorted", "max", "min", "print"
+        };
+        if (builtinNames.count(varName)) {
             return Value(FunctionValue(varName));
         }
         // Not found anywhere, return None
@@ -3975,4 +4078,80 @@ void EvalVisitor::findGlobalInStmt(Python3Parser::StmtContext* stmt, std::set<st
         
         // We don't need to check funcdef since nested functions create their own scope
     }
+}
+
+// Helper: call a built-in function with a single argument (for key= parameter support)
+// Supports: abs, len, str, int, float, bool
+Value EvalVisitor::callBuiltinSingle(const std::string& name, const Value& arg) {
+    if (name == "abs") {
+        if (std::holds_alternative<int>(arg)) {
+            int v = std::get<int>(arg);
+            return Value(v < 0 ? -v : v);
+        } else if (std::holds_alternative<double>(arg)) {
+            return Value(std::abs(std::get<double>(arg)));
+        } else if (std::holds_alternative<bool>(arg)) {
+            return Value(std::get<bool>(arg) ? 1 : 0);
+        } else if (std::holds_alternative<BigInteger>(arg)) {
+            BigInteger bi = std::get<BigInteger>(arg);
+            if (bi.isNegative()) return Value(-bi);
+            return arg;
+        }
+        return arg;
+    } else if (name == "len") {
+        if (std::holds_alternative<std::string>(arg)) {
+            return Value((int)std::get<std::string>(arg).size());
+        } else if (std::holds_alternative<ListValue>(arg)) {
+            return Value((int)std::get<ListValue>(arg).elements->size());
+        } else if (std::holds_alternative<TupleValue>(arg)) {
+            return Value((int)std::get<TupleValue>(arg).elements.size());
+        }
+        return Value(0);
+    } else if (name == "str") {
+        if (std::holds_alternative<std::string>(arg)) return arg;
+        if (std::holds_alternative<int>(arg)) return Value(std::to_string(std::get<int>(arg)));
+        if (std::holds_alternative<double>(arg)) return Value(floatToRepr(std::get<double>(arg)));
+        if (std::holds_alternative<bool>(arg)) return Value(std::get<bool>(arg) ? std::string("True") : std::string("False"));
+        if (std::holds_alternative<BigInteger>(arg)) return Value(std::get<BigInteger>(arg).toString());
+        if (std::holds_alternative<std::monostate>(arg)) return Value(std::string("None"));
+        if (std::holds_alternative<ListValue>(arg)) return Value(valueToRepr(arg));
+        if (std::holds_alternative<TupleValue>(arg)) return Value(valueToRepr(arg));
+        return Value(std::string(""));
+    } else if (name == "int") {
+        if (std::holds_alternative<int>(arg)) return arg;
+        if (std::holds_alternative<double>(arg)) return Value((int)std::get<double>(arg));
+        if (std::holds_alternative<bool>(arg)) return Value(std::get<bool>(arg) ? 1 : 0);
+        if (std::holds_alternative<BigInteger>(arg)) return arg;
+        if (std::holds_alternative<std::string>(arg)) {
+            const std::string& s = std::get<std::string>(arg);
+            bool neg = !s.empty() && s[0] == '-';
+            std::string abs_s = neg ? s.substr(1) : s;
+            if (abs_s.length() > 10 || (abs_s.length() == 10 && abs_s > "2147483647"))
+                return Value(BigInteger(s));
+            try { return Value(std::stoi(s)); } catch (...) { return Value(0); }
+        }
+        return Value(0);
+    } else if (name == "float") {
+        if (std::holds_alternative<double>(arg)) return arg;
+        if (std::holds_alternative<int>(arg)) return Value((double)std::get<int>(arg));
+        if (std::holds_alternative<bool>(arg)) return Value(std::get<bool>(arg) ? 1.0 : 0.0);
+        if (std::holds_alternative<std::string>(arg)) {
+            try { return Value(std::stod(std::get<std::string>(arg))); } catch (...) { return Value(0.0); }
+        }
+        if (std::holds_alternative<BigInteger>(arg)) {
+            try { return Value(std::stod(std::get<BigInteger>(arg).toString())); } catch (...) { return Value(0.0); }
+        }
+        return Value(0.0);
+    } else if (name == "bool") {
+        if (std::holds_alternative<bool>(arg)) return arg;
+        if (std::holds_alternative<int>(arg)) return Value(std::get<int>(arg) != 0);
+        if (std::holds_alternative<double>(arg)) return Value(std::get<double>(arg) != 0.0);
+        if (std::holds_alternative<std::string>(arg)) return Value(!std::get<std::string>(arg).empty());
+        if (std::holds_alternative<std::monostate>(arg)) return Value(false);
+        if (std::holds_alternative<BigInteger>(arg)) return Value(!std::get<BigInteger>(arg).isZero());
+        if (std::holds_alternative<ListValue>(arg)) return Value(!std::get<ListValue>(arg).elements->empty());
+        if (std::holds_alternative<TupleValue>(arg)) return Value(!std::get<TupleValue>(arg).elements.empty());
+        return Value(false);
+    }
+    // Unknown built-in name — return arg unchanged
+    return arg;
 }
