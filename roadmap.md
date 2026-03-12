@@ -2,7 +2,7 @@
 
 **Project:** BotCompanyBenchmarkProblem014 - Python Interpreter  
 **Created:** 2026-03-02  
-**Last Updated:** 2026-03-11 (Cycle 20 - Athena)
+**Last Updated:** 2026-03-12 (Cycle 30 - Athena)
 
 ---
 
@@ -19,15 +19,77 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 20)
+## Current State (Cycle 30)
 
-- **Status:** M28 complete (PR #19 merged). All basic tests and BigInt tests pass.
-- **Last Known OJ Score:** 25/100 (submission #5, before M22-M28 fixes)
+- **Status:** M29+M30 complete (merged). All basic tests and BigInt tests pass.
+- **Last Known OJ Score:** 25/100 (submission #5, before M22-M30 fixes)
 - **OJ Submissions Used:** 5 of 18 budget
-- **Features Implemented:** M1-M28 (list concat, list repeat, container equality, nested subscript augassign)
+- **Features Implemented:** M1-M30 (list pass-by-ref, nested function scope)
 - **Local Tests:** All 16 basic tests PASS, all 20 BigInteger tests PASS
 
-## Critical Bugs Remaining (Cycle 20 Analysis)
+## Critical Bugs Remaining (Cycle 30 Analysis)
+
+### Bug A: Functions as First-Class Values (CRITICAL for AdvancedTest)
+Functions cannot be passed as arguments, stored in variables, or returned and called later.
+
+**Examples that fail:**
+```python
+def double(x): return x * 2
+f = double          # f gets None instead of function ref
+print(f(5))         # None called, doesn't work
+
+def apply(g, x): return g(x)
+print(apply(double, 5))  # g is None, fails
+```
+
+**Root cause:** In `visitAtom`, when a NAME is a function name, it returns `None`. Functions are stored in a separate `functions` map, not in `variables`.
+
+**Fix:** Add `FunctionValue` struct to Value variant:
+```cpp
+struct FunctionValue {
+    std::string name;  // function name to look up
+    explicit FunctionValue(std::string n) : name(std::move(n)) {}
+};
+```
+1. In `visitAtom`, if NAME is in `functions` and not in variables → return `Value(FunctionValue(name))`
+2. In `visitAtom_expr`, when call trailer is processed:
+   - If `funcName` is a variable holding `FunctionValue`, use that function
+   - Also: currentValue might be a FunctionValue from a previous expression
+3. In `visitFuncdef`, store function in both `functions` AND as `Value(FunctionValue(name))` in `variables`
+
+### Bug B: Float Repr in Containers (May affect ComplexTest/CornerTest)
+When printing lists or tuples containing floats, we output `3.140000` but Python outputs `3.14`.
+
+**Example:**
+```python
+print([1.0, 3.14])   # We: [1.000000, 3.14...] Python: [1.0, 3.14]
+```
+
+The spec says "Output float with 6 decimal places" for `print`. But inside containers, Python uses natural repr.
+This is ambiguous - the OJ might expect Python behavior here.
+
+**Fix (if needed):** In `valueToRepr()`, format floats using Python's natural repr (not fixed 6 decimal places).
+
+### Bug C: Returned Functions / Closures (IMPORTANT for AdvancedTest)
+When a function is returned and stored, then called, the enclosing scope is not captured.
+
+**Example:**
+```python
+def make_adder(n):
+    def adder(x): return x + n
+    return adder
+
+add5 = make_adder(5)
+print(add5(3))  # Expected: 8, Gets: None
+```
+
+**Root cause:** `enclosingLocalVariables` is set dynamically when a function is called. When `make_adder` returns `adder`, there's no way to capture `n=5` for later use.
+
+**Fix:** Store captured variables in `FunctionValue`. When defining a function inside another, capture the current local scope. When calling a FunctionValue that has captured locals, set them as enclosing scope.
+
+This is complex but important.
+
+## Previous Critical Bugs (Cycle 20 Analysis)
 
 ### Bug A: List Pass-By-Reference Broken (CRITICAL)
 When a list is passed to a function and the function modifies it via subscript assignment,
@@ -106,88 +168,116 @@ variables should only be readable (not writable) unless we implement full closur
 ### M1-M28: Foundation Through List Operations ✅ COMPLETE (Prior Work)
 All core features implemented and verified through multiple OJ submission cycles.
 
-### M29: List Pass-By-Reference (cycles: 3)
+### M29: List Pass-By-Reference ✅ COMPLETE (Cycle 29)
+Refactored `ListValue` to use `shared_ptr<vector<Value>>`. All 5 acceptance tests passed.
+
+### M30: Nested Function Scope ✅ COMPLETE (Cycle 29)
+Implemented `enclosingLocalVariables` pointer. All 5 acceptance tests passed.
+
+### M31: Functions as First-Class Values (cycles: 3)
 **Status: READY TO START**
 
-Refactor `ListValue` to use `shared_ptr<vector<Value>>` for pass-by-reference semantics.
+Allow Python functions to be used as first-class values: passed as arguments, stored in variables, and called via stored references.
 
 **Implementation Plan:**
-1. Change `ListValue` struct to use `shared_ptr`:
+
+1. Add `FunctionValue` struct to `Evalvisitor.h`:
 ```cpp
-struct ListValue {
-    std::shared_ptr<std::vector<Value>> elements;
-    ListValue() : elements(std::make_shared<std::vector<Value>>()) {}
-    ListValue(const std::vector<Value>& elems) : elements(std::make_shared<std::vector<Value>>(elems)) {}
-    bool operator==(const ListValue& other) const;
-    bool operator!=(const ListValue& other) const;
+struct FunctionValue {
+    std::string name;  // function name to look up in functions map
+    std::map<std::string, Value> capturedLocals;  // for closures
+    FunctionValue() = default;
+    explicit FunctionValue(std::string n) : name(std::move(n)) {}
+    FunctionValue(std::string n, std::map<std::string, Value> captured)
+        : name(std::move(n)), capturedLocals(std::move(captured)) {}
 };
 ```
 
-2. Update ALL accesses to `listValue.elements` to use `*listValue.elements` or `listValue.elements->...`
-   Key locations:
-   - `visitAtom`: creating list literal → use `ListValue(elements)` constructor
-   - `visitArith_expr`: list + list → create NEW ListValue with combined elements
-   - `visitTerm`: list * int → create NEW ListValue with repeated elements
-   - `visitAtom_expr`: subscript access `lst[i]` → access `(*listValue.elements)[i]`
-   - `visitExpr_stmt`: subscript assignment `lst[i] = v` → modify `(*listValue.elements)[i]`
-   - `valueToString` / `valueToRepr`: iterate `*listValue.elements`
-   - `TupleValue::operator==`, `ListValue::operator==`: compare `*elements`
-   - everywhere else that accesses `.elements`
-
-3. The key semantic: when a ListValue is COPIED (stored in localVars), the shared_ptr is shallow-copied,
-   so both copies share the same underlying vector. Modifications via subscript affect the original.
-
-4. `list + list` and `list * int` must create DEEP COPY (new shared_ptr) to avoid aliasing:
+2. Add `FunctionValue` to `Value` variant in `Evalvisitor.h`:
 ```cpp
-// list + list: create new independent list
-ListValue combined;
-for (auto& e : *l.elements) combined.elements->push_back(e);
-for (auto& e : *r.elements) combined.elements->push_back(e);
+struct Value : std::variant<std::monostate, int, bool, std::string, double, BigInteger, TupleValue, ListValue, FunctionValue> {
 ```
 
-**Acceptance Criteria:**
-1. `lst = [1,2,3]; def f(L): L[0] = 99; f(lst); print(lst[0])` → `99`
-2. `m = [[1,2],[3,4]]; def f(M): M[0][0] = 99; f(m); print(m[0][0])` → `99`
-3. `a = [1,2]; b = a + [3]; a[0] = 99; print(b[0])` → `1` (a+b creates new list)
-4. All 16 basic tests still pass
-5. All 20 BigInteger tests still pass
+3. In `visitAtom` (NAME lookup):
+   - After checking localVariables and variables for the name, ALSO check if it's in `functions`
+   - If found in functions but NOT in variables → return `Value(FunctionValue(varName))`
+   - This handles `f = double` where `double` is a known function
+   - If found in variables, return the variable value (as before)
 
-### M30: Nested Function Scope (cycles: 2)
-**Status: PLANNED (after M29)**
-
-Implement enclosing scope lookup so nested functions can read outer function's local variables.
-
-**Implementation:**
-1. Add `enclosingLocalVariables` pointer to EvalVisitor private members
-2. In function call execution (visitAtom_expr):
+4. In `visitAtom_expr` (function call trailers):
+   Currently: `std::string funcName = atom->getText()` then look up in `functions`
+   
+   **New logic - after getting funcName:**
    ```cpp
-   std::map<std::string, Value>* savedEnclosing = enclosingLocalVariables;
-   enclosingLocalVariables = savedLocalVariables;  // outer's locals become enclosing
-   localVariables = &localVars;
-   // ... execute body ...
-   localVariables = savedLocalVariables;
-   enclosingLocalVariables = savedEnclosing;
+   // Check if funcName is a variable holding a FunctionValue
+   std::string actualFuncName = funcName;
+   std::map<std::string, Value>* capturedLocalsPtr = nullptr;
+   
+   // Look up in local then global scope
+   Value* varPtr = nullptr;
+   if (localVariables) {
+       auto it = localVariables->find(funcName);
+       if (it != localVariables->end()) varPtr = &it->second;
+   }
+   if (!varPtr) {
+       auto it = variables.find(funcName);
+       if (it != variables.end()) varPtr = &it->second;
+   }
+   
+   if (varPtr && std::holds_alternative<FunctionValue>(*varPtr)) {
+       FunctionValue& fv = std::get<FunctionValue>(*varPtr);
+       actualFuncName = fv.name;
+       capturedLocalsPtr = &fv.capturedLocals;
+   }
    ```
-3. In `visitAtom` variable lookup, after checking localVariables, check enclosingLocalVariables:
+   
+   Then use `actualFuncName` instead of `funcName` to look up the function.
+   
+   When calling with captured locals, inject them into the function scope:
    ```cpp
-   // Check enclosing scope (for nested functions)
-   if (enclosingLocalVariables != nullptr) {
-       auto enclosingIt = enclosingLocalVariables->find(varName);
-       if (enclosingIt != enclosingLocalVariables->end()) {
-           return enclosingIt->second;
+   // If calling a function with captured locals (closure), inject them
+   if (capturedLocalsPtr && !capturedLocalsPtr->empty()) {
+       for (auto& [k, v] : *capturedLocalsPtr) {
+           if (localVars.find(k) == localVars.end()) {  // don't override parameters
+               localVars[k] = v;
+           }
        }
    }
    ```
 
-**Acceptance Criteria:**
-1. `def outer(): x=42; def inner(): return x; return inner(); print(outer())` → `42`
-2. `def make_adder(n): def adder(x): return x+n; return adder(5); print(make_adder(3))` → `8`
-3. All previous tests still pass
+5. In `visitFuncdef`:
+   When a function is defined inside another function, capture the current local variables:
+   ```cpp
+   // If we're inside a function, store the function name as a FunctionValue in localVariables
+   // AND capture current locals for closure support
+   if (localVariables != nullptr) {
+       std::map<std::string, Value> captured;
+       // Capture all current local variables
+       if (localVariables) captured = *localVariables;
+       if (enclosingLocalVariables) {
+           for (auto& [k, v] : *enclosingLocalVariables) {
+               if (captured.find(k) == captured.end()) captured[k] = v;
+           }
+       }
+       (*localVariables)[funcName] = Value(FunctionValue(funcName, captured));
+   } else {
+       // At global level, just store the function reference
+       variables[funcName] = Value(FunctionValue(funcName));
+   }
+   ```
 
-### M31: Final Polish and Submit (cycles: 2)
+**Acceptance Criteria:**
+1. `def double(x): return x*2; f = double; print(f(5))` → `10`
+2. `def apply(g, x): return g(x); def sq(x): return x*x; print(apply(sq, 4))` → `16`
+3. `def make_adder(n): def adder(x): return x+n; return adder; add5 = make_adder(5); print(add5(3))` → `8`
+4. Functions stored in lists: `funcs = [add, mul]; print(funcs[0](3, 4))` → `7` (if functions support this)
+5. All 16 basic tests still pass
+6. All 20 BigInteger tests still pass
+
+### M32: Float Repr in Containers + Final Polish (cycles: 2)
 **Status: PLANNED**
 
-Run full test suite, verify correctness, merge to master, mark ready for OJ evaluation.
+Fix float representation inside containers (use Python-style repr) and run full verification.
 
 ---
 
@@ -229,6 +319,16 @@ Run full test suite, verify correctness, merge to master, mark ready for OJ eval
 
 ### Cycles 12-14 (Ares/Leo + Apollo)
 - M25 implemented and verified (augmented assignment on subscripts, global fallback)
+
+### Cycles 27-29 (Ares/Leo + Apollo)
+- M29 implemented and verified (list pass-by-reference via shared_ptr)
+- M30 implemented and verified (nested function scope via enclosingLocalVariables)
+
+### Cycle 30 (Athena)
+- Deep analysis of remaining bugs
+- Discovered: functions cannot be used as first-class values (M31)
+- Discovered: float repr in containers differs from Python (M32)
+- Updated roadmap, defining M31 and M32
 
 ### Cycle 15 (Athena)
 - Deep code analysis of remaining issues
