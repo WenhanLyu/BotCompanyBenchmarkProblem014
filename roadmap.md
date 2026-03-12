@@ -2,7 +2,7 @@
 
 **Project:** BotCompanyBenchmarkProblem014 - Python Interpreter  
 **Created:** 2026-03-02  
-**Last Updated:** 2026-03-12 (Cycle 66 - Athena)
+**Last Updated:** 2026-03-12 (Cycle 76 - Athena)
 
 ---
 
@@ -19,13 +19,14 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 66 - Athena)
+## Current State (Cycle 76 - Athena)
 
-- **Status:** M44 complete (on master). Code ready for OJ evaluation.
-- **Last Known OJ Score:** 25/100 (submission #5, before M22-M44 fixes)
+- **Status:** M44-M46 complete + power operator in function args fixed. Code ready for OJ evaluation.
+- **Last Known OJ Score:** 25/100 (submission #5, before M22-M44 fixes - very outdated)
 - **OJ Submissions Used:** 5 of 18 budget
-- **Features Implemented:** M1-M44
+- **Features Implemented:** M1-M46 + additional fixes
 - **Local Tests:** All 16 basic tests PASS (14 exact Python match, 2 spec-allowed differences), all 20 BigInteger tests PASS
+- **Comprehensive algorithm testing done:** Sorting (bubble, quick, merge), DP (knapsack, LCS, LIS, edit distance), graph (DFS, BFS, Dijkstra), closures, HOF, recursion, BigInt all pass
 - **M44 Summary:**
   - Fixed f-string lexer bug: text with only identifier-like chars (e.g., `f"hello"`, `f"True"`) now works correctly
   - Fixed by adding `{format_mode == 0 || expr_mode}?` predicates to NAME, NUMBER, and all keyword rules in Python3Lexer.g4
@@ -468,6 +469,30 @@ Three fixes:
 2. Subscript augmented assignment (`lst[i] += val`) now checks `enclosingLocalVariables`
 3. Recursive closure calls: inject function itself into `localVars` so self-recursion works at any depth (fixes memoization patterns like `def fib(n): ... fib(n-1) ...` inside a closure)
 
+### M45: Comprehensive targeted testing (cycles: 3, MISSED DEADLINE)
+**Status: EFFECTIVELY COMPLETE (M45 cycle budget exhausted, testing done in cycles 71-73)**
+
+Testing was completed across all categories:
+- AdvancedTest patterns (sorting, DP, graph algorithms)
+- ComplexTest patterns (closures, HOF, function composition)
+- CornerTest patterns (edge cases, type conversions, float precision)
+
+One bug fixed: bool as list/tuple/string index (True=1, False=0) - commit 7a2fefd
+key= parameter support for max()/min()/sorted() - commit 76709bd
+Default parameter capture at function definition time (closure-in-loop) - commit 7ad944f
+**power operator in function call arguments** fixed - commit e7982d1 (branch athena/fix-power-in-function-calls, merged via PR #31)
+
+### M46: Additional testing and power operator fix (cycles: 3, M45 successor)
+**Status: COMPLETE (Cycles 71-74, Leo implemented fixes, Athena merged power fix)**
+
+Comprehensive testing was done over 3 cycles. No major bugs found. Fixed:
+1. Bool as list/tuple/string index (True=1, False=0)
+2. key= parameter for max()/min()/sorted()
+3. Default parameter capture at function definition time
+4. Power operator (**) in function call arguments (grammar rule fix - separating `power` from `factor` in grammar)
+
+All 16 basic tests PASS, all 20 BigInteger tests PASS.
+
 ---
 
 ## Lessons Learned
@@ -701,3 +726,21 @@ Three fixes:
   - Comprehensive edge case testing: all patterns work correctly
 - Code is in very good shape for OJ submission
 - Defining M45 to focus on any remaining edge cases that might affect AdvancedTest/ComplexTest/CornerTest
+
+### Cycles 71-74 (Ares/Leo + Athena)
+- M45/M46: Additional testing and bug fixes
+  - Leo tested 53+ patterns across all categories
+  - Fixed: bool as index (True=1, False=0)
+  - Added: key= parameter for max()/min()/sorted()
+  - Fixed: Default parameter capture at function definition time (closure-in-loop)
+  - M45 deadline missed (3 cycles), Leo timed out in cycle 73 investigating potential tuple unpack bug
+  - Athena (cycle 76) independently verified: no tuple unpack bug found, code is correct
+  - **Power operator in function call arguments fixed** (commit e7982d1, PR #31 merged)
+  - `f(2**10)` now correctly returns 2048 (was returning None)
+
+### Cycle 76 (Athena) - Current
+- Independent evaluation: code is in excellent shape
+- All tested patterns match Python3 output
+- Power operator fix merged to master
+- Roadmap updated to reflect current state
+- Defining M47: Final round of testing to ensure correctness before Apollo verification
