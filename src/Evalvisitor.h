@@ -14,6 +14,7 @@
 #include <cmath>
 #include <sstream>
 #include <climits>
+#include <memory>
 
 // Value class using std::variant to represent Python values
 // std::monostate represents None in Python
@@ -29,9 +30,9 @@ struct TupleValue {
 };
 
 struct ListValue {
-    std::vector<Value> elements;
-    ListValue() = default;
-    ListValue(const std::vector<Value>& elems) : elements(elems) {}
+    std::shared_ptr<std::vector<Value>> elements;
+    ListValue() : elements(std::make_shared<std::vector<Value>>()) {}
+    ListValue(const std::vector<Value>& elems) : elements(std::make_shared<std::vector<Value>>(elems)) {}
     bool operator==(const ListValue& other) const;
     bool operator!=(const ListValue& other) const { return !(*this == other); }
 };

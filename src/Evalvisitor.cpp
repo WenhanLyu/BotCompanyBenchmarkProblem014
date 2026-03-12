@@ -4,7 +4,7 @@ bool TupleValue::operator==(const TupleValue& other) const {
     return elements == other.elements;
 }
 bool ListValue::operator==(const ListValue& other) const {
-    return elements == other.elements;
+    return *elements == *other.elements;
 }
 
 std::any EvalVisitor::visitFile_input(Python3Parser::File_inputContext *ctx) {
@@ -63,10 +63,10 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                 else if (std::holds_alternative<BigInteger>(idxVal)) idx1 = static_cast<int>(std::get<BigInteger>(idxVal).toLongLong());
                             } catch (...) {}
                         }
-                        if (idx1 < 0) idx1 += static_cast<int>(outerList.elements.size());
-                        if (idx1 >= 0 && idx1 < static_cast<int>(outerList.elements.size()) &&
-                            std::holds_alternative<ListValue>(outerList.elements[idx1])) {
-                            ListValue& innerList = std::get<ListValue>(outerList.elements[idx1]);
+                        if (idx1 < 0) idx1 += static_cast<int>(outerList.elements->size());
+                        if (idx1 >= 0 && idx1 < static_cast<int>(outerList.elements->size()) &&
+                            std::holds_alternative<ListValue>((*outerList.elements)[idx1])) {
+                            ListValue& innerList = std::get<ListValue>((*outerList.elements)[idx1]);
                             // Evaluate inner index
                             auto idx2Any = visit(lhsAtomExpr->trailer(1)->test());
                             int idx2 = 0;
@@ -78,9 +78,9 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                     else if (std::holds_alternative<BigInteger>(idxVal)) idx2 = static_cast<int>(std::get<BigInteger>(idxVal).toLongLong());
                                 } catch (...) {}
                             }
-                            if (idx2 < 0) idx2 += static_cast<int>(innerList.elements.size());
-                            if (idx2 >= 0 && idx2 < static_cast<int>(innerList.elements.size())) {
-                                Value currentVal = innerList.elements[idx2];
+                            if (idx2 < 0) idx2 += static_cast<int>(innerList.elements->size());
+                            if (idx2 >= 0 && idx2 < static_cast<int>(innerList.elements->size())) {
+                                Value currentVal = (*innerList.elements)[idx2];
                                 auto rightAny = visit(testlists[1]);
                                 Value rightVal;
                                 if (rightAny.has_value()) {
@@ -127,7 +127,7 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                         newVal = pythonModulo(std::get<int>(currentVal), std::get<int>(rightVal));
                                     } else { newVal = currentVal; }
                                 } else { newVal = currentVal; }
-                                innerList.elements[idx2] = newVal;
+                                (*innerList.elements)[idx2] = newVal;
                             }
                         }
                     }
@@ -159,9 +159,9 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                 }
                             } catch (...) {}
                         }
-                        if (idx < 0) idx += static_cast<int>(lst.elements.size());
-                        if (idx >= 0 && idx < static_cast<int>(lst.elements.size())) {
-                            Value currentVal = lst.elements[idx];
+                        if (idx < 0) idx += static_cast<int>(lst.elements->size());
+                        if (idx >= 0 && idx < static_cast<int>(lst.elements->size())) {
+                            Value currentVal = (*lst.elements)[idx];
                             auto rightAny = visit(testlists[1]);
                             Value rightVal;
                             if (rightAny.has_value()) {
@@ -243,7 +243,7 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                 if (r != 0.0) newVal = l / r;
                                 else newVal = currentVal;  // Division by zero protection
                             } else { newVal = currentVal; }
-                            lst.elements[idx] = newVal;
+                            (*lst.elements)[idx] = newVal;
                         }
                     }
                     return std::any();
@@ -661,10 +661,10 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                             
                             if (std::holds_alternative<ListValue>(*varPtr)) {
                                 ListValue& lst = std::get<ListValue>(*varPtr);
-                                int size = static_cast<int>(lst.elements.size());
+                                int size = static_cast<int>(lst.elements->size());
                                 if (index < 0) index = size + index;
                                 if (index >= 0 && index < size) {
-                                    lst.elements[index] = value;
+                                    (*lst.elements)[index] = value;
                                 }
                             }
                         } else if (trailers.size() == 2) {
@@ -683,15 +683,15 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                             
                             if (std::holds_alternative<ListValue>(*varPtr)) {
                                 ListValue& lst = std::get<ListValue>(*varPtr);
-                                int size1 = static_cast<int>(lst.elements.size());
+                                int size1 = static_cast<int>(lst.elements->size());
                                 if (idx1 < 0) idx1 = size1 + idx1;
                                 if (idx1 >= 0 && idx1 < size1 && 
-                                    std::holds_alternative<ListValue>(lst.elements[idx1])) {
-                                    ListValue& innerLst = std::get<ListValue>(lst.elements[idx1]);
-                                    int size2 = static_cast<int>(innerLst.elements.size());
+                                    std::holds_alternative<ListValue>((*lst.elements)[idx1])) {
+                                    ListValue& innerLst = std::get<ListValue>((*lst.elements)[idx1]);
+                                    int size2 = static_cast<int>(innerLst.elements->size());
                                     if (idx2 < 0) idx2 = size2 + idx2;
                                     if (idx2 >= 0 && idx2 < size2) {
-                                        innerLst.elements[idx2] = value;
+                                        (*innerLst.elements)[idx2] = value;
                                     }
                                 }
                             }
@@ -835,7 +835,7 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
             } else if (std::holds_alternative<ListValue>(sequence)) {
                 // List indexing
                 const ListValue& list = std::get<ListValue>(sequence);
-                int size = static_cast<int>(list.elements.size());
+                int size = static_cast<int>(list.elements->size());
                 
                 // Handle negative indexing
                 if (index < 0) {
@@ -847,7 +847,7 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                     throw std::runtime_error("List index out of range");
                 }
                 
-                currentValue = list.elements[index];
+                currentValue = (*list.elements)[index];
             } else {
                 throw std::runtime_error("Object is not subscriptable");
             }
@@ -1586,13 +1586,12 @@ std::any EvalVisitor::visitArith_expr(Python3Parser::Arith_exprContext *ctx) {
                 result = std::get<std::string>(result) + std::get<std::string>(term);
             }
         } else if (std::holds_alternative<ListValue>(result) && std::holds_alternative<ListValue>(term)) {
-            // List concatenation: [1,2] + [3,4] = [1,2,3,4]
+            // List concatenation: [1,2] + [3,4] = [1,2,3,4] (creates NEW list)
             if (op == "+") {
-                ListValue newList;
-                newList.elements = std::get<ListValue>(result).elements;
-                const auto& rhs = std::get<ListValue>(term).elements;
-                newList.elements.insert(newList.elements.end(), rhs.begin(), rhs.end());
-                result = newList;
+                std::vector<Value> newElems = *std::get<ListValue>(result).elements;
+                const auto& rhs = *std::get<ListValue>(term).elements;
+                newElems.insert(newElems.end(), rhs.begin(), rhs.end());
+                result = ListValue(newElems);
             }
         }
     }
@@ -1688,10 +1687,10 @@ std::any EvalVisitor::visitTerm(Python3Parser::TermContext *ctx) {
             }
             ListValue newList;
             if (count > 0) {
-                newList.elements.reserve(baseList.elements.size() * count);
+                newList.elements->reserve(baseList.elements->size() * count);
                 for (int i = 0; i < count; i++) {
-                    newList.elements.insert(newList.elements.end(), 
-                                            baseList.elements.begin(), baseList.elements.end());
+                    newList.elements->insert(newList.elements->end(), 
+                                            baseList.elements->begin(), baseList.elements->end());
                 }
             }
             result = newList;
@@ -2037,9 +2036,9 @@ std::string EvalVisitor::valueToString(const Value& val) {
         // Print list as [elem1, elem2, ...] with repr for elements
         const ListValue& list = std::get<ListValue>(val);
         std::string result = "[";
-        for (size_t i = 0; i < list.elements.size(); i++) {
-            result += valueToRepr(list.elements[i]);
-            if (i < list.elements.size() - 1) {
+        for (size_t i = 0; i < list.elements->size(); i++) {
+            result += valueToRepr((*list.elements)[i]);
+            if (i < list.elements->size() - 1) {
                 result += ", ";
             }
         }
@@ -2109,7 +2108,7 @@ bool EvalVisitor::valueToBool(const Value& val) {
     } else if (std::holds_alternative<TupleValue>(val)) {
         return !std::get<TupleValue>(val).elements.empty();
     } else if (std::holds_alternative<ListValue>(val)) {
-        return !std::get<ListValue>(val).elements.empty();
+        return !std::get<ListValue>(val).elements->empty();
     }
     return false;
 }
