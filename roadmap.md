@@ -19,12 +19,12 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 45)
+## Current State (Cycle 46)
 
-- **Status:** M35 complete (merged). abs/max/min/bool-list-tuple all fixed.
-- **Last Known OJ Score:** 25/100 (submission #5, before M22-M35 fixes)
+- **Status:** M36 complete (PR #25, merged). list augmented assignment, list/tuple ordering, sorted() all fixed.
+- **Last Known OJ Score:** 25/100 (submission #5, before M22-M36 fixes)
 - **OJ Submissions Used:** 5 of 18 budget
-- **Features Implemented:** M1-M35
+- **Features Implemented:** M1-M36
 - **Local Tests:** All 16 basic tests PASS, all 20 BigInteger tests PASS
 
 ## Critical Bugs Found (Cycle 45 Analysis)
@@ -154,7 +154,7 @@ Three bugs that likely affect Sample tests (21-34) and AdvancedTest (35-52):
 10. All 20 BigInteger tests still pass
 
 ### M36: list/tuple ordering comparison + list augmented assignment + sorted() (cycles: 2)
-**Status: READY TO START**
+**Status: COMPLETE (PR #25, merged)**
 
 Three bugs that break nearly all AdvancedTest programs using lists:
 
