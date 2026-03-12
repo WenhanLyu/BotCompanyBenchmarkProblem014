@@ -139,6 +139,9 @@ private:
     // Local variable storage during function execution (nullptr when not in function)
     std::map<std::string, Value>* localVariables = nullptr;
     
+    // Enclosing function's local variables (for nested functions)
+    std::map<std::string, Value>* enclosingLocalVariables = nullptr;
+    
     // Set of variables that are local in the current function (nullptr when not in function)
     const std::set<std::string>* currentFunctionLocals = nullptr;
     

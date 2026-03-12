@@ -1153,7 +1153,10 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
             std::map<std::string, Value>* savedLocalVariables = localVariables;
             const std::set<std::string>* savedFunctionLocals = currentFunctionLocals;
             std::set<std::string> savedFunctionGlobals = currentFunctionGlobals;
+            std::map<std::string, Value>* savedEnclosingLocalVariables = enclosingLocalVariables;
             
+            // The current function's locals become the enclosing scope for nested calls
+            enclosingLocalVariables = savedLocalVariables;
             localVariables = &localVars;
             currentFunctionLocals = &funcDef.assignedVars;
             currentFunctionGlobals = funcDef.globalVars;
@@ -1226,6 +1229,7 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
             localVariables = savedLocalVariables;
             currentFunctionLocals = savedFunctionLocals;
             currentFunctionGlobals = savedFunctionGlobals;
+            enclosingLocalVariables = savedEnclosingLocalVariables;
             
             // Store the return value and continue (allow subscript trailers after function call)
             currentValue = returnValue;
@@ -1326,6 +1330,13 @@ std::any EvalVisitor::visitAtom(Python3Parser::AtomContext *ctx) {
                     return localIt->second;
                 }
             }
+            // Check enclosing scope (for nested functions)
+            if (enclosingLocalVariables != nullptr) {
+                auto encIt = enclosingLocalVariables->find(varName);
+                if (encIt != enclosingLocalVariables->end()) {
+                    return encIt->second;
+                }
+            }
             // Local variable not initialized - fall back to global scope per spec:
             // "global variables are effective in all scopes (can be accessed without the global keyword)"
             auto globalIt = variables.find(varName);
@@ -1339,6 +1350,13 @@ std::any EvalVisitor::visitAtom(Python3Parser::AtomContext *ctx) {
             auto localIt = localVariables->find(varName);
             if (localIt != localVariables->end()) {
                 return localIt->second;
+            }
+        }
+        // Check enclosing scope (for nested functions)
+        if (enclosingLocalVariables != nullptr) {
+            auto encIt = enclosingLocalVariables->find(varName);
+            if (encIt != enclosingLocalVariables->end()) {
+                return encIt->second;
             }
         }
         auto it = variables.find(varName);
