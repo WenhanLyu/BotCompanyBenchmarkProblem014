@@ -395,7 +395,14 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
             Value currentValue;
             bool found = false;
             
-            if (isLocal) {
+            if (isGlobal) {
+                // Declared global: ALWAYS read from global scope (skip localVariables entirely)
+                auto it = variables.find(varName);
+                if (it != variables.end()) {
+                    currentValue = it->second;
+                    found = true;
+                }
+            } else if (isLocal) {
                 // This is a local variable - only look in local scope (no global fallback)
                 // In Python, if a variable is assigned anywhere in a function (including +=),
                 // it is local. Reading it before local assignment → UnboundLocalError.
@@ -636,8 +643,11 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
             }
             
             // Store the result (in local scope if local variable, otherwise global)
-            // isLocal was already defined above (may have been set to false by global fallback)
-            if (isLocal && localVariables != nullptr) {
+            if (isGlobal) {
+                // Declared global: ALWAYS write to global scope only
+                // Never write to localVariables to avoid stale-read bugs on subsequent augmented assigns
+                variables[varName] = result;
+            } else if (isLocal && localVariables != nullptr) {
                 // This is a local variable (assigned via = in this function scope)
                 // Only write to local scope - do NOT write back to global (even if same name exists there)
                 (*localVariables)[varName] = result;
@@ -648,14 +658,8 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                     // Modify the parameter (local copy)
                     (*localVariables)[varName] = result;
                 } else {
-                    // Modify global
+                    // Modify global (not a parameter, not explicitly local)
                     variables[varName] = result;
-                    // Also write to local scope if the pre-scan says this is a local variable
-                    // so that subsequent reads (e.g., return x) can find the value
-                    if (currentFunctionLocals != nullptr &&
-                        currentFunctionLocals->find(varName) != currentFunctionLocals->end()) {
-                        (*localVariables)[varName] = result;
-                    }
                 }
             } else {
                 variables[varName] = result;
