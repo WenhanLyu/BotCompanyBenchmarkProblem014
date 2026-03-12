@@ -7,6 +7,81 @@ bool ListValue::operator==(const ListValue& other) const {
     return *elements == *other.elements;
 }
 
+// Forward declare for lexicographic comparison
+static int compareValues(const Value& a, const Value& b);
+
+// Compare two values: returns -1 if a < b, 0 if a == b, 1 if a > b
+// Supports: int, bool, double, BigInteger, string, list, tuple
+static int compareValues(const Value& a, const Value& b) {
+    // Helper: convert numeric to double
+    auto toDouble = [](const Value& v) -> double {
+        if (std::holds_alternative<int>(v)) return std::get<int>(v);
+        if (std::holds_alternative<bool>(v)) return std::get<bool>(v) ? 1.0 : 0.0;
+        if (std::holds_alternative<double>(v)) return std::get<double>(v);
+        return 0.0;
+    };
+    bool aIsNum = std::holds_alternative<int>(a) || std::holds_alternative<bool>(a) || std::holds_alternative<double>(a);
+    bool bIsNum = std::holds_alternative<int>(b) || std::holds_alternative<bool>(b) || std::holds_alternative<double>(b);
+    bool aIsBig = std::holds_alternative<BigInteger>(a);
+    bool bIsBig = std::holds_alternative<BigInteger>(b);
+    
+    if ((aIsNum || aIsBig) && (bIsNum || bIsBig)) {
+        if (aIsBig && bIsBig) {
+            const BigInteger& la = std::get<BigInteger>(a);
+            const BigInteger& rb = std::get<BigInteger>(b);
+            if (la < rb) return -1;
+            if (rb < la) return 1;
+            return 0;
+        } else if (aIsBig) {
+            BigInteger rb((long long)toDouble(b));
+            if (std::get<BigInteger>(a) < rb) return -1;
+            if (rb < std::get<BigInteger>(a)) return 1;
+            return 0;
+        } else if (bIsBig) {
+            BigInteger la((long long)toDouble(a));
+            if (la < std::get<BigInteger>(b)) return -1;
+            if (std::get<BigInteger>(b) < la) return 1;
+            return 0;
+        } else {
+            double da = toDouble(a), db = toDouble(b);
+            if (da < db) return -1;
+            if (da > db) return 1;
+            return 0;
+        }
+    } else if (std::holds_alternative<std::string>(a) && std::holds_alternative<std::string>(b)) {
+        const std::string& sa = std::get<std::string>(a);
+        const std::string& sb = std::get<std::string>(b);
+        if (sa < sb) return -1;
+        if (sa > sb) return 1;
+        return 0;
+    } else if (std::holds_alternative<ListValue>(a) && std::holds_alternative<ListValue>(b)) {
+        // Lexicographic comparison of lists
+        const auto& la = *std::get<ListValue>(a).elements;
+        const auto& lb = *std::get<ListValue>(b).elements;
+        size_t minLen = std::min(la.size(), lb.size());
+        for (size_t i = 0; i < minLen; i++) {
+            int c = compareValues(la[i], lb[i]);
+            if (c != 0) return c;
+        }
+        if (la.size() < lb.size()) return -1;
+        if (la.size() > lb.size()) return 1;
+        return 0;
+    } else if (std::holds_alternative<TupleValue>(a) && std::holds_alternative<TupleValue>(b)) {
+        // Lexicographic comparison of tuples
+        const auto& ta = std::get<TupleValue>(a).elements;
+        const auto& tb = std::get<TupleValue>(b).elements;
+        size_t minLen = std::min(ta.size(), tb.size());
+        for (size_t i = 0; i < minLen; i++) {
+            int c = compareValues(ta[i], tb[i]);
+            if (c != 0) return c;
+        }
+        if (ta.size() < tb.size()) return -1;
+        if (ta.size() > tb.size()) return 1;
+        return 0;
+    }
+    return 0; // incomparable types treated as equal
+}
+
 std::any EvalVisitor::visitFile_input(Python3Parser::File_inputContext *ctx) {
     // Visit all statements in the file
     return visitChildren(ctx);
@@ -369,6 +444,15 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                     result = left + right;
                 } else if (std::holds_alternative<std::string>(currentValue) && std::holds_alternative<std::string>(rightValue)) {
                     result = std::get<std::string>(currentValue) + std::get<std::string>(rightValue);
+                } else if (std::holds_alternative<ListValue>(currentValue) && std::holds_alternative<ListValue>(rightValue)) {
+                    // List concatenation: a += [x] appends elements
+                    const ListValue& lhs = std::get<ListValue>(currentValue);
+                    const ListValue& rhs = std::get<ListValue>(rightValue);
+                    std::vector<Value> newElems = *lhs.elements;
+                    for (const auto& elem : *rhs.elements) {
+                        newElems.push_back(elem);
+                    }
+                    result = ListValue(newElems);
                 }
             } else if (op == "-=") {
                 if (std::holds_alternative<BigInteger>(currentValue) || std::holds_alternative<BigInteger>(rightValue)) {
@@ -429,6 +513,18 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                         repeated.append(s);
                     }
                     result = repeated;
+                } else if (std::holds_alternative<ListValue>(currentValue) && std::holds_alternative<int>(rightValue)) {
+                    // List repetition: a *= 3 repeats elements 3 times
+                    const ListValue& lst = std::get<ListValue>(currentValue);
+                    int count = std::get<int>(rightValue);
+                    std::vector<Value> newElems;
+                    newElems.reserve(lst.elements->size() * (count > 0 ? count : 0));
+                    for (int i = 0; i < count; i++) {
+                        for (const auto& elem : *lst.elements) {
+                            newElems.push_back(elem);
+                        }
+                    }
+                    result = ListValue(newElems);
                 }
             } else if (op == "/=") {
                 // Division always returns double
@@ -1473,6 +1569,41 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
             continue;
         }
         
+        if (funcName == "sorted") {
+            // sorted(iterable) → returns a new sorted list (non-destructive)
+            auto arglist = trailer->arglist();
+            if (arglist) {
+                auto args = arglist->argument();
+                if (!args.empty()) {
+                    auto tests = args[0]->test();
+                    if (!tests.empty()) {
+                        auto av = visit(tests[0]);
+                        if (av.has_value()) {
+                            try {
+                                Value argVal = std::any_cast<Value>(av);
+                                std::vector<Value> elems;
+                                if (std::holds_alternative<ListValue>(argVal)) {
+                                    elems = *std::get<ListValue>(argVal).elements;
+                                } else if (std::holds_alternative<TupleValue>(argVal)) {
+                                    elems = std::get<TupleValue>(argVal).elements;
+                                }
+                                // Sort using compareValues for Python-style ordering
+                                std::stable_sort(elems.begin(), elems.end(), [](const Value& a, const Value& b) {
+                                    return compareValues(a, b) < 0;
+                                });
+                                currentValue = Value(ListValue(elems));
+                                isFirstTrailer = false;
+                                continue;
+                            } catch (...) {}
+                        }
+                    }
+                }
+            }
+            currentValue = Value(ListValue());
+            isFirstTrailer = false;
+            continue;
+        }
+
         // Check if funcName refers to a variable holding a FunctionValue (first-class function)
         // This allows: f = double; f(5)  or  apply(double, 5)
         {
@@ -2514,14 +2645,24 @@ std::any EvalVisitor::visitComparison(Python3Parser::ComparisonContext *ctx) {
             else if (op == "==") compResult = l == r;
             else if (op == "!=") compResult = l != r;
         } else if (std::holds_alternative<TupleValue>(left) && std::holds_alternative<TupleValue>(right)) {
-            // Tuple equality comparison
-            if (op == "==") compResult = (std::get<TupleValue>(left) == std::get<TupleValue>(right));
-            else if (op == "!=") compResult = (std::get<TupleValue>(left) != std::get<TupleValue>(right));
+            // Tuple lexicographic comparison
+            int c = compareValues(left, right);
+            if (op == "==") compResult = (c == 0);
+            else if (op == "!=") compResult = (c != 0);
+            else if (op == "<")  compResult = (c < 0);
+            else if (op == ">")  compResult = (c > 0);
+            else if (op == "<=") compResult = (c <= 0);
+            else if (op == ">=") compResult = (c >= 0);
             else compResult = false;
         } else if (std::holds_alternative<ListValue>(left) && std::holds_alternative<ListValue>(right)) {
-            // List equality comparison
-            if (op == "==") compResult = (std::get<ListValue>(left) == std::get<ListValue>(right));
-            else if (op == "!=") compResult = (std::get<ListValue>(left) != std::get<ListValue>(right));
+            // List lexicographic comparison
+            int c = compareValues(left, right);
+            if (op == "==") compResult = (c == 0);
+            else if (op == "!=") compResult = (c != 0);
+            else if (op == "<")  compResult = (c < 0);
+            else if (op == ">")  compResult = (c > 0);
+            else if (op == "<=") compResult = (c <= 0);
+            else if (op == ">=") compResult = (c >= 0);
             else compResult = false;
         } else if (std::holds_alternative<std::monostate>(left) && std::holds_alternative<std::monostate>(right)) {
             // None vs None: None == None is True, None != None is False

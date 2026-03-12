@@ -15,6 +15,7 @@
 #include <sstream>
 #include <climits>
 #include <memory>
+#include <algorithm>
 
 // Value class using std::variant to represent Python values
 // std::monostate represents None in Python
