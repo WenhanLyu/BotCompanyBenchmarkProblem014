@@ -111,7 +111,121 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
             auto lhsTests = testlists[0]->test();
             if (!lhsTests.empty()) {
                 auto lhsAtomExpr = getAtomExprFromTest(lhsTests[0]);
-                if (lhsAtomExpr && lhsAtomExpr->trailer().size() >= 2 &&
+                if (lhsAtomExpr && lhsAtomExpr->trailer().size() >= 3 &&
+                    lhsAtomExpr->trailer(0)->OPEN_BRACK() &&
+                    lhsAtomExpr->trailer(1)->OPEN_BRACK() &&
+                    lhsAtomExpr->trailer(2)->OPEN_BRACK()) {
+                    // 3-trailer case: arr[i][j][k] op= val
+                    std::string outerVarName = lhsAtomExpr->atom()->getText();
+                    Value* outerPtr = nullptr;
+                    if (localVariables != nullptr) {
+                        auto it = localVariables->find(outerVarName);
+                        if (it != localVariables->end()) outerPtr = &it->second;
+                    }
+                    if (!outerPtr && enclosingLocalVariables != nullptr) {
+                        auto eit = enclosingLocalVariables->find(outerVarName);
+                        if (eit != enclosingLocalVariables->end()) outerPtr = &eit->second;
+                    }
+                    if (!outerPtr) {
+                        auto it = variables.find(outerVarName);
+                        if (it != variables.end()) outerPtr = &it->second;
+                    }
+                    if (outerPtr && std::holds_alternative<ListValue>(*outerPtr)) {
+                        auto extractIdx = [&](Python3Parser::TrailerContext* trailer) -> int {
+                            auto idxAny = visit(trailer->test());
+                            int idx = 0;
+                            if (idxAny.has_value()) {
+                                try {
+                                    Value idxVal = std::any_cast<Value>(idxAny);
+                                    if (std::holds_alternative<int>(idxVal)) idx = std::get<int>(idxVal);
+                                    else if (std::holds_alternative<bool>(idxVal)) idx = std::get<bool>(idxVal) ? 1 : 0;
+                                    else if (std::holds_alternative<BigInteger>(idxVal)) idx = static_cast<int>(std::get<BigInteger>(idxVal).toLongLong());
+                                } catch (...) {}
+                            }
+                            return idx;
+                        };
+                        int idx1 = extractIdx(lhsAtomExpr->trailer(0));
+                        int idx2 = extractIdx(lhsAtomExpr->trailer(1));
+                        int idx3 = extractIdx(lhsAtomExpr->trailer(2));
+
+                        ListValue& lvl1 = std::get<ListValue>(*outerPtr);
+                        int s1 = static_cast<int>(lvl1.elements->size());
+                        if (idx1 < 0) idx1 = s1 + idx1;
+                        if (idx1 >= 0 && idx1 < s1 &&
+                            std::holds_alternative<ListValue>((*lvl1.elements)[idx1])) {
+                            ListValue& lvl2 = std::get<ListValue>((*lvl1.elements)[idx1]);
+                            int s2 = static_cast<int>(lvl2.elements->size());
+                            if (idx2 < 0) idx2 = s2 + idx2;
+                            if (idx2 >= 0 && idx2 < s2 &&
+                                std::holds_alternative<ListValue>((*lvl2.elements)[idx2])) {
+                                ListValue& lvl3 = std::get<ListValue>((*lvl2.elements)[idx2]);
+                                int s3 = static_cast<int>(lvl3.elements->size());
+                                if (idx3 < 0) idx3 = s3 + idx3;
+                                if (idx3 >= 0 && idx3 < s3) {
+                                    Value currentVal = (*lvl3.elements)[idx3];
+                                    auto rightAny = visit(testlists[1]);
+                                    Value rightVal;
+                                    if (rightAny.has_value()) {
+                                        try { rightVal = std::any_cast<Value>(rightAny); } catch (...) { rightVal = Value(0); }
+                                    } else { rightVal = Value(0); }
+                                    std::string op = augassign->getText();
+                                    if (std::holds_alternative<bool>(currentVal)) currentVal = Value(std::get<bool>(currentVal) ? 1 : 0);
+                                    if (std::holds_alternative<bool>(rightVal)) rightVal = Value(std::get<bool>(rightVal) ? 1 : 0);
+                                    Value newVal;
+                                    if (op == "+=") {
+                                        if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
+                                            int l = std::get<int>(currentVal), r = std::get<int>(rightVal);
+                                            if (willOverflowAdd(l, r)) newVal = tryDowncastBigInteger(BigInteger(l) + BigInteger(r));
+                                            else newVal = l + r;
+                                        } else if (std::holds_alternative<BigInteger>(currentVal) || std::holds_alternative<BigInteger>(rightVal)) {
+                                            BigInteger l = std::holds_alternative<BigInteger>(currentVal) ? std::get<BigInteger>(currentVal) : BigInteger(std::get<int>(currentVal));
+                                            BigInteger r = std::holds_alternative<BigInteger>(rightVal) ? std::get<BigInteger>(rightVal) : BigInteger(std::get<int>(rightVal));
+                                            newVal = tryDowncastBigInteger(l + r);
+                                        } else if (std::holds_alternative<double>(currentVal) || std::holds_alternative<double>(rightVal)) {
+                                            double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) : static_cast<double>(std::get<int>(currentVal));
+                                            double r = std::holds_alternative<double>(rightVal) ? std::get<double>(rightVal) : static_cast<double>(std::get<int>(rightVal));
+                                            newVal = l + r;
+                                        } else { newVal = currentVal; }
+                                    } else if (op == "-=") {
+                                        if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
+                                            int l = std::get<int>(currentVal), r = std::get<int>(rightVal);
+                                            newVal = willOverflowSubtract(l,r) ? tryDowncastBigInteger(BigInteger(l)-BigInteger(r)) : Value(l-r);
+                                        } else { newVal = currentVal; }
+                                    } else if (op == "*=") {
+                                        if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
+                                            int l = std::get<int>(currentVal), r = std::get<int>(rightVal);
+                                            newVal = willOverflowMultiply(l,r) ? tryDowncastBigInteger(BigInteger(l)*BigInteger(r)) : Value(l*r);
+                                        } else { newVal = currentVal; }
+                                    } else if (op == "/=") {
+                                        double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) : static_cast<double>(std::get<int>(currentVal));
+                                        double r = std::holds_alternative<double>(rightVal) ? std::get<double>(rightVal) : static_cast<double>(std::get<int>(rightVal));
+                                        if (r != 0.0) newVal = l / r; else newVal = currentVal;
+                                    } else if (op == "//=") {
+                                        if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
+                                            newVal = pythonFloorDiv(std::get<int>(currentVal), std::get<int>(rightVal));
+                                        } else if (std::holds_alternative<double>(currentVal) || std::holds_alternative<double>(rightVal)) {
+                                            double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) : static_cast<double>(std::get<int>(currentVal));
+                                            double r = std::holds_alternative<double>(rightVal) ? std::get<double>(rightVal) : static_cast<double>(std::get<int>(rightVal));
+                                            newVal = std::floor(l / r);
+                                        } else { newVal = currentVal; }
+                                    } else if (op == "%=") {
+                                        if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
+                                            newVal = pythonModulo(std::get<int>(currentVal), std::get<int>(rightVal));
+                                        } else if (std::holds_alternative<double>(currentVal) || std::holds_alternative<double>(rightVal)) {
+                                            double l = std::holds_alternative<double>(currentVal) ? std::get<double>(currentVal) : static_cast<double>(std::get<int>(currentVal));
+                                            double r = std::holds_alternative<double>(rightVal) ? std::get<double>(rightVal) : static_cast<double>(std::get<int>(rightVal));
+                                            newVal = l - std::floor(l / r) * r;
+                                        } else { newVal = currentVal; }
+                                    } else if (op == "**=") {
+                                        newVal = powerValue(currentVal, rightVal);
+                                    } else { newVal = currentVal; }
+                                    (*lvl3.elements)[idx3] = newVal;
+                                }
+                            }
+                        }
+                    }
+                    return std::any();
+                } else if (lhsAtomExpr && lhsAtomExpr->trailer().size() >= 2 &&
                     lhsAtomExpr->trailer(0)->OPEN_BRACK() &&
                     lhsAtomExpr->trailer(1)->OPEN_BRACK()) {
                     // 2-trailer case: m[i][j] op= val
@@ -829,6 +943,44 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                         }
                                     }
                                 }
+                            } else if (trailers.size() >= 3 && trailers[0]->OPEN_BRACK() && trailers[1]->OPEN_BRACK() && trailers[2]->OPEN_BRACK()) {
+                                // Triple subscript: arr[i][j][k] = value
+                                auto extractIdx = [&](Python3Parser::TrailerContext* trailer) -> int {
+                                    auto idxAny = visit(trailer->test());
+                                    Value idxVal = std::any_cast<Value>(idxAny);
+                                    if (std::holds_alternative<int>(idxVal)) return std::get<int>(idxVal);
+                                    else if (std::holds_alternative<bool>(idxVal)) return std::get<bool>(idxVal) ? 1 : 0;
+                                    else if (std::holds_alternative<BigInteger>(idxVal)) return static_cast<int>(std::get<BigInteger>(idxVal).toLongLong());
+                                    return 0;
+                                };
+                                int idx1 = extractIdx(trailers[0]);
+                                int idx2 = extractIdx(trailers[1]);
+                                int idx3 = extractIdx(trailers[2]);
+
+                                if (std::holds_alternative<ListValue>(*varPtr)) {
+                                    ListValue& lvl1 = std::get<ListValue>(*varPtr);
+                                    int s1 = static_cast<int>(lvl1.elements->size());
+                                    if (idx1 < 0) idx1 = s1 + idx1;
+                                    if (idx1 >= 0 && idx1 < s1) {
+                                        Value& v1 = (*lvl1.elements)[idx1];
+                                        if (std::holds_alternative<ListValue>(v1)) {
+                                            ListValue& lvl2 = std::get<ListValue>(v1);
+                                            int s2 = static_cast<int>(lvl2.elements->size());
+                                            if (idx2 < 0) idx2 = s2 + idx2;
+                                            if (idx2 >= 0 && idx2 < s2) {
+                                                Value& v2 = (*lvl2.elements)[idx2];
+                                                if (std::holds_alternative<ListValue>(v2)) {
+                                                    ListValue& lvl3 = std::get<ListValue>(v2);
+                                                    int s3 = static_cast<int>(lvl3.elements->size());
+                                                    if (idx3 < 0) idx3 = s3 + idx3;
+                                                    if (idx3 >= 0 && idx3 < s3) {
+                                                        (*lvl3.elements)[idx3] = value;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     } else {
@@ -940,6 +1092,44 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                     if (idx2 < 0) idx2 = size2 + idx2;
                                     if (idx2 >= 0 && idx2 < size2) {
                                         (*innerLst.elements)[idx2] = value;
+                                    }
+                                }
+                            }
+                        } else if (trailers.size() >= 3) {
+                            // Triple subscript: arr[i][j][k] = value
+                            auto extractIdx = [&](Python3Parser::TrailerContext* trailer) -> int {
+                                auto idxAny = visit(trailer->test());
+                                Value idxVal = std::any_cast<Value>(idxAny);
+                                if (std::holds_alternative<int>(idxVal)) return std::get<int>(idxVal);
+                                else if (std::holds_alternative<bool>(idxVal)) return std::get<bool>(idxVal) ? 1 : 0;
+                                else if (std::holds_alternative<BigInteger>(idxVal)) return static_cast<int>(std::get<BigInteger>(idxVal).toLongLong());
+                                return 0;
+                            };
+                            int idx1 = extractIdx(trailers[0]);
+                            int idx2 = extractIdx(trailers[1]);
+                            int idx3 = extractIdx(trailers[2]);
+
+                            if (std::holds_alternative<ListValue>(*varPtr)) {
+                                ListValue& lvl1 = std::get<ListValue>(*varPtr);
+                                int s1 = static_cast<int>(lvl1.elements->size());
+                                if (idx1 < 0) idx1 = s1 + idx1;
+                                if (idx1 >= 0 && idx1 < s1) {
+                                    Value& v1 = (*lvl1.elements)[idx1];
+                                    if (std::holds_alternative<ListValue>(v1)) {
+                                        ListValue& lvl2 = std::get<ListValue>(v1);
+                                        int s2 = static_cast<int>(lvl2.elements->size());
+                                        if (idx2 < 0) idx2 = s2 + idx2;
+                                        if (idx2 >= 0 && idx2 < s2) {
+                                            Value& v2 = (*lvl2.elements)[idx2];
+                                            if (std::holds_alternative<ListValue>(v2)) {
+                                                ListValue& lvl3 = std::get<ListValue>(v2);
+                                                int s3 = static_cast<int>(lvl3.elements->size());
+                                                if (idx3 < 0) idx3 = s3 + idx3;
+                                                if (idx3 >= 0 && idx3 < s3) {
+                                                    (*lvl3.elements)[idx3] = value;
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
