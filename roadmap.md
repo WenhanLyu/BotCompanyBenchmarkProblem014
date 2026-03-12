@@ -2,7 +2,7 @@
 
 **Project:** BotCompanyBenchmarkProblem014 - Python Interpreter  
 **Created:** 2026-03-02  
-**Last Updated:** 2026-03-12 (Cycle 45 - Athena)
+**Last Updated:** 2026-03-12 (Cycle 48 - Athena)
 
 ---
 
@@ -19,17 +19,37 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 46)
+## Current State (Cycle 48)
 
-- **Status:** M36 complete (PR #25, merged). list augmented assignment, list/tuple ordering, sorted() all fixed.
+- **Status:** M36 complete (PR #25, merged). M37 pending definition.
 - **Last Known OJ Score:** 25/100 (submission #5, before M22-M36 fixes)
 - **OJ Submissions Used:** 5 of 18 budget
 - **Features Implemented:** M1-M36
 - **Local Tests:** All 16 basic tests PASS, all 20 BigInteger tests PASS
 
-## Critical Bugs Found (Cycle 45 Analysis)
+## Critical Bugs Found (Cycle 48 Analysis)
 
-### Bug A: `list += list` and `list *= int` in Augmented Assignment → None (CRITICAL)
+### Bug A: `def f(x=None)` crashes with "Missing required parameter" (CRITICAL)
+When `None` is used as a default parameter value, it is stored as `std::monostate{}` - same as "no default". The check `!std::holds_alternative<std::monostate>(funcDef.defaultValues[pi])` then treats `None` as "no default", causing crash.
+
+**Fix needed:** Add `numDefaultParams` field to `FunctionDef` tracking how many TRAILING parameters have explicit defaults. Then check uses index >= numParams - numDefaultParams instead of checking if value is non-monostate.
+
+### Bug B: `max([list])` and `min([list])` don't work with single iterable (CRITICAL)
+`max([3, 1, 4])` should return `4` (max of list elements), not the list itself.
+Currently, when called with one list argument, the function returns that single argument as the "maximum".
+
+**Fix needed:** In the `max`/`min` built-in handlers in `visitAtom_expr`: if there's exactly 1 argument and it's a ListValue or TupleValue, iterate over its elements and compute max/min.
+
+### Bug C: Closures cannot modify outer scope variables (MEDIUM)
+`count += 1` inside an inner function does NOT propagate to outer function's `count`.
+The capturedLocals mechanism copies values at closure creation time, so mutations are isolated to each call.
+
+**Workaround (working):** Using a list `count = [0]; count[0] += 1` works since lists are shared by reference.
+**Real fix:** This requires significant architecture changes (shared_ptr to scope maps), deprioritized unless test cases specifically need it.
+
+## Critical Bugs Found (Cycle 45 Analysis) — ALL FIXED IN M36
+
+### Bug A: `list += list` and `list *= int` in Augmented Assignment → None (CRITICAL) ✅ FIXED M36
 
 `a += [x]` sets `a` to `None` instead of the concatenated list.
 `a *= 3` sets `a` to `None` instead of the repeated list.
@@ -153,6 +173,29 @@ Three bugs that likely affect Sample tests (21-34) and AdvancedTest (35-52):
 9. All 16 basic tests still pass
 10. All 20 BigInteger tests still pass
 
+### M37: Fix None default parameter + max/min with single iterable (cycles: 2)
+**Status: PENDING**
+
+Two critical bugs blocking AdvancedTest:
+
+1. **`def f(x=None)` crashes** - When None is used as a default parameter value, it's stored as `std::monostate{}` (same as "no default"), causing "Missing required parameter" crash. Fix: add `numDefaultParams` field to `FunctionDef`, use positional check instead of value check.
+
+2. **`max(list)` / `min(list)` with single iterable** - When called with one list/tuple arg, should compute max/min over elements (not return the list itself). Fix: in max/min handlers, if single arg is ListValue or TupleValue, iterate elements.
+
+**Acceptance Criteria:**
+1. `def f(x=None): return x`; `print(f())` → `None`
+2. `def f(x=None): return x`; `print(f(5))` → `5`
+3. `def f(a, b=None): return b`; `print(f(1))` → `None`
+4. `def binary_search(arr, lo=0, hi=None)` works (no crash)
+5. `print(max([3, 1, 4, 1, 5]))` → `5`
+6. `print(min([3, 1, 4, 1, 5]))` → `1`
+7. `print(max([3]))` → `3`
+8. `print(max(1, 2, 3))` → `3` (multi-arg still works)
+9. `print(min(1, 2, 3))` → `1` (multi-arg still works)
+10. `print(max((5, 2, 8)))` → `8` (tuple arg also works)
+11. All 16 basic tests still pass
+12. All 20 BigInteger tests still pass
+
 ### M36: list/tuple ordering comparison + list augmented assignment + sorted() (cycles: 2)
 **Status: COMPLETE (PR #25, merged)**
 
@@ -202,6 +245,7 @@ Three bugs that break nearly all AdvancedTest programs using lists:
 13. **M34 analysis** - print sep/end kwargs and f-string float repr are Sample test blockers; len() is missing
 14. **M35 analysis** - abs(), max(), min() are critical missing built-ins; bool() has bug with list/tuple args
 15. **M36 analysis** - list += list in augmented assignment broken (returns None), list </>/<=/>=  ordering broken, sorted() missing
+16. **M37 analysis** - None as default parameter crashes (monostate ambiguity with "no default"), max/min with single list/tuple arg returns the container instead of its max/min element
 
 ---
 
@@ -288,7 +332,7 @@ Three bugs that break nearly all AdvancedTest programs using lists:
 ### Cycles 43-44 (Ares/Leo + Apollo)
 - M35 implemented and verified (abs/max/min/bool-fix all working)
 
-### Cycle 45 (Athena - this cycle)
+### Cycle 45 (Athena)
 - Deep analysis of remaining bugs
 - Discovered: list += list in augmented assignment → None (CRITICAL)
 - Discovered: list *= int in augmented assignment → None (CRITICAL)
@@ -296,4 +340,16 @@ Three bugs that break nearly all AdvancedTest programs using lists:
 - Discovered: sorted() not implemented
 - All 16 basic tests PASS, all 20 BigInteger tests PASS
 - Updated roadmap, defining M36
+- OJ submissions budget: 13 remaining
+
+### Cycles 46-47 (Ares/Leo + Apollo)
+- M36 implemented and verified (list aug-assign, list/tuple ordering, sorted() all working)
+
+### Cycle 48 (Athena)
+- Deep analysis of remaining bugs via targeted testing
+- Discovered: `def f(x=None)` crashes (None default param = monostate ambiguity with "no default") - CRITICAL
+- Discovered: `max([3, 1, 4])` returns the list itself instead of 4 (single iterable arg not handled) - CRITICAL
+- Closures modifying outer variables don't persist (known arch limitation, list-based workaround works)
+- All 16 basic tests PASS, all 20 BigInteger tests PASS
+- Updated roadmap, defining M37
 - OJ submissions budget: 13 remaining
