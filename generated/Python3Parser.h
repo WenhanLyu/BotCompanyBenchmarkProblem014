@@ -1,5 +1,5 @@
 
-// Generated from resources/Python3Parser.g4 by ANTLR 4.13.2
+// Generated from Python3Parser.g4 by ANTLR 4.13.2
 
 #pragma once
 
@@ -39,9 +39,9 @@ public:
     RuleCompound_stmt = 15, RuleIf_stmt = 16, RuleWhile_stmt = 17, RuleSuite = 18, 
     RuleTest = 19, RuleOr_test = 20, RuleAnd_test = 21, RuleNot_test = 22, 
     RuleComparison = 23, RuleComp_op = 24, RuleArith_expr = 25, RuleAddorsub_op = 26, 
-    RuleTerm = 27, RuleMuldivmod_op = 28, RuleFactor = 29, RuleAtom_expr = 30, 
-    RuleTrailer = 31, RuleAtom = 32, RuleFormat_string = 33, RuleTestlist = 34, 
-    RuleArglist = 35, RuleArgument = 36
+    RuleTerm = 27, RuleMuldivmod_op = 28, RuleFactor = 29, RulePower = 30, 
+    RuleAtom_expr = 31, RuleTrailer = 32, RuleAtom = 33, RuleFormat_string = 34, 
+    RuleTestlist = 35, RuleArglist = 36, RuleArgument = 37
   };
 
   explicit Python3Parser(antlr4::TokenStream *input);
@@ -91,6 +91,7 @@ public:
   class TermContext;
   class Muldivmod_opContext;
   class FactorContext;
+  class PowerContext;
   class Atom_exprContext;
   class TrailerContext;
   class AtomContext;
@@ -566,7 +567,7 @@ public:
     FactorContext *factor();
     antlr4::tree::TerminalNode *ADD();
     antlr4::tree::TerminalNode *MINUS();
-    Atom_exprContext *atom_expr();
+    PowerContext *power();
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -574,6 +575,21 @@ public:
   };
 
   FactorContext* factor();
+
+  class  PowerContext : public antlr4::ParserRuleContext {
+  public:
+    PowerContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    Atom_exprContext *atom_expr();
+    antlr4::tree::TerminalNode *POWER();
+    FactorContext *factor();
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  PowerContext* power();
 
   class  Atom_exprContext : public antlr4::ParserRuleContext {
   public:

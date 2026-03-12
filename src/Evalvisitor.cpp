@@ -2726,7 +2726,7 @@ std::any EvalVisitor::visitTerm(Python3Parser::TermContext *ctx) {
 }
 
 std::any EvalVisitor::visitFactor(Python3Parser::FactorContext *ctx) {
-    // factor: ('+'|'-') factor | atom_expr
+    // factor: ('+'|'-') factor | power
     
     // Check if there's a unary operator
     auto text = ctx->getText();
@@ -2775,31 +2775,41 @@ std::any EvalVisitor::visitFactor(Python3Parser::FactorContext *ctx) {
             }
         }
     } else {
-        // This is atom_expr, possibly followed by ** factor
-        auto atomExpr = ctx->atom_expr();
-        if (atomExpr) {
-            auto baseAny = visit(atomExpr);
-            
-            // Check if there's a ** (power) operator
-            auto factorCtx = ctx->factor();
-            if (factorCtx) {
-                // This is atom_expr ** factor
-                auto expAny = visit(factorCtx);
-                Value base, exp;
-                try {
-                    base = std::any_cast<Value>(baseAny);
-                    exp = std::any_cast<Value>(expAny);
-                } catch (...) {
-                    return Value(0);
-                }
-                return powerValue(base, exp);
-            }
-            
-            return baseAny;
+        // This is 'power' rule
+        auto powerCtx = ctx->power();
+        if (powerCtx) {
+            return visit(powerCtx);
         }
     }
     
     return std::any();
+}
+
+std::any EvalVisitor::visitPower(Python3Parser::PowerContext *ctx) {
+    // power: atom_expr (POWER factor)?
+    auto atomExpr = ctx->atom_expr();
+    if (!atomExpr) {
+        return std::any();
+    }
+    
+    auto baseAny = visit(atomExpr);
+    
+    // Check if there's a ** (power) operator
+    auto factorCtx = ctx->factor();
+    if (factorCtx) {
+        // This is atom_expr ** factor
+        auto expAny = visit(factorCtx);
+        Value base, exp;
+        try {
+            base = std::any_cast<Value>(baseAny);
+            exp = std::any_cast<Value>(expAny);
+        } catch (...) {
+            return Value(0);
+        }
+        return powerValue(base, exp);
+    }
+    
+    return baseAny;
 }
 
 std::any EvalVisitor::visitComparison(Python3Parser::ComparisonContext *ctx) {
@@ -3156,7 +3166,7 @@ std::string EvalVisitor::valueToRepr(const Value& val) {
 }
 
 Python3Parser::Atom_exprContext* EvalVisitor::getAtomExprFromTest(Python3Parser::TestContext* test) {
-    // Navigate the grammar tree: test -> or_test -> and_test -> not_test -> comparison -> arith_expr -> term -> factor -> atom_expr
+    // Navigate the grammar tree: test -> or_test -> and_test -> not_test -> comparison -> arith_expr -> term -> factor -> power -> atom_expr
     if (!test) return nullptr;
     auto orTest = test->or_test();
     if (!orTest) return nullptr;
@@ -3176,7 +3186,10 @@ Python3Parser::Atom_exprContext* EvalVisitor::getAtomExprFromTest(Python3Parser:
     if (factors.size() != 1) return nullptr;
     auto factor = factors[0];
     if (factor->factor()) return nullptr; // has unary prefix
-    return factor->atom_expr();
+    auto power = factor->power();
+    if (!power) return nullptr;
+    if (power->factor()) return nullptr; // has ** operator
+    return power->atom_expr();
 }
 
 bool EvalVisitor::valueToBool(const Value& val) {

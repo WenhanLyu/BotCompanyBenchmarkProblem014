@@ -1,5 +1,5 @@
 
-// Generated from resources/Python3Parser.g4 by ANTLR 4.13.2
+// Generated from Python3Parser.g4 by ANTLR 4.13.2
 
 #pragma once
 
@@ -78,6 +78,8 @@ public:
     virtual std::any visitMuldivmod_op(Python3Parser::Muldivmod_opContext *context) = 0;
 
     virtual std::any visitFactor(Python3Parser::FactorContext *context) = 0;
+
+    virtual std::any visitPower(Python3Parser::PowerContext *context) = 0;
 
     virtual std::any visitAtom_expr(Python3Parser::Atom_exprContext *context) = 0;
 

@@ -1,5 +1,5 @@
 
-// Generated from resources/Python3Parser.g4 by ANTLR 4.13.2
+// Generated from Python3Parser.g4 by ANTLR 4.13.2
 
 #pragma once
 
@@ -132,6 +132,10 @@ public:
   }
 
   virtual std::any visitFactor(Python3Parser::FactorContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitPower(Python3Parser::PowerContext *ctx) override {
     return visitChildren(ctx);
   }
 
