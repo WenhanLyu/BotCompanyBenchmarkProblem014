@@ -2,7 +2,7 @@
 
 **Project:** BotCompanyBenchmarkProblem014 - Python Interpreter  
 **Created:** 2026-03-02  
-**Last Updated:** 2026-03-12 (Cycle 36 - Athena)
+**Last Updated:** 2026-03-12 (Cycle 39 - Athena)
 
 ---
 
@@ -19,55 +19,52 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 36)
+## Current State (Cycle 39)
 
-- **Status:** M32 complete (merged). Float repr in containers and BigInteger downcast working.
-- **Last Known OJ Score:** 25/100 (submission #5, before M22-M32 fixes)
+- **Status:** M33 complete (merged). Multi-trailer function calls and tuple unpacking with subscript LHS working.
+- **Last Known OJ Score:** 25/100 (submission #5, before M22-M33 fixes)
 - **OJ Submissions Used:** 5 of 18 budget
-- **Features Implemented:** M1-M32
-- **Local Tests:** 16/16 basic test inputs run without crash; BigInteger tests produce output
+- **Features Implemented:** M1-M33
+- **Local Tests:** All basic and BigInteger tests run without crash
 
-## Critical Bugs Found (Cycle 36 Analysis)
+## Critical Bugs Found (Cycle 39 Analysis)
 
-### Bug A: Multi-Trailer Function Calls CRASH (CRITICAL for AdvancedTest)
+### Bug A: `print(sep=...)` and `print(end=...)` Broken (CRITICAL for Sample tests)
 
-When the first trailer produces a value (function result or subscript), and the next trailer is a function call, it throws: "Invalid syntax: cannot call result of subscript as function"
+`print` keyword arguments `sep` and `end` are not handled. When called with these kwargs:
+- The positional args still print, but each keyword arg (`sep`, `end`) is also evaluated as a positional arg (its name `sep`/`end` resolves to `None`) and printed
+- The sep/end values are ignored entirely
 
 **Examples that fail:**
 ```python
-# Calling return value of a function directly:
-make_adder(5)(3)          # → crash
-outer(1)(2)(3)            # → crash
-
-# Calling function stored in list:
-ops = [add, mul]
-ops[0](3, 4)              # → crash
-multipliers[0](5)         # → crash
+print(1, 2, 3, sep=", ")  # prints "1 2 3 None" instead of "1, 2, 3"
+print("x", end="!")        # prints "x None\n" instead of "x!"
 ```
 
-**Root cause:** In `visitAtom_expr`, when processing trailers, the code at `i != 0` throws for function call trailers. It only handles function calls when `i == 0` (the first trailer after the atom).
+**Root cause:** In `visitAtom_expr` print handler (around line 1040), the code loops through all args and tries to print them. For keyword args (tests.size()==2), it prints tests[0] which is the name "sep" or "end", which evaluates to None.
 
-**Fix needed:** When `i > 0` and current trailer is a function call `(args)`:
-1. Get `currentValue` from previous trailer evaluation
-2. If `currentValue` holds a `FunctionValue`, call that function with the provided args
-3. If `currentValue` holds some other callable, handle appropriately
+**Fix needed:** 
+1. Parse all args, separating positional args from keyword args (sep, end)
+2. For keyword args: extract the value from tests[1]
+3. Print positional args joined by `sep` (default " "), then print `end` (default "\n")
 
-The function call logic (argument binding, scope management, etc.) already exists for the `i == 0` case — just need to add the same logic for `i > 0` using the `currentValue` instead of the atom name.
+### Bug B: F-string Float Formatting Wrong (CRITICAL for Sample tests)
 
-### Bug B: Tuple Unpacking with Subscript LHS (CRITICAL for sorting/swapping)
-
-Multiple assignment where LHS contains list subscripts doesn't work:
+Inside f-strings, floats show 6 decimal places instead of Python repr.
 ```python
-arr[i], arr[j] = arr[j], arr[i]  # Doesn't modify arr
-lst[0], lst[1] = 99, 88           # Doesn't modify lst
+print(f"{1.0}")    # prints "1.000000" instead of "1.0"
+print(f"{3.14}")   # prints "3.140000" instead of "3.14"
 ```
 
-**Root cause:** In `visitExpr_stmt`, the tuple unpacking code (`tests.size() > 1`) calls `tests[j]->getText()` to get variable names, then assigns to those names as variables. But for subscript targets like `arr[i]`, `getText()` returns "arr[i]" which is not a valid variable name, so it creates a new global variable instead of modifying the list.
+**Root cause:** In `visitFormat_string`, when converting expression values to strings with `valueToString()`, floats use 6-decimal-place fixed format. It should use `floatToRepr()` instead.
 
-**Fix needed:** In the tuple unpacking loop, for each target in the LHS:
-1. Check if the target is a simple name or a subscript expression (has trailers with `[`)
-2. If subscript, use the same subscript assignment logic as the single-assign case
-3. If simple name, use the current variable assignment logic
+**Fix needed:** In `visitFormat_string` around line 1829, change `result += valueToString(val)` to use floatToRepr for doubles specifically (or add a `valueToFStrRepr` function that uses floatToRepr for doubles).
+
+### Bug C: `len()` Not Implemented (CRITICAL for AdvancedTest)
+
+`len(x)` returns `None` for all inputs (lists, strings, tuples).
+
+**Fix needed:** Add `len` handler in `visitAtom_expr`, similar to `int()`, `str()`, `bool()` handlers. Return size of list, string, or tuple.
 
 ---
 
@@ -97,31 +94,34 @@ Allow Python functions to be used as first-class values: passed as arguments, st
 - Float repr fix: `[1.0, 3.14]` instead of `[1.000000, 3.140000]`
 - BigInteger downcast: Test13 improved from ~15s to ~5.3s
 
-### M33: Multi-Trailer Function Calls + Tuple Unpacking Subscript LHS (cycles: 3)
+### M33: Multi-Trailer Function Calls + Tuple Unpacking Subscript LHS ✅ COMPLETE (Cycle 38, Apollo verified)
+All acceptance tests passed. Commit `4c2289b` on master.
+
+### M34: print() sep/end kwargs + F-string float repr + len() (cycles: 2)
 **Status: READY TO START**
 
-Two critical fixes:
+Three bugs that likely affect Sample tests (21-34) and AdvancedTest (35-52):
 
-1. **Multi-trailer function calls**: When atom_expr has multiple trailers and the current trailer is a function call but we have a value from a previous trailer, call that value as a function (if it's a FunctionValue).
+1. **`print(sep=...)` / `print(end=...)`**: Keyword args for print not handled. Fix the print handler in `visitAtom_expr` to:
+   - Separate positional args from keyword args (sep, end)
+   - Print positional args joined by `sep` (default `" "`)
+   - End with `end` (default `"\n"`)
+   
+2. **F-string float repr**: Inside `{}` in f-strings, floats show 6 decimal places. Fix `visitFormat_string` around line 1829 to use `floatToRepr()` instead of `valueToString()` for double values.
 
-   Key case: In `visitAtom_expr`, when `trailer->OPEN_PAREN()` and `i > 0`:
-   - Get `currentValue` (the FunctionValue from list indexing or prior function call result)
-   - Look up the actual function in `functions` map
-   - Bind args and execute, injecting capturedLocals if any
-   - Set `currentValue = returnValue`
-
-2. **Tuple unpacking with subscript LHS**: When LHS of `a, b = c, d` has subscript expressions (like `arr[i], arr[j] = ...`):
-   - For each target in LHS, check if it's a subscript (has atom + trailer with `[`)
-   - If so, perform subscript assignment using the corresponding RHS value
-   - Reuse the existing single-subscript assignment logic
+3. **`len()` function**: Not implemented, returns None. Add handler in `visitAtom_expr` for `funcName == "len"` that returns the size of a list, string, or tuple.
 
 **Acceptance Criteria:**
-1. `def make_adder(n): def adder(x): return x+n; return adder; print(make_adder(5)(3))` → `8`
-2. `def add(a,b): return a+b; ops=[add]; print(ops[0](3,4))` → `7`
-3. `arr = [1,2,3]; arr[0], arr[2] = arr[2], arr[0]; print(arr)` → `[3, 2, 1]`
-4. `arr = [5,3,1]; i=0; while i<2: j=0; while j<2-i: if arr[j]>arr[j+1]: arr[j],arr[j+1]=arr[j+1],arr[j]; j+=1; i+=1; print(arr)` → `[1, 3, 5]`
-5. All 16 basic tests still pass
-6. All 20 BigInteger tests still pass
+1. `print(1, 2, 3, sep=", ")` → `1, 2, 3`
+2. `print("a", "b", "c", sep="-")` → `a-b-c`
+3. `print("hello", end="")` + `print(" world")` → `hello world` (on one line)
+4. `print(f"{1.0}")` → `1.0`
+5. `print(f"{3.14}")` → `3.14`
+6. `print(len([1,2,3]))` → `3`
+7. `print(len("hello"))` → `5`
+8. `print(len((1,2)))` → `2`
+9. All 16 basic tests still pass
+10. All 20 BigInteger tests still pass
 
 ---
 
@@ -139,6 +139,7 @@ Two critical fixes:
 10. **Cycle 15 analysis** - scope fallback missing in READ path (visitAtom) is critical bug
 11. **List semantics** - Python lists are passed by reference; failing to implement this breaks many programs
 12. **M33 analysis** - multi-trailer function calls and tuple unpacking with subscripts are critical for AdvancedTest
+13. **M34 analysis** - print sep/end kwargs and f-string float repr are Sample test blockers; len() is missing
 
 ---
 
@@ -197,4 +198,16 @@ Two critical fixes:
 - Discovered: multi-trailer function calls crash (f(a)(b), ops[0](a)) - affects AdvancedTest
 - Discovered: tuple unpacking with subscript LHS doesn't work (arr[i], arr[j] = ...) - affects sorting
 - Updated roadmap, defining M33
+- OJ submissions budget: 13 remaining
+
+### Cycles 37-38 (Ares/Leo + Apollo)
+- M33 implemented and verified (multi-trailer function calls, tuple unpacking with subscript LHS)
+- All acceptance tests pass
+
+### Cycle 39 (Athena)
+- Deep analysis of remaining bugs
+- Discovered: print sep/end kwargs broken (shows None for keyword args)
+- Discovered: f-string float shows 6 decimal places instead of Python repr
+- Discovered: len() not implemented
+- Updated roadmap, defining M34
 - OJ submissions budget: 13 remaining
