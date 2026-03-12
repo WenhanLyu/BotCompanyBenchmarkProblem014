@@ -2,7 +2,7 @@
 
 **Project:** BotCompanyBenchmarkProblem014 - Python Interpreter  
 **Created:** 2026-03-02  
-**Last Updated:** 2026-03-12 (Cycle 86 - Athena)
+**Last Updated:** 2026-03-12 (Cycle 87 - Athena)
 
 ---
 
@@ -19,13 +19,14 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 86 - Athena)
+## Current State (Cycle 87 - Athena)
 
-- **Status:** M1-M48 complete. M49 (built-in first-class functions) also complete.
+- **Status:** M1-M50 complete.
 - **Last Known OJ Score:** 25/100 (submission #5, before M22-M44 fixes - very outdated)
 - **OJ Submissions Used:** 5 of 18 budget
-- **Features Implemented:** M1-M49 + all additional fixes
+- **Features Implemented:** M1-M50 + all additional fixes
 - **Local Tests:** 15/16 basic tests PASS. test13 FAILS (expects Python3-style UnboundLocalError traceback, which contradicts spec that says globals accessible everywhere).
+- **Cycle 87 Fix (M50):** Critical scope bug fixed: augmented assignment (`+=`, `-=`, etc.) was incorrectly adding variables to `assignedVars` pre-scan set, causing function parameters with same name as globals to ALSO modify the global. Now fixed: `findAssignedVariables` and `findAssignedInStmt` only add variables from regular `=` assignment, not augmented assignment. This means `def f(x): x += 1` correctly only modifies the local parameter, not the global `x`. Commit: 5327507.
 - **Cycle 86 Fix:** Built-in functions (abs, len, str, int, float, bool, print) now work as first-class values. Previously, `key=abs`, `key=len`, `apply(abs, x)` etc. would return None because built-ins weren't stored as FunctionValue. Now fixed (commit dd9507b).
 - **Cycle 82 Fix:** M48 complete - f-string and str(float) now use Python repr (1.0) not 6 decimal places. test14 PASS.
 - **Root Cause of M49 Bug:** visitAtom NAME lookup checked variables then user-defined functions but not built-in function names. Now added check: if name is in {abs, len, str, int, float, bool, sorted, max, min, print}, return FunctionValue(name). applyKey lambdas in sorted/min/max now dispatch to callBuiltinSingle() for built-in key functions.
@@ -555,6 +556,25 @@ Fixes:
 5. Multi-trailer call path (`ops[0](x)`): added built-in dispatch
 6. New helper method `callBuiltinSingle(name, arg)` handles abs/len/str/int/float/bool
 
+### M50: Fix scope bug - parameter shadowing global with augmented assignment (cycles: 1)
+**Status: COMPLETE (Cycle 87, Athena implemented directly, commit 5327507 on master)**
+
+Critical scope bug found in cycle 87: when a function parameter has the same name as a global variable, and the parameter is used with augmented assignment (`x += 1`), the GLOBAL variable was also being modified, not just the local parameter.
+
+Root cause: `findAssignedVariables()` and `findAssignedInStmt()` were adding ALL LHS variables to `assignedVars` pre-scan set, including those from augmented assignments (`+=`, `-=`, etc.). This incorrectly made `isLocal=true` for parameters, then a bug in the write-back code also wrote to the global.
+
+Two fixes:
+1. `findAssignedVariables` (line ~3915): only add to `assigned` if `!expr_stmt->augassign()` - skip augmented assignments
+2. `findAssignedInStmt` (line ~3963): same fix - skip augmented assignments
+3. Remove erroneous double-write at lines 646-652 that wrote local variable result back to global
+
+**Acceptance Criteria (all now PASS):**
+1. `x=10; def f(x): x+=1; return x; print(f(5)); print(x)` → `6` then `10` (global unchanged)
+2. `y=5; def g(): y+=3; return y; print(g()); print(y)` → `8` then `8` (global modified)
+3. `z=100; def h(): z=1; z+=5; return z; print(h()); print(z)` → `6` then `100` (local z, global unchanged)
+4. `count=0; def inc(): count+=1; inc(); inc(); print(count)` → `2` (global count modified 2 times)
+5. All 15 basic tests still pass
+
 ---
 
 ## Lessons Learned
@@ -579,6 +599,7 @@ Fixes:
 18. **M40 analysis (Cycle 54)** - Float floor division (`//`) and modulo (`%`) with float operands return int instead of float; fix required in visitTerm() and augmented assignment sections
 19. **M41 analysis (Cycle 60)** - `list += [item]` in functions when list is a parameter creates a new list (new shared_ptr) instead of extending the existing one in-place. Also `str(ListValue)` returns empty string due to missing case in str() handler.
 20. **M42/M43 (Cycle 64)** - Closure subscript assignment needed enclosingLocalVariables lookup; recursive closures needed self-injection into localVars for proper self-reference.
+21. **M50 (Cycle 87)** - Scope pre-scan bug: `findAssignedVariables` was adding augmented assignment (`+=`, etc.) LHS to `assignedVars`, incorrectly treating parameters as locally-assigned variables and causing them to also write to global. Fix: only regular `=` assignments should add to `assignedVars`.
 
 ---
 
@@ -830,7 +851,7 @@ Fixes:
 - test14 now PASS. 15/16 basic tests pass.
 - test13 fails: expects Python3-style UnboundLocalError traceback (incompatible with spec that says globals accessible everywhere)
 
-### Cycle 86 (Athena) - Current
+### Cycle 86 (Athena)
 - Independent comprehensive evaluation of project state
 - Discovered critical bug: built-in functions cannot be used as first-class values
 - `key=abs`, `key=len`, `apply(abs, x)`, `f = abs; f(x)` all returned None
@@ -842,6 +863,20 @@ Fixes:
 - Key= parameter now works with: abs, len, str, int, float, bool (user-defined + built-ins)
 - M49 complete
 
-### Lessons from Cycle 86
-- **Built-in functions as first-class values**: A subtle but important gap that affects CornerTest and ComplexTest patterns using `key=abs`, `key=len`, etc. This was caught by independent analysis.
+### Cycle 87 (Athena) - Current
+- Independent comprehensive evaluation of project state
+- Discovered critical scope bug: function parameters with same name as globals, when used in augmented assignment (`x += 1`), were incorrectly also modifying the global variable
+- Root cause: `findAssignedVariables` was adding augmented assignment LHS to `assignedVars`, then double-write code wrote to both local AND global
+- Fixed in commit 5327507: skip augmented assignments in pre-scan, remove double-write
+- Comprehensive scope testing confirms: 
+  - Parameters shadow globals correctly
+  - Globals accessible from functions without explicit `global` keyword (spec requirement)
+  - Multiple augmented assignments to global from function still work
+  - Mixed local assignment + augmented assignment works correctly
+- All 15 basic tests still pass after fix
+- M50 complete
+
+### Lessons from Cycle 87
+- **Scope pre-scan bug**: `findAssignedVariables` was including augmented assignment LHS in `assignedVars`, causing incorrect local variable classification. The pre-scan should only consider regular `=` assignments as creating new locals.
+- **Double-write regression**: Writing to both local and global was meant to "persist globals" but was incorrect - locals should NEVER write back to globals. This was a fundamental design mistake.
 - **Test13 analysis**: test13 expects UnboundLocalError traceback format which includes the OJ file path. Cannot be matched. Acceptable loss (1 test).
