@@ -2,7 +2,7 @@
 
 **Project:** BotCompanyBenchmarkProblem014 - Python Interpreter  
 **Created:** 2026-03-02  
-**Last Updated:** 2026-03-12 (Cycle 60 - Athena)
+**Last Updated:** 2026-03-12 (Cycle 65 - Athena)
 
 ---
 
@@ -19,13 +19,18 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 60 - Athena)
+## Current State (Cycle 65 - Athena)
 
-- **Status:** M40 complete (Apollo verified on commit 352eb32, master). M41 defined.
-- **Last Known OJ Score:** 25/100 (submission #5, before M22-M40 fixes)
+- **Status:** M43 complete (on master). Code ready for OJ evaluation.
+- **Last Known OJ Score:** 25/100 (submission #5, before M22-M43 fixes)
 - **OJ Submissions Used:** 5 of 18 budget
-- **Features Implemented:** M1-M40
-- **Local Tests:** All 16 basic tests PASS, all 20 BigInteger tests produce output without errors
+- **Features Implemented:** M1-M43
+- **Local Tests:** All 16 basic tests PASS (compared against Python), all 20 BigInteger tests produce output
+- **M41-M43 Summary:**
+  - M41: list += in function params now modifies in-place; str(list/tuple) fixed
+  - M42: subscript augmented assignment (lst[i] += ...) now checks enclosing scope correctly
+  - M43: closure subscript assignment + recursive closure (self-reference inside closure)
+- **Test13 timing:** 11 seconds (OJ limit 16s) - should be OK but close
 - **Critical Findings (Cycle 60):**
   - Bug A: `list += [item]` inside functions when list is a PARAMETER (not global) creates a new list instead of modifying in-place. Caller's list is unchanged.
   - Bug B: `str(ListValue)` and `str(TupleValue)` return empty string instead of string representation.
@@ -277,7 +282,7 @@ Four critical bugs affecting AdvancedTest, ComplexTest, and CornerTest:
 14. All 20 BigInteger tests still pass
 
 ### M41: Fix list += in functions + str(list/tuple) (cycles: 1)
-**Status: PENDING**
+**Status: COMPLETE (PR #28 merged, Apollo verified)**
 
 Two critical bugs found in Cycle 60 analysis:
 
@@ -426,6 +431,22 @@ Three bugs that break nearly all AdvancedTest programs using lists:
 12. All 16 basic tests still pass
 13. All 20 BigInteger tests still pass
 
+### M42: Fix subscript augmented assignment for ListValue in closures (cycles: 1)
+**Status: COMPLETE (Cycle 64, Athena implemented directly, PR #29 merged, commit 7711779)**
+
+Bug: `lst[i] += val` inside a function didn't work when `lst` was in enclosing scope.
+Fix: In `visitExpr_stmt` subscript augmented assignment, added check for `enclosingLocalVariables` when looking up the list variable.
+
+Also fixed: `lst[i] *= val` for ListValue (in-place repetition).
+
+### M43: Fix closure subscript assignment + recursive closure lookup (cycles: 1)
+**Status: COMPLETE (Cycle 64, Athena implemented directly, PR #30 merged, commit f7ab641)**
+
+Three fixes:
+1. Subscript assignment (`lst[i] = val`) now checks `enclosingLocalVariables` for closure support
+2. Subscript augmented assignment (`lst[i] += val`) now checks `enclosingLocalVariables`
+3. Recursive closure calls: inject function itself into `localVars` so self-recursion works at any depth (fixes memoization patterns like `def fib(n): ... fib(n-1) ...` inside a closure)
+
 ---
 
 ## Lessons Learned
@@ -449,6 +470,7 @@ Three bugs that break nearly all AdvancedTest programs using lists:
 17. **M38 analysis** - str(float) uses 6 decimal places (should be Python repr), tuple + tuple and tuple * int not implemented, max/min inline comparison doesn't handle TupleValue/ListValue
 18. **M40 analysis (Cycle 54)** - Float floor division (`//`) and modulo (`%`) with float operands return int instead of float; fix required in visitTerm() and augmented assignment sections
 19. **M41 analysis (Cycle 60)** - `list += [item]` in functions when list is a parameter creates a new list (new shared_ptr) instead of extending the existing one in-place. Also `str(ListValue)` returns empty string due to missing case in str() handler.
+20. **M42/M43 (Cycle 64)** - Closure subscript assignment needed enclosingLocalVariables lookup; recursive closures needed self-injection into localVars for proper self-reference.
 
 ---
 
@@ -626,3 +648,24 @@ Three bugs that break nearly all AdvancedTest programs using lists:
 - All 11 M40 acceptance criteria pass
 - All 16 basic tests pass, all 20 BigInteger tests pass
 - M40 COMPLETE
+
+### Cycles 61-63 (Ares/Leo + Apollo)
+- M41 implemented by Leo (PR #28 merged)
+- list += and list *= now extend shared_ptr in-place (reference semantics preserved for parameters)
+- str(list) and str(tuple) now use valueToRepr() correctly
+- All 12 M41 acceptance criteria pass
+- M41 COMPLETE (Apollo verified)
+
+### Cycle 64 (Athena → implemented M42/M43 directly)
+- M42: Subscript augmented assignment for ListValue (lst[i] += [item]) now checks enclosing scope
+  - Fixed in visitExpr_stmt for nested subscript += with ListValue (PR #29, commit 7711779)
+- M43: Closure subscript assignment + recursive closure lookup (PR #30, commit f7ab641)
+  - Subscript assignment (lst[i] = val) now checks enclosingLocalVariables for closure support
+  - Recursive closure calls now inject function itself into localVars for self-recursion at any depth
+
+### Cycle 65 (Athena - this cycle)
+- Deep analysis: all 16 basic tests PASS against Python output
+- All major algorithms (sorting, DP, graph traversal, closures) work correctly
+- Timing: Test13 (Pollard Rho) takes ~11 seconds (OJ limit 16s)
+- Hired Maya (quality analyst) to find remaining bugs
+- Code ready for OJ evaluation
