@@ -756,11 +756,16 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                         // Subscript assignment: arr[i] = value
                         std::string varName = lhsAtomExpr->atom()->getText();
                         
+                        // Look up the variable (check local scope, enclosing scope, global scope)
                         bool isGlobal = (currentFunctionGlobals.find(varName) != currentFunctionGlobals.end());
                         Value* varPtr = nullptr;
                         if (!isGlobal && localVariables != nullptr) {
                             auto it = localVariables->find(varName);
                             if (it != localVariables->end()) varPtr = &it->second;
+                        }
+                        if (!varPtr && enclosingLocalVariables != nullptr) {
+                            auto it = enclosingLocalVariables->find(varName);
+                            if (it != enclosingLocalVariables->end()) varPtr = &it->second;
                         }
                         if (!varPtr) {
                             auto it = variables.find(varName);
@@ -769,14 +774,16 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                         
                         if (varPtr) {
                             auto trailers = lhsAtomExpr->trailer();
-                            if (trailers.size() >= 1 && trailers[0]->OPEN_BRACK()) {
+                            if (trailers.size() == 1 && trailers[0]->OPEN_BRACK()) {
+                                // Single subscript: arr[i] = value
                                 auto indexTest = trailers[0]->test();
                                 auto indexAny = visit(indexTest);
                                 Value indexVal = std::any_cast<Value>(indexAny);
                                 int index;
                                 if (std::holds_alternative<int>(indexVal)) index = std::get<int>(indexVal);
                                 else if (std::holds_alternative<bool>(indexVal)) index = std::get<bool>(indexVal) ? 1 : 0;
-                                else index = static_cast<int>(std::get<BigInteger>(indexVal).toLongLong());
+                                else if (std::holds_alternative<BigInteger>(indexVal)) index = static_cast<int>(std::get<BigInteger>(indexVal).toLongLong());
+                                else index = 0;
                                 
                                 if (std::holds_alternative<ListValue>(*varPtr)) {
                                     ListValue& lst = std::get<ListValue>(*varPtr);
@@ -784,6 +791,42 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                     if (index < 0) index = size + index;
                                     if (index >= 0 && index < size) {
                                         (*lst.elements)[index] = value;
+                                    }
+                                }
+                            } else if (trailers.size() == 2 && trailers[0]->OPEN_BRACK() && trailers[1]->OPEN_BRACK()) {
+                                // Double subscript: arr[i][j] = value
+                                auto idx1Test = trailers[0]->test();
+                                auto idx1Any = visit(idx1Test);
+                                Value idx1Val = std::any_cast<Value>(idx1Any);
+                                int idx1;
+                                if (std::holds_alternative<int>(idx1Val)) idx1 = std::get<int>(idx1Val);
+                                else if (std::holds_alternative<bool>(idx1Val)) idx1 = std::get<bool>(idx1Val) ? 1 : 0;
+                                else if (std::holds_alternative<BigInteger>(idx1Val)) idx1 = static_cast<int>(std::get<BigInteger>(idx1Val).toLongLong());
+                                else idx1 = 0;
+                                
+                                auto idx2Test = trailers[1]->test();
+                                auto idx2Any = visit(idx2Test);
+                                Value idx2Val = std::any_cast<Value>(idx2Any);
+                                int idx2;
+                                if (std::holds_alternative<int>(idx2Val)) idx2 = std::get<int>(idx2Val);
+                                else if (std::holds_alternative<bool>(idx2Val)) idx2 = std::get<bool>(idx2Val) ? 1 : 0;
+                                else if (std::holds_alternative<BigInteger>(idx2Val)) idx2 = static_cast<int>(std::get<BigInteger>(idx2Val).toLongLong());
+                                else idx2 = 0;
+                                
+                                if (std::holds_alternative<ListValue>(*varPtr)) {
+                                    ListValue& outer = std::get<ListValue>(*varPtr);
+                                    int outerSize = static_cast<int>(outer.elements->size());
+                                    if (idx1 < 0) idx1 = outerSize + idx1;
+                                    if (idx1 >= 0 && idx1 < outerSize) {
+                                        Value& innerVal = (*outer.elements)[idx1];
+                                        if (std::holds_alternative<ListValue>(innerVal)) {
+                                            ListValue& inner = std::get<ListValue>(innerVal);
+                                            int innerSize = static_cast<int>(inner.elements->size());
+                                            if (idx2 < 0) idx2 = innerSize + idx2;
+                                            if (idx2 >= 0 && idx2 < innerSize) {
+                                                (*inner.elements)[idx2] = value;
+                                            }
+                                        }
                                     }
                                 }
                             }

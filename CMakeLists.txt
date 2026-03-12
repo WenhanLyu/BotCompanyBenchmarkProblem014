@@ -21,3 +21,6 @@ add_executable(code ${main_src}) # Add all *.cpp file after src/main.cpp, like s
 target_link_libraries(code PyAntlr)
 target_link_libraries(code antlr4-runtime)
 ### YOU CAN"T MODIFY THE CODE ABOVE
+
+find_package(Threads REQUIRED)
+target_link_libraries(code Threads::Threads)
