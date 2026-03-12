@@ -27,9 +27,13 @@ struct Value;
 struct FunctionValue {
     std::string name;
     std::map<std::string, Value> capturedLocals;
+    std::vector<Value> capturedDefaults;  // Default values captured at definition time
+    bool hasOwnDefaults = false;          // Whether this FV has its own captured defaults
     FunctionValue() = default;
     explicit FunctionValue(std::string n) : name(std::move(n)) {}
     FunctionValue(std::string n, std::map<std::string, Value> captured) : name(std::move(n)), capturedLocals(std::move(captured)) {}
+    FunctionValue(std::string n, std::map<std::string, Value> captured, std::vector<Value> defaults) 
+        : name(std::move(n)), capturedLocals(std::move(captured)), capturedDefaults(std::move(defaults)), hasOwnDefaults(true) {}
     bool operator==(const FunctionValue& other) const { return name == other.name; }
     bool operator!=(const FunctionValue& other) const { return !(*this == other); }
 };

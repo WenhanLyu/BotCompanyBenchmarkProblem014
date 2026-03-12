@@ -1177,13 +1177,16 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                     boundParams.insert(paramName);
                 }
                 
+                // Use captured defaults from FunctionValue if available, otherwise funcDef defaults
+                const std::vector<Value>& effectiveDefaults = fv.hasOwnDefaults ? fv.capturedDefaults : funcDef.defaultValues;
+                
                 for (size_t pi = 0; pi < funcDef.parameters.size(); pi++) {
                     const std::string& paramName = funcDef.parameters[pi];
                     if (boundParams.find(paramName) == boundParams.end()) {
                         // Check if this parameter has a default value
                         // Parameters with defaults are the last numDefaultParams params
                         if (pi >= funcDef.parameters.size() - funcDef.numDefaultParams) {
-                            localVars[paramName] = funcDef.defaultValues[pi];
+                            localVars[paramName] = effectiveDefaults[pi];
                         } else {
                             localVariables = savedLocalVariables;
                             currentFunctionLocals = savedFunctionLocals;
@@ -1933,13 +1936,16 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                         boundParams.insert(paramName);
                     }
                     
+                    // Use captured defaults from FunctionValue if available
+                    const std::vector<Value>& effectiveDefaults2 = fv.hasOwnDefaults ? fv.capturedDefaults : funcDef.defaultValues;
+                    
                     for (size_t pi = 0; pi < funcDef.parameters.size(); pi++) {
                         const std::string& paramName = funcDef.parameters[pi];
                         if (boundParams.find(paramName) == boundParams.end()) {
                             // Check if this parameter has a default value
                             // Parameters with defaults are the last numDefaultParams params
                             if (pi >= funcDef.parameters.size() - funcDef.numDefaultParams) {
-                                localVars[paramName] = funcDef.defaultValues[pi];
+                                localVars[paramName] = effectiveDefaults2[pi];
                             } else {
                                 localVariables = savedLocalVariables;
                                 currentFunctionLocals = savedFunctionLocals;
@@ -2083,6 +2089,25 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
             }
             
             // Step 4 & 5: Apply defaults or error for unmatched required parameters
+            // Check if there's a FunctionValue with captured defaults for this function
+            const std::vector<Value>* effectiveDefaults3 = &funcDef.defaultValues;
+            {
+                Value* fvPtr = nullptr;
+                if (localVariables) {
+                    auto lit = localVariables->find(funcName);
+                    if (lit != localVariables->end()) fvPtr = &lit->second;
+                }
+                if (!fvPtr) {
+                    auto git = variables.find(funcName);
+                    if (git != variables.end()) fvPtr = &git->second;
+                }
+                if (fvPtr && std::holds_alternative<FunctionValue>(*fvPtr)) {
+                    const FunctionValue& fv3 = std::get<FunctionValue>(*fvPtr);
+                    if (fv3.hasOwnDefaults) {
+                        effectiveDefaults3 = &fv3.capturedDefaults;
+                    }
+                }
+            }
             for (size_t i = 0; i < funcDef.parameters.size(); i++) {
                 const std::string& paramName = funcDef.parameters[i];
                 
@@ -2090,7 +2115,7 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
                     // Parameter not bound - try to use default
                     // Parameters with defaults are the last numDefaultParams params
                     if (i >= funcDef.parameters.size() - funcDef.numDefaultParams) {
-                        localVars[paramName] = funcDef.defaultValues[i];
+                        localVars[paramName] = (*effectiveDefaults3)[i];
                     } else {
                         // No default value - this is an error
                         throw std::runtime_error("Missing required parameter: " + paramName);
@@ -3515,10 +3540,10 @@ std::any EvalVisitor::visitFuncdef(Python3Parser::FuncdefContext *ctx) {
                 if (captured.find(k) == captured.end()) captured[k] = v;
             }
         }
-        (*localVariables)[funcName] = Value(FunctionValue(funcName, captured));
+        (*localVariables)[funcName] = Value(FunctionValue(funcName, captured, defaults));
     } else {
-        // At global scope
-        variables[funcName] = Value(FunctionValue(funcName));
+        // At global scope - store defaults for functions defined at global scope too
+        variables[funcName] = Value(FunctionValue(funcName, {}, defaults));
     }
     
     return std::any();
