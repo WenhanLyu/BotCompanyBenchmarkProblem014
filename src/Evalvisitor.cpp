@@ -773,8 +773,10 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                 auto indexTest = trailers[0]->test();
                                 auto indexAny = visit(indexTest);
                                 Value indexVal = std::any_cast<Value>(indexAny);
-                                int index = std::holds_alternative<int>(indexVal) ? std::get<int>(indexVal) :
-                                            static_cast<int>(std::get<BigInteger>(indexVal).toLongLong());
+                                int index;
+                                if (std::holds_alternative<int>(indexVal)) index = std::get<int>(indexVal);
+                                else if (std::holds_alternative<bool>(indexVal)) index = std::get<bool>(indexVal) ? 1 : 0;
+                                else index = static_cast<int>(std::get<BigInteger>(indexVal).toLongLong());
                                 
                                 if (std::holds_alternative<ListValue>(*varPtr)) {
                                     ListValue& lst = std::get<ListValue>(*varPtr);
@@ -853,8 +855,10 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                             auto indexTest = trailers[0]->test();
                             auto indexAny = visit(indexTest);
                             Value indexVal = std::any_cast<Value>(indexAny);
-                            int index = std::holds_alternative<int>(indexVal) ? std::get<int>(indexVal) :
-                                        static_cast<int>(std::get<BigInteger>(indexVal).toLongLong());
+                            int index;
+                            if (std::holds_alternative<int>(indexVal)) index = std::get<int>(indexVal);
+                            else if (std::holds_alternative<bool>(indexVal)) index = std::get<bool>(indexVal) ? 1 : 0;
+                            else index = static_cast<int>(std::get<BigInteger>(indexVal).toLongLong());
                             
                             if (std::holds_alternative<ListValue>(*varPtr)) {
                                 ListValue& lst = std::get<ListValue>(*varPtr);
@@ -869,14 +873,18 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                             auto idx1Test = trailers[0]->test();
                             auto idx1Any = visit(idx1Test);
                             Value idx1Val = std::any_cast<Value>(idx1Any);
-                            int idx1 = std::holds_alternative<int>(idx1Val) ? std::get<int>(idx1Val) :
-                                       static_cast<int>(std::get<BigInteger>(idx1Val).toLongLong());
+                            int idx1;
+                            if (std::holds_alternative<int>(idx1Val)) idx1 = std::get<int>(idx1Val);
+                            else if (std::holds_alternative<bool>(idx1Val)) idx1 = std::get<bool>(idx1Val) ? 1 : 0;
+                            else idx1 = static_cast<int>(std::get<BigInteger>(idx1Val).toLongLong());
                             
                             auto idx2Test = trailers[1]->test();
                             auto idx2Any = visit(idx2Test);
                             Value idx2Val = std::any_cast<Value>(idx2Any);
-                            int idx2 = std::holds_alternative<int>(idx2Val) ? std::get<int>(idx2Val) :
-                                       static_cast<int>(std::get<BigInteger>(idx2Val).toLongLong());
+                            int idx2;
+                            if (std::holds_alternative<int>(idx2Val)) idx2 = std::get<int>(idx2Val);
+                            else if (std::holds_alternative<bool>(idx2Val)) idx2 = std::get<bool>(idx2Val) ? 1 : 0;
+                            else idx2 = static_cast<int>(std::get<BigInteger>(idx2Val).toLongLong());
                             
                             if (std::holds_alternative<ListValue>(*varPtr)) {
                                 ListValue& lst = std::get<ListValue>(*varPtr);
@@ -979,10 +987,12 @@ std::any EvalVisitor::visitAtom_expr(Python3Parser::Atom_exprContext *ctx) {
             
             Value indexVal = std::any_cast<Value>(indexValue);
             
-            // Index must be an integer or BigInteger
+            // Index must be an integer, BigInteger, or bool
             int index;
             if (std::holds_alternative<int>(indexVal)) {
                 index = std::get<int>(indexVal);
+            } else if (std::holds_alternative<bool>(indexVal)) {
+                index = std::get<bool>(indexVal) ? 1 : 0;
             } else if (std::holds_alternative<BigInteger>(indexVal)) {
                 // Convert BigInteger to int for indexing
                 BigInteger bi = std::get<BigInteger>(indexVal);
