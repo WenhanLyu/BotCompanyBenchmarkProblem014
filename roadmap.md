@@ -2,7 +2,7 @@
 
 **Project:** BotCompanyBenchmarkProblem014 - Python Interpreter  
 **Created:** 2026-03-02  
-**Last Updated:** 2026-03-12 (Cycle 91 - Athena)
+**Last Updated:** 2026-03-12 (Cycle 95 - Athena)
 
 ---
 
@@ -19,14 +19,17 @@ Build a Python interpreter that passes ACMOJ problem 2515 evaluation with 66 tes
 
 ---
 
-## Current State (Cycle 91 - Athena)
+## Current State (Cycle 95 - Athena)
 
-- **Status:** M1-M50 complete. M51 in progress.
-- **Last Known OJ Score:** 25/100 (submission #5, before M22-M50 fixes - very outdated)
+- **Status:** M1-M51 complete. M52 defined (stack overflow + nested subscript swap fix).
+- **Last Known OJ Score:** 25/100 (submission #5, before M22-M51 fixes - very outdated)
 - **OJ Submissions Used:** 5 of 18 budget
-- **Features Implemented:** M1-M50 + all additional fixes
-- **Local Tests:** 15/16 basic tests PASS. test13 FAILS (expects Python3-style UnboundLocalError traceback).
-- **M51 (in progress):** Fix UnboundLocalError for augmented assignment to non-local non-parameter globals. M50 wrongly excluded augmented assignment from assignedVars, causing augmented assign to globals to silently modify global. Fix: add augmented assignment back to assignedVars, throw UnboundLocalError when isLocal=true but not found in local scope.
+- **Features Implemented:** M1-M51 + all additional fixes
+- **Local Tests:** 15/16 basic tests PASS. test13 FAILS (expects full Python traceback with file path and line numbers - complex to implement).
+- **NEW BUGS FOUND (Cycle 95):**
+  - **Bug A (CRITICAL)**: Stack overflow at ~1300 recursion depth. Spec says up to 2000. Root cause: large stack frames per function call (~5.4KB). Fix: spawn a thread with 64MB stack using pthread.
+  - **Bug B (CRITICAL)**: Tuple swap with nested subscripts broken. `a[i][j], a[k][l] = val1, val2` does NOT work correctly. The tuple unpacking code in visitExpr_stmt only handles single-level subscripts ([i]) not double ([i][j]). Fix: add double-subscript handling in the tuple unpacking loop.
+- **M52 (defined):** Fix stack overflow + nested subscript swap bug.
 - **Key discovery cycle 91:** The spec's "globals accessible everywhere" means READ-only access. Augmented assignment (+=) to a non-parameter global without `global` keyword is UnboundLocalError (standard Python). The grammar supports `global` keyword for writing to globals from functions.
 - **Cycle 87 Fix (M50):** Critical scope bug fixed: augmented assignment (`+=`, `-=`, etc.) was incorrectly adding variables to `assignedVars` pre-scan set, causing function parameters with same name as globals to ALSO modify the global. Now fixed: `findAssignedVariables` and `findAssignedInStmt` only add variables from regular `=` assignment, not augmented assignment. This means `def f(x): x += 1` correctly only modifies the local parameter, not the global `x`. Commit: 5327507.
 - **Cycle 86 Fix:** Built-in functions (abs, len, str, int, float, bool, print) now work as first-class values. Previously, `key=abs`, `key=len`, `apply(abs, x)` etc. would return None because built-ins weren't stored as FunctionValue. Now fixed (commit dd9507b).
@@ -865,6 +868,31 @@ Two fixes:
 - Key= parameter now works with: abs, len, str, int, float, bool (user-defined + built-ins)
 - M49 complete
 
+### M52: Fix stack overflow + nested subscript tuple swap (cycles: 2)
+**Status: DEFINED (Cycle 95)**
+
+Two critical bugs found in Cycle 95 independent evaluation:
+
+**Bug A: Stack overflow at ~1300 recursion depth**
+- Spec says "recursion depth does not exceed 2000 levels"
+- Our interpreter crashes at ~1300 due to large stack frames (~5.4KB each)
+- Default stack size is 8MB, 8MB/5.4KB ≈ 1480 frames
+- Fix: In `main.cpp`, spawn a thread with 64MB stack using `pthread_create` with `pthread_attr_setstacksize(64 * 1024 * 1024)`, run the visitor in that thread
+
+**Bug B: Nested subscript tuple swap broken**
+- `a[i][j], a[k][l] = val1, val2` doesn't work correctly
+- Root cause: In `visitExpr_stmt`, the tuple unpacking code (around line 750-790) only handles single-level subscripts `[i]` but not double subscripts `[i][j]`
+- The single-element subscript assignment (around line 810+) correctly handles 1 and 2 trailers, but the tuple unpacking version doesn't
+- Fix: In the tuple unpacking loop, add the same double-subscript handling: check `trailers.size() == 2` and navigate through two levels of subscripts
+
+**Acceptance Criteria:**
+1. `def f(n): return 0 if n == 0 else f(n-1) + 1; print(f(2000))` → `2000` (no crash)
+2. `a = [[1,2],[3,4]]; a[0][1], a[1][0] = a[1][0], a[0][1]; print(a)` → `[[1, 3], [2, 4]]`
+3. `a = [[1,2,3],[4,5,6]]; a[0][0], a[1][2] = a[1][2], a[0][0]; print(a)` → `[[6, 2, 3], [4, 5, 1]]`
+4. Quick sort with 2D array element swapping works
+5. All basic tests 0-15 still pass (15/15 non-test13)
+6. All 20 BigInt tests still pass
+
 ### M51: Fix UnboundLocalError for augmented assignment to non-local globals (cycles: 1)
 **Status: IN PROGRESS (Cycle 91)**
 
@@ -883,7 +911,19 @@ This makes `def rand(): seed += ...` (where seed is a non-parameter global) thro
 4. Top-level `i += 1` still works (not in function)
 5. All basic tests 0-12, 14, 15 still PASS
 
-### Cycle 91 (Athena) - Current
+### Cycle 95 (Athena) - Current
+
+Independent evaluation found two critical bugs:
+
+1. **Stack overflow at ~1300 recursion depth** (spec says up to 2000). Fix: use pthread with 64MB stack.
+2. **Nested subscript tuple swap broken** (`a[i][j], a[k][l] = val1, val2`). Fix: add double-subscript handling in tuple unpacking loop in visitExpr_stmt.
+
+All 15/16 basic tests pass (test13 fails due to traceback format).
+All 20 BigInt tests pass.
+Algorithm patterns (sorting, DP, BFS, closures, HOF) all work correctly.
+M52 defined: fix stack overflow + nested subscript swap.
+
+### Cycle 91 (Athena) - Previous
 - Evaluated project state: 15/16 basic tests pass (test13 fails - UnboundLocalError)
 - Discovered M50 introduced a new bug: augmented assign to non-param globals no longer throws UnboundLocalError
 - Closed stale issues #18, #19, #20 (work already done)
