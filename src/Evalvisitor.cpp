@@ -396,7 +396,9 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
             bool found = false;
             
             if (isLocal) {
-                // This is a local variable - look in local scope first
+                // This is a local variable - only look in local scope (no global fallback)
+                // In Python, if a variable is assigned anywhere in a function (including +=),
+                // it is local. Reading it before local assignment → UnboundLocalError.
                 if (localVariables != nullptr) {
                     auto localIt = localVariables->find(varName);
                     if (localIt != localVariables->end()) {
@@ -404,16 +406,8 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                         found = true;
                     }
                 }
-                // If not found locally, fall back to global scope
-                // (Non-standard Python: global accessible without 'global' keyword)
-                if (!found) {
-                    auto it = variables.find(varName);
-                    if (it != variables.end()) {
-                        currentValue = it->second;
-                        found = true;
-                        isLocal = false;  // write-back to global scope
-                    }
-                }
+                // DO NOT fall back to global when isLocal=true
+                // If not found: will throw UnboundLocalError below
             } else {
                 // Check parameters (in local scope but not in assignedVars)
                 if (localVariables != nullptr) {
@@ -434,14 +428,14 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
             }
             
             if (!found) {
-                // Variable doesn't exist - initialize to 0
-                // (In real Python, this would be UnboundLocalError for locals)
-                currentValue = Value(0);
-                if (isLocal && localVariables != nullptr) {
-                    (*localVariables)[varName] = Value(0);
-                } else {
-                    variables[varName] = Value(0);
+                if (isLocal) {
+                    // UnboundLocalError: local variable referenced before assignment
+                    // This matches Python's standard behavior for augmented assignment
+                    throw std::runtime_error("UnboundLocalError: local variable '" + varName + "' referenced before assignment");
                 }
+                // Non-local: initialize to 0 in global scope
+                currentValue = Value(0);
+                variables[varName] = Value(0);
             }
             
             // Evaluate the right-hand side
@@ -3910,33 +3904,31 @@ void EvalVisitor::findAssignedVariables(Python3Parser::SuiteContext* suite, std:
             auto expr_stmt = small_stmt->expr_stmt();
             if (expr_stmt) {
                 // expr_stmt: testlist ( (augassign testlist) | ('=' testlist)* )
-                // Only count as "assigned" for regular = assignment, NOT augmented (+=, -=, etc.)
-                // Augmented assignment modifies existing variables, not creates new locals
-                if (!expr_stmt->augassign()) {
-                    auto testlists = expr_stmt->testlist();
-                    if (!testlists.empty()) {
-                        // The first testlist contains the assigned variable(s)
-                        std::string varText = testlists[0]->getText();
-                        if (varText.find(',') != std::string::npos) {
-                            // Tuple unpacking - split by comma
-                            size_t start = 0;
-                            size_t comma = varText.find(',');
-                            while (comma != std::string::npos) {
-                                std::string var = varText.substr(start, comma - start);
-                                var.erase(0, var.find_first_not_of(" \t"));
-                                var.erase(var.find_last_not_of(" \t") + 1);
-                                if (!var.empty()) assigned.insert(var);
-                                start = comma + 1;
-                                comma = varText.find(',', start);
-                            }
-                            std::string var = varText.substr(start);
+                // Both regular = and augmented += mark variables as local (Python semantics)
+                // In Python, `x += 1` inside a function makes `x` local, same as `x = ...`
+                auto testlists = expr_stmt->testlist();
+                if (!testlists.empty()) {
+                    // The first testlist contains the assigned variable(s)
+                    std::string varText = testlists[0]->getText();
+                    if (varText.find(',') != std::string::npos) {
+                        // Tuple unpacking - split by comma
+                        size_t start = 0;
+                        size_t comma = varText.find(',');
+                        while (comma != std::string::npos) {
+                            std::string var = varText.substr(start, comma - start);
                             var.erase(0, var.find_first_not_of(" \t"));
                             var.erase(var.find_last_not_of(" \t") + 1);
                             if (!var.empty()) assigned.insert(var);
-                        } else {
-                            // Simple assignment
-                            assigned.insert(varText);
+                            start = comma + 1;
+                            comma = varText.find(',', start);
                         }
+                        std::string var = varText.substr(start);
+                        var.erase(0, var.find_first_not_of(" \t"));
+                        var.erase(var.find_last_not_of(" \t") + 1);
+                        if (!var.empty()) assigned.insert(var);
+                    } else {
+                        // Simple assignment
+                        assigned.insert(varText);
                     }
                 }
             }
@@ -3957,31 +3949,29 @@ void EvalVisitor::findAssignedInStmt(Python3Parser::StmtContext* stmt, std::set<
         if (small_stmt) {
             auto expr_stmt = small_stmt->expr_stmt();
             if (expr_stmt) {
-                // Only count regular = assignment as creating a local variable, not augmented (+=, -=, etc.)
-                // Augmented assignment modifies existing variables and should not create new locals
-                if (!expr_stmt->augassign()) {
-                    auto testlists = expr_stmt->testlist();
-                    if (!testlists.empty()) {
-                        std::string varText = testlists[0]->getText();
-                        if (varText.find(',') != std::string::npos) {
-                            // Tuple unpacking
-                            size_t start = 0;
-                            size_t comma = varText.find(',');
-                            while (comma != std::string::npos) {
-                                std::string var = varText.substr(start, comma - start);
-                                var.erase(0, var.find_first_not_of(" \t"));
-                                var.erase(var.find_last_not_of(" \t") + 1);
-                                if (!var.empty()) assigned.insert(var);
-                                start = comma + 1;
-                                comma = varText.find(',', start);
-                            }
-                            std::string var = varText.substr(start);
+                // Both regular = and augmented += mark variables as local (Python semantics)
+                // In Python, `x += 1` inside a function makes `x` local, same as `x = ...`
+                auto testlists = expr_stmt->testlist();
+                if (!testlists.empty()) {
+                    std::string varText = testlists[0]->getText();
+                    if (varText.find(',') != std::string::npos) {
+                        // Tuple unpacking
+                        size_t start = 0;
+                        size_t comma = varText.find(',');
+                        while (comma != std::string::npos) {
+                            std::string var = varText.substr(start, comma - start);
                             var.erase(0, var.find_first_not_of(" \t"));
                             var.erase(var.find_last_not_of(" \t") + 1);
                             if (!var.empty()) assigned.insert(var);
-                        } else {
-                            assigned.insert(varText);
+                            start = comma + 1;
+                            comma = varText.find(',', start);
                         }
+                        std::string var = varText.substr(start);
+                        var.erase(0, var.find_first_not_of(" \t"));
+                        var.erase(var.find_last_not_of(" \t") + 1);
+                        if (!var.empty()) assigned.insert(var);
+                    } else {
+                        assigned.insert(varText);
                     }
                 }
             }

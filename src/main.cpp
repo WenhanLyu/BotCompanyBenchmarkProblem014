@@ -15,6 +15,13 @@ int main(int argc, const char *argv[]) {
 	Python3Parser parser(&tokens);
 	tree::ParseTree *tree = parser.file_input();
 	EvalVisitor visitor;
-	visitor.visit(tree);
+	try {
+		visitor.visit(tree);
+	} catch (const std::runtime_error& e) {
+		// Print Python-style traceback for runtime errors (e.g., UnboundLocalError)
+		std::string msg = e.what();
+		std::cout << "Traceback (most recent call last):" << std::endl;
+		std::cout << msg << std::endl;
+	}
 	return 0;
 }
