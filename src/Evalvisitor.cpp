@@ -255,7 +255,15 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                             if (std::holds_alternative<bool>(rightVal)) rightVal = Value(std::get<bool>(rightVal) ? 1 : 0);
                             Value newVal;
                             if (op == "+=") {
-                                if (std::holds_alternative<BigInteger>(currentVal) || std::holds_alternative<BigInteger>(rightVal)) {
+                                if (std::holds_alternative<ListValue>(currentVal) && std::holds_alternative<ListValue>(rightVal)) {
+                                    // List in-place extension via shared_ptr (reference semantics preserved)
+                                    ListValue& lhs = std::get<ListValue>(currentVal);
+                                    const ListValue& rhs = std::get<ListValue>(rightVal);
+                                    for (const auto& elem : *rhs.elements) {
+                                        lhs.elements->push_back(elem);
+                                    }
+                                    newVal = currentVal;  // Same shared_ptr - inner list is modified
+                                } else if (std::holds_alternative<BigInteger>(currentVal) || std::holds_alternative<BigInteger>(rightVal)) {
                                     BigInteger l = std::holds_alternative<BigInteger>(currentVal) ? std::get<BigInteger>(currentVal) : BigInteger(std::get<int>(currentVal));
                                     BigInteger r = std::holds_alternative<BigInteger>(rightVal) ? std::get<BigInteger>(rightVal) : BigInteger(std::get<int>(rightVal));
                                     newVal = tryDowncastBigInteger(l + r);
@@ -285,7 +293,20 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
                                     newVal = l - r;
                                 } else { newVal = currentVal; }
                             } else if (op == "*=") {
-                                if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
+                                if (std::holds_alternative<ListValue>(currentVal) && std::holds_alternative<int>(rightVal)) {
+                                    // List in-place repetition via shared_ptr
+                                    ListValue& lst_inner = std::get<ListValue>(currentVal);
+                                    int count = std::get<int>(rightVal);
+                                    std::vector<Value> repeated;
+                                    repeated.reserve(lst_inner.elements->size() * (count > 0 ? count : 0));
+                                    for (int ki = 0; ki < count; ki++) {
+                                        for (const auto& elem : *lst_inner.elements) {
+                                            repeated.push_back(elem);
+                                        }
+                                    }
+                                    lst_inner.elements->assign(repeated.begin(), repeated.end());
+                                    newVal = currentVal;
+                                } else if (std::holds_alternative<int>(currentVal) && std::holds_alternative<int>(rightVal)) {
                                     int l = std::get<int>(currentVal), r = std::get<int>(rightVal);
                                     if (willOverflowMultiply(l, r)) newVal = tryDowncastBigInteger(BigInteger(l) * BigInteger(r));
                                     else newVal = l * r;
